@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<link rel="apple-touch-icon" href="Check.png">
+<title>Habits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f2f0;
+    --white: #ffffff;
+    --grey: #ebebea;
+    --border: #d8d8d5;
+    --text: #1a1a18;
+    --muted: #888884;
+    --accent: #b09040;
+    --green: #4a8f4a;
+    --blue: #3a7a9a;
+    --radius: 14px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 0 calc(var(--safe-bottom) + 40px);
+  }
+
+  /* ── Sticky header ── */
+  .sticky-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    padding: calc(var(--safe-top) + 14px) 16px 12px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .sticky-bar.scrolled { border-bottom-color: var(--border); }
+
+  .bar-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .header-date {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .header-day {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .bar-row:last-child { margin-bottom: 0; }
+
+  .bar-row-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    min-width: 44px;
+  }
+
+  .bar-row-pct {
+    font-size: 10px;
+    font-weight: 500;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .weekly-bar-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Zone 2 in header ── */
+  .header-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .zone2-bar-row {
+    margin-bottom: 0;
+  }
+
+  .zone2-bar-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .zone2-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .zone2-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--grey);
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .zone2-btn:active { background: var(--border); }
+
+  .zone2-value {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--blue);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* ── Weekly quick-pills ── */
+  .quick-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .quick-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--grey);
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+
+  .quick-pill:active { opacity: 0.7; }
+
+  .quick-pill.done {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.6);
+  }
+
+  @keyframes pill-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(0.92); }
+    70%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  .pill-popping { animation: pill-pop 0.22s ease; }
+
+  /* ── Habit sections ── */
+  .habit-section {
+    margin: 12px 16px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .habit-section.daily  { background: var(--white); }
+  .habit-section.weekly { background: var(--grey); }
+
+  .habit-list { display: flex; flex-direction: column; }
+
+  .habit-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .habit-item:last-child { border-bottom: none; }
+
+  .daily  .habit-item:active { background: #f5f5f3; }
+  .weekly .habit-item:active { background: #e2e2e0; }
+
+  .habit-item.done { opacity: 0.38; }
+  .habit-item.done .habit-name {
+    text-decoration: line-through;
+    text-decoration-color: var(--muted);
+  }
+
+  .checkbox {
+    width: 21px;
+    height: 21px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+    background: transparent;
+  }
+  .habit-item.done .checkbox { background: var(--green); border-color: var(--green); }
+
+  .checkmark { opacity: 0; transform: scale(0.5); transition: all 0.18s; }
+  .habit-item.done .checkmark { opacity: 1; transform: scale(1); }
+
+  .habit-name {
+    font-size: 14px;
+    color: var(--text);
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  /* ── Reset info ── */
+  .reset-info {
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 20px;
+    letter-spacing: 0.04em;
+    padding: 0 16px;
+  }
+
+  /* ── Animations ── */
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  .popping { animation: pop 0.18s ease; }
+
+  .burst { position: fixed; pointer-events: none; z-index: 100; }
+  .burst-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: burst-out 0.5s ease-out forwards;
+  }
+  @keyframes burst-out {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+
+  /* ── Bottom sheet (French app) ── */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  .sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .bottom-sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 100dvh;
+    background: var(--white);
+    border-radius: 0;
+    z-index: 400;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .bottom-sheet.open { transform: translateY(0); }
+
+  .sheet-handle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--safe-top) + 12px) 16px 10px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 10px;
+  }
+
+  .sheet-title {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .sheet-close {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--blue);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .sheet-close:active { opacity: 0.6; }
+
+  .sheet-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    display: block;
+  }
+  .detail-panel {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-panel.open { transform: translateX(0); }
+
+  .detail-header {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: calc(var(--safe-top) + 14px) 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--blue);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+    flex-shrink: 0;
+  }
+
+  .back-btn:active { opacity: 0.6; }
+
+  .detail-title {
+    font-size: 13px;
+    color: var(--muted);
+    flex: 1;
+    text-align: right;
+    letter-spacing: 0.02em;
+  }
+
+  .detail-body {
+    padding: 16px 16px calc(var(--safe-bottom) + 32px);
+  }
+
+  .routine-list {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .routine-item {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .routine-item:last-child { border-bottom: none; }
+
+  .routine-num {
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 16px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .routine-info { flex: 1; }
+
+  .routine-name {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .routine-detail {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── Info button on habit row ── */
+  .info-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+    transition: border-color 0.15s, color 0.15s;
+    line-height: 1;
+  }
+  .info-btn:active { border-color: var(--blue); color: var(--blue); }
+
+  ::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="sticky-bar" id="stickyBar">
+    <div class="bar-top">
+      <div class="header-date" id="headerDate"></div>
+      <div class="header-day" id="headerDay"></div>
+    </div>
+    <div class="quick-pills" id="quickPills"></div>
+    <div class="bar-row zone2-bar-row">
+      <span class="bar-row-label">Zone 2</span>
+      <div class="progress-bar-wrap">
+        <div class="zone2-bar-fill" id="z2barFill" style="width:0%"></div>
+      </div>
+      <div class="zone2-controls">
+        <button class="zone2-btn" id="z2minus">−</button>
+        <span class="zone2-value" id="z2value">0 / 180 min</span>
+        <button class="zone2-btn" id="z2plus">＋</button>
+      </div>
+    </div>
+    <div class="header-divider"></div>
+    <div class="bar-row">
+      <span class="bar-row-label">Today</span>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="barFill" style="width:0%"></div>
+      </div>
+      <span class="bar-row-pct" id="barPct" style="color:var(--accent)">0%</span>
+    </div>
+  </div>
+
+  <div class="habit-section daily">
+    <div class="habit-list" id="dailyList"></div>
+  </div>
+
+  <div class="reset-info" id="resetInfo"></div>
+</div>
+
+<script>
+const DAILY_HABITS = [
+  "Out of bed by 7:30am",
+  "Make bed + open window",
+  "Omega-3, VitD, Creatine",
+  "10-min morning mobility",
+  "Minoxidil (AM)",
+  "Salad",
+  "Minoxidil (PM)",
+  "Tennis elbow rehab",
+  "1 French moment",
+  "10-min evening mobility",
+  "Neuropod",
+  "Statin, Magnesium, CoQ10",
+  "In bed by 11:00pm",
+];
+
+const ZONE2_GOAL = 180;
+const RESET_HOUR = 3;
+
+function getState() {
+  try { return JSON.parse(localStorage.getItem('habitState') || '{}'); }
+  catch { return {}; }
+}
+function saveState(s) { localStorage.setItem('habitState', JSON.stringify(s)); }
+
+function getDayKey(d = new Date()) {
+  const adj = new Date(d.getTime());
+  if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
+  return adj.toISOString().slice(0, 10);
+}
+
+function getWeekKey(d = new Date()) {
+  const adj = new Date(d.getTime());
+  if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
+  const day = adj.getDay();
+  const monday = new Date(adj);
+  monday.setDate(adj.getDate() - ((day + 6) % 7));
+  return monday.toISOString().slice(0, 10);
+}
+
+function timeUntilReset() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(RESET_HOUR, 0, 0, 0);
+  if (now.getHours() >= RESET_HOUR) next.setDate(next.getDate() + 1);
+  const diff = next - now;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return `${h}h ${m}m`;
+}
+
+function initState() {
+  let s = getState();
+  const dayKey  = getDayKey();
+  const weekKey = getWeekKey();
+  if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
+  if (s.weekKey !== weekKey) { s.weekKey = weekKey; s.weekly = {}; s.zone2 = 0; }
+  s.daily  = s.daily  || {};
+  s.weekly = s.weekly || {};
+  s.zone2  = s.zone2  || 0;
+  saveState(s);
+  return s;
+}
+
+let state;
+
+function render() {
+  state = initState();
+  const now    = new Date();
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('headerDate').textContent = `${months[now.getMonth()]} ${now.getDate()}`;
+  document.getElementById('headerDay').textContent  = days[now.getDay()];
+  renderDaily();
+  updateBars();
+  renderZone2();
+  renderQuickPills();
+  document.getElementById('resetInfo').textContent =
+    `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
+}
+
+function renderDaily() {
+  const list = document.getElementById('dailyList');
+  list.innerHTML = '';
+  DAILY_HABITS.forEach(name => {
+    list.appendChild(makeCheckItem(name, !!state.daily[name], () => {
+      state.daily[name] = !state.daily[name];
+      saveState(state);
+      render();
+    }));
+  });
+}
+
+const WEEKLY_HABITS = ["Push day", "Pull day", "Tennis", "Core", "Work remote"];
+
+function updateBars() {
+  const dailyDone = DAILY_HABITS.filter(h => state.daily[h]).length;
+  const dp = dailyDone / DAILY_HABITS.length;
+  document.getElementById('barFill').style.width = Math.round(dp * 100) + '%';
+  document.getElementById('barPct').textContent  = `${dailyDone}/${DAILY_HABITS.length}`;
+}
+
+function renderZone2() {
+  const done  = state.zone2 >= ZONE2_GOAL;
+  const pct   = Math.min(state.zone2 / ZONE2_GOAL * 100, 100);
+  const color = done ? 'var(--green)' : 'var(--blue)';
+  document.getElementById('z2value').textContent       = `${state.zone2} / ${ZONE2_GOAL} min`;
+  document.getElementById('z2value').style.color       = color;
+  document.getElementById('z2barFill').style.width     = pct + '%';
+  document.getElementById('z2barFill').style.background = color;
+}
+
+function renderQuickPills() {
+  const container = document.getElementById('quickPills');
+  container.innerHTML = '';
+  WEEKLY_HABITS.forEach(name => {
+    const done = !!state.weekly[name];
+    const pill = document.createElement('button');
+    pill.className = 'quick-pill' + (done ? ' done' : '');
+    pill.textContent = name;
+    pill.addEventListener('click', (e) => {
+      pill.classList.add('pill-popping');
+      pill.addEventListener('animationend', () => pill.classList.remove('pill-popping'), { once: true });
+      state.weekly[name] = !state.weekly[name];
+      saveState(state);
+      if (state.weekly[name]) burst(e);
+      render();
+    });
+    container.appendChild(pill);
+  });
+}
+
+function makeCheckItem(name, checked, onClick) {
+  const div = document.createElement('div');
+  div.className = 'habit-item' + (checked ? ' done' : '');
+  const isMobility = name === '10-min morning mobility';
+  const isElbow    = name === 'Tennis elbow rehab';
+  const isEvening  = name === '10-min evening mobility';
+  const isFrench   = name === '1 French moment';
+  div.innerHTML = `
+    <div class="checkbox">
+      <svg class="checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="habit-name">${name}</span>
+    ${isMobility ? `<button class="info-btn" id="mobilityInfoBtn">↗</button>` : ''}
+    ${isElbow    ? `<button class="info-btn" id="elbowInfoBtn">↗</button>` : ''}
+    ${isEvening  ? `<button class="info-btn" id="eveningInfoBtn">↗</button>` : ''}
+    ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn">↗</button>` : ''}
+  `;
+  if (isMobility) {
+    div.querySelector('#mobilityInfoBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('mobilityPanel').classList.add('open');
+    });
+  }
+  if (isElbow) {
+    div.querySelector('#elbowInfoBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('elbowPanel').classList.add('open');
+    });
+  }
+  if (isEvening) {
+    div.querySelector('#eveningInfoBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('eveningPanel').classList.add('open');
+    });
+  }
+  if (isFrench) {
+    div.querySelector('#frenchInfoBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const iframe = document.getElementById('frenchIframe');
+      if (!iframe.src || iframe.src === 'about:blank') {
+        iframe.src = iframe.dataset.src;
+      }
+      document.getElementById('sheetBackdrop').classList.add('open');
+      document.getElementById('frenchSheet').classList.add('open');
+    });
+  }
+  div.addEventListener('click', (e) => {
+    div.classList.add('popping');
+    div.addEventListener('animationend', () => div.classList.remove('popping'), { once: true });
+    onClick(e);
+  });
+  return div;
+}
+
+function burst(e) {
+  const colors = ['#b09040','#4a8f4a','#3a7a9a','#1a1a18'];
+  const x = e.clientX || window.innerWidth / 2;
+  const y = e.clientY || window.innerHeight / 2;
+  const c = document.createElement('div');
+  c.className = 'burst';
+  c.style.left = x + 'px';
+  c.style.top  = y + 'px';
+  document.body.appendChild(c);
+  for (let i = 0; i < 10; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'burst-dot';
+    const angle = (i / 10) * Math.PI * 2;
+    const dist  = 30 + Math.random() * 30;
+    dot.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    dot.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+    dot.style.background = colors[i % colors.length];
+    dot.style.animationDelay = Math.random() * 0.1 + 's';
+    c.appendChild(dot);
+  }
+  setTimeout(() => c.remove(), 700);
+}
+
+render();
+
+document.getElementById('z2minus').addEventListener('click', e => {
+  state = initState();
+  state.zone2 = Math.max(0, state.zone2 - 15);
+  saveState(state);
+  renderZone2();
+  updateBars();
+});
+
+document.getElementById('z2plus').addEventListener('click', e => {
+  state = initState();
+  const wasDone = state.zone2 >= ZONE2_GOAL;
+  state.zone2 += 15;
+  if (state.zone2 >= ZONE2_GOAL && !wasDone) burst(e);
+  saveState(state);
+  renderZone2();
+  updateBars();
+});
+
+window.addEventListener('scroll', () => {
+  document.getElementById('stickyBar').classList.toggle('scrolled', window.scrollY > 4);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('backBtn').addEventListener('click', () => {
+    document.getElementById('mobilityPanel').classList.remove('open');
+  });
+  document.getElementById('elbowBackBtn').addEventListener('click', () => {
+    document.getElementById('elbowPanel').classList.remove('open');
+  });
+  document.getElementById('eveningBackBtn').addEventListener('click', () => {
+    document.getElementById('eveningPanel').classList.remove('open');
+  });
+
+  function closeSheet() {
+    document.getElementById('sheetBackdrop').classList.remove('open');
+    document.getElementById('frenchSheet').classList.remove('open');
+  }
+  document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
+  document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
+});
+
+setInterval(render, 60000);
+</script>
+
+<!-- Morning mobility detail panel -->
+<div class="detail-panel" id="mobilityPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="backBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">10-min morning mobility</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Hop / shake</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Jumping twist</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Sun salutations</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Seated straddle</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">90/90s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Windshield wipers</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Cossack squats</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">Curl up</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">Bird dog</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">10</span><div class="routine-info"><div class="routine-name">Side bridge</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">11</span><div class="routine-info"><div class="routine-name">Banded SLS</div><div class="routine-detail">12 reps, each side</div></div></div>
+      <div class="routine-item"><span class="routine-num">12</span><div class="routine-info"><div class="routine-name">Wall ankle mobility</div><div class="routine-detail">1 min</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tennis elbow rehab detail panel -->
+<div class="detail-panel" id="elbowPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="elbowBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Tennis elbow rehab</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Broomstick pronation</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Broomstick supination</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Reverse wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Wrist extensors stretch</div><div class="routine-detail">2 × 1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Lacrosse ball release</div><div class="routine-detail">1–3 min</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Evening mobility detail panel -->
+<div class="detail-panel" id="eveningPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="eveningBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">10-min evening mobility</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Ragdolls</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Open books</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Bolster</div><div class="routine-detail">5 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Couch stretch</div><div class="routine-detail">2 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Passive 90/90s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Figure 4s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Wall ankle stretch</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- French app bottom sheet -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="bottom-sheet" id="frenchSheet">
+  <div class="sheet-handle-row">
+    <div class="sheet-handle"></div>
+    <span class="sheet-title">1 French moment</span>
+    <button class="sheet-close" id="sheetCloseBtn">Done</button>
+  </div>
+  <iframe
+    class="sheet-iframe"
+    src="about:blank"
+    data-src="https://kevincook0.github.io/French-lessons/french-vocab-trainer"
+    id="frenchIframe"
+  ></iframe>
+</div>
+
+</body>
+</html>
