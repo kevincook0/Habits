@@ -787,7 +787,7 @@ function renderDaily() {
   });
 }
 
-const WEEKLY_HABITS = ["Push day", "Pull day", "Tennis", "Core", "Work remote"];
+const WEEKLY_HABITS = ["Push", "Pull", "Tennis", "Core", "Work remote"];
 
 function updateBars() {
   const dailyDone = DAILY_HABITS.filter(h => state.daily[h]).length;
@@ -1097,25 +1097,32 @@ setInterval(render, 60000);
   const infoBtn    = document.getElementById('breathingInfoBtn');
 
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
 
-  function playTone(freq, duration, type = 'sine', fadeOut = true) {
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
-    if (fadeOut) gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration + 0.05);
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone(freq, duration) {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration + 0.05);
+    } catch(e) {}
   }
 
   function playChime() {
-    // Three ascending tones for completion
     [523, 659, 784].forEach((freq, i) => {
       setTimeout(() => playTone(freq, 0.6), i * 250);
     });
@@ -1203,6 +1210,7 @@ setInterval(render, 60000);
   }
 
   startBtn.addEventListener('click', () => {
+    getAudioCtx(); // unlock audio on this gesture
     if (timer) stop();
     else if (phase === 'done') { stop(); start(); }
     else start();
