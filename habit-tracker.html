@@ -302,7 +302,175 @@
     100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
   }
 
-  /* ── Bottom sheet (French app) ── */
+  /* ── Breathing panel ── */
+  .breathing-panel {
+    position: fixed;
+    inset: 0;
+    background: #1a2a1a;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .breathing-panel.open { transform: translateY(0); }
+
+  .breathing-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--safe-top) + 14px) 20px 12px;
+    flex-shrink: 0;
+  }
+
+  .breathing-back {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .breathing-back:active { opacity: 0.5; }
+
+  .breathing-title {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .breathing-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    padding-bottom: 40px;
+  }
+
+  .breath-circle-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin-bottom: 40px;
+  }
+
+  .breath-circle-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .breath-circle {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(122,184,122,0.25), rgba(122,184,122,0.08));
+    border: 1.5px solid rgba(122,184,122,0.3);
+    transform: scale(0.7);
+    transition: transform 4s ease-in-out, background 1s ease, border-color 1s ease;
+  }
+
+  .breath-circle.exhale {
+    transform: scale(0.55);
+    background: radial-gradient(circle at 50% 50%, rgba(122,184,184,0.2), rgba(122,184,184,0.06));
+    border-color: rgba(122,184,184,0.25);
+    transition: transform 6s ease-in-out, background 1s ease, border-color 1s ease;
+  }
+
+  .breath-circle.inhale {
+    transform: scale(1);
+    background: radial-gradient(circle at 50% 50%, rgba(122,184,122,0.3), rgba(122,184,122,0.1));
+    border-color: rgba(122,184,122,0.4);
+    transition: transform 4s ease-in-out, background 1s ease, border-color 1s ease;
+  }
+
+  .breath-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.02em;
+  }
+
+  .breath-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  .breath-time-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.06em;
+  }
+
+  .breathing-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: calc(var(--safe-bottom) + 32px);
+    width: 100%;
+  }
+
+  .breath-start-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 99px;
+    padding: 12px 36px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .breath-start-btn:active { background: rgba(255,255,255,0.14); }
+
+  .breath-duration-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .breath-dur-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: rgba(255,255,255,0.35);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .breath-dur-btn:active { color: rgba(255,255,255,0.7); }
+
+  .breath-dur-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.06em;
+    min-width: 52px;
+    text-align: center;
+  }
   .sheet-backdrop {
     position: fixed;
     inset: 0;
@@ -469,10 +637,10 @@
   .info-btn {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--muted);
+    border-radius: 8px;
+    border: none;
+    background: #c96a36;
+    color: #fff;
     font-size: 13px;
     display: flex;
     align-items: center;
@@ -480,10 +648,10 @@
     cursor: pointer;
     flex-shrink: 0;
     font-family: 'DM Mono', monospace;
-    transition: border-color 0.15s, color 0.15s;
+    transition: background 0.15s;
     line-height: 1;
   }
-  .info-btn:active { border-color: var(--blue); color: var(--blue); }
+  .info-btn:active { background: #a8552a; }
 
   ::-webkit-scrollbar { width: 0; }
 </style>
@@ -672,10 +840,10 @@ function makeCheckItem(name, checked, onClick) {
       </svg>
     </div>
     <span class="habit-name">${name}</span>
-    ${isMobility ? `<button class="info-btn" id="mobilityInfoBtn">↗</button>` : ''}
-    ${isElbow    ? `<button class="info-btn" id="elbowInfoBtn">↗</button>` : ''}
-    ${isEvening  ? `<button class="info-btn" id="eveningInfoBtn">↗</button>` : ''}
-    ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn">↗</button>` : ''}
+    ${isMobility ? `<button class="info-btn" id="mobilityInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isElbow    ? `<button class="info-btn" id="elbowInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isEvening  ? `<button class="info-btn" id="eveningInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
   `;
   if (isMobility) {
     div.querySelector('#mobilityInfoBtn').addEventListener('click', (e) => {
@@ -855,7 +1023,7 @@ setInterval(render, 60000);
       <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Passive 90/90s</div><div class="routine-detail">1 min</div></div></div>
       <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Figure 4s</div><div class="routine-detail">1 min</div></div></div>
       <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Wall ankle stretch</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div></div>
+      <div class="routine-item" id="breathingRow"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div><button class="info-btn" id="breathingInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div>
     </div>
   </div>
 </div>
@@ -875,6 +1043,188 @@ setInterval(render, 60000);
     id="frenchIframe"
   ></iframe>
 </div>
+
+<!-- Breathing timer panel -->
+<div class="breathing-panel" id="breathingPanel">
+  <div class="breathing-header">
+    <button class="breathing-back" id="breathingBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="breathing-title">4 / 6 breathing</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="breathing-main">
+    <div class="breath-circle-wrap">
+      <div class="breath-circle-bg"></div>
+      <div class="breath-circle" id="breathCircle"></div>
+      <div class="breath-label" id="breathLabel">—</div>
+    </div>
+    <div class="breath-counter" id="breathCounter"></div>
+    <div class="breath-time-left" id="breathTimeLeft"></div>
+  </div>
+  <div class="breathing-controls">
+    <button class="breath-start-btn" id="breathStartBtn">Begin</button>
+    <div class="breath-duration-row">
+      <button class="breath-dur-btn" id="breathDurMinus">−</button>
+      <span class="breath-dur-label" id="breathDurLabel">2 min</span>
+      <button class="breath-dur-btn" id="breathDurPlus">+</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Breathing timer ───────────────────────────────────────────────────────────
+(function() {
+  const INHALE = 4, EXHALE = 6, CYCLE = INHALE + EXHALE;
+  let durationMin = 2;
+  let timer = null;
+  let elapsed = 0;
+  let phase = 'idle'; // idle | inhale | exhale | done
+
+  const panel      = document.getElementById('breathingPanel');
+  const circle     = document.getElementById('breathCircle');
+  const label      = document.getElementById('breathLabel');
+  const counter    = document.getElementById('breathCounter');
+  const timeLeft   = document.getElementById('breathTimeLeft');
+  const startBtn   = document.getElementById('breathStartBtn');
+  const durLabel   = document.getElementById('breathDurLabel');
+  const durMinus   = document.getElementById('breathDurMinus');
+  const durPlus    = document.getElementById('breathDurPlus');
+  const backBtn    = document.getElementById('breathingBackBtn');
+  const infoBtn    = document.getElementById('breathingInfoBtn');
+
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+
+  function playTone(freq, duration, type = 'sine', fadeOut = true) {
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+    if (fadeOut) gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.05);
+  }
+
+  function playChime() {
+    // Three ascending tones for completion
+    [523, 659, 784].forEach((freq, i) => {
+      setTimeout(() => playTone(freq, 0.6), i * 250);
+    });
+  }
+
+  function playInhaleTone()  { playTone(432, 0.3); }
+  function playExhaleTone()  { playTone(320, 0.4); }
+
+  function updateDurLabel() {
+    durLabel.textContent = `${durationMin} min`;
+  }
+
+  function formatTimeLeft(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function setPhase(p) {
+    phase = p;
+    circle.classList.remove('inhale', 'exhale');
+    if (p === 'inhale') {
+      circle.classList.add('inhale');
+      label.textContent = 'Inhale';
+      playInhaleTone();
+    } else if (p === 'exhale') {
+      circle.classList.add('exhale');
+      label.textContent = 'Exhale';
+      playExhaleTone();
+    }
+  }
+
+  function tick() {
+    elapsed++;
+    const totalSec = durationMin * 60;
+    const remaining = totalSec - elapsed;
+    const cyclePos = elapsed % CYCLE;
+
+    // Phase transitions
+    if (cyclePos === 0) setPhase('inhale');
+    else if (cyclePos === INHALE) setPhase('exhale');
+
+    // Count within phase
+    const phaseCount = cyclePos < INHALE
+      ? INHALE - cyclePos
+      : CYCLE - cyclePos;
+    counter.textContent = phaseCount > 0 ? phaseCount : '';
+    timeLeft.textContent = formatTimeLeft(remaining);
+
+    if (remaining <= 0) finish();
+  }
+
+  function start() {
+    elapsed = 0;
+    clearInterval(timer);
+    startBtn.textContent = 'Stop';
+    timeLeft.textContent = formatTimeLeft(durationMin * 60);
+    // Kick off immediately
+    setPhase('inhale');
+    counter.textContent = INHALE;
+    timer = setInterval(tick, 1000);
+  }
+
+  function stop() {
+    clearInterval(timer);
+    timer = null;
+    phase = 'idle';
+    circle.classList.remove('inhale', 'exhale');
+    label.textContent = '—';
+    counter.textContent = '';
+    timeLeft.textContent = '';
+    startBtn.textContent = 'Begin';
+  }
+
+  function finish() {
+    clearInterval(timer);
+    timer = null;
+    phase = 'done';
+    circle.classList.remove('inhale', 'exhale');
+    label.textContent = '✓';
+    counter.textContent = '';
+    timeLeft.textContent = 'done';
+    startBtn.textContent = 'Again';
+    playChime();
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (timer) stop();
+    else if (phase === 'done') { stop(); start(); }
+    else start();
+  });
+
+  durMinus.addEventListener('click', () => {
+    if (durationMin > 1) { durationMin--; updateDurLabel(); }
+  });
+  durPlus.addEventListener('click', () => {
+    if (durationMin < 10) { durationMin++; updateDurLabel(); }
+  });
+
+  backBtn.addEventListener('click', () => {
+    stop();
+    panel.classList.remove('open');
+  });
+
+  infoBtn.addEventListener('click', () => {
+    panel.classList.add('open');
+  });
+})();
+</script>
 
 </body>
 </html>
