@@ -1099,10 +1099,21 @@ setInterval(render, 60000);
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
 
+  // Tiny silent MP3 as base64 — unlocks iOS audio session on tap
+  const SILENT_MP3 = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADQADMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMz/////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAADQJ3oxgAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAENtAxn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAA';
+  const silentAudio = new Audio(SILENT_MP3);
+  silentAudio.volume = 0.001;
+
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new AudioCtx();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
+  }
+
+  function unlockAudio() {
+    // Play silent audio to unlock iOS media session
+    silentAudio.play().catch(() => {});
+    getAudioCtx();
   }
 
   function playTone(freq, duration) {
@@ -1115,7 +1126,7 @@ setInterval(render, 60000);
       osc.type = 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
       gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + duration + 0.05);
@@ -1128,8 +1139,8 @@ setInterval(render, 60000);
     });
   }
 
-  function playInhaleTone()  { playTone(432, 0.3); }
-  function playExhaleTone()  { playTone(320, 0.4); }
+  function playInhaleTone()  { playTone(432, 0.35); }
+  function playExhaleTone()  { playTone(320, 0.45); }
 
   function updateDurLabel() {
     durLabel.textContent = `${durationMin} min`;
@@ -1210,7 +1221,7 @@ setInterval(render, 60000);
   }
 
   startBtn.addEventListener('click', () => {
-    getAudioCtx(); // unlock audio on this gesture
+    unlockAudio();
     if (timer) stop();
     else if (phase === 'done') { stop(); start(); }
     else start();
