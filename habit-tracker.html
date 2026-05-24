@@ -654,6 +654,129 @@
   .info-btn:active { background: #a8552a; }
 
   ::-webkit-scrollbar { width: 0; }
+
+  /* ── Weekend Plan row ── */
+  .weekend-plan-row {
+    margin-top: 6px;
+    margin-bottom: 0;
+    min-height: 22px;
+    align-items: center;
+  }
+
+  .wp-prompt-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    opacity: 0.75;
+    transition: opacity 0.15s;
+  }
+  .wp-prompt-btn:active { opacity: 0.45; }
+
+  .wp-filled {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .wp-plan-text {
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .wp-edit-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1.6;
+    transition: background 0.12s;
+  }
+  .wp-edit-btn:active { background: var(--grey); }
+
+  /* ── Weekend Plan drawer ── */
+  .wp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  .wp-backdrop.open { opacity: 1; pointer-events: all; }
+
+  .wp-drawer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--white);
+    border-radius: 16px 16px 0 0;
+    z-index: 310;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 16px 16px calc(var(--safe-bottom) + 20px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .wp-drawer.open { transform: translateY(0); }
+
+  .wp-drawer-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 4px;
+    flex-shrink: 0;
+  }
+
+  .wp-textarea {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--grey);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    resize: none;
+    height: 120px;
+    outline: none;
+    width: 100%;
+    line-height: 1.5;
+  }
+  .wp-textarea::placeholder { color: var(--muted); }
+  .wp-textarea:focus { border-color: var(--muted); }
+
+  .wp-save-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--text);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+  }
+  .wp-save-btn:active { opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -674,6 +797,13 @@
         <button class="zone2-btn" id="z2minus">−</button>
         <span class="zone2-value" id="z2value">0 / 180 min</span>
         <button class="zone2-btn" id="z2plus">＋</button>
+      </div>
+    </div>
+    <div class="bar-row weekend-plan-row" id="weekendPlanRow">
+      <button class="wp-prompt-btn" id="wpPromptBtn">Plan your weekend →</button>
+      <div class="wp-filled" id="wpFilled" style="display:none">
+        <span class="wp-plan-text" id="wpPlanText"></span>
+        <button class="wp-edit-btn" id="wpEditBtn">edit</button>
       </div>
     </div>
     <div class="header-divider"></div>
@@ -800,10 +930,11 @@ function ensureFreshKeys(s) {
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
-  if (s.weekKey !== weekKey) { s.weekKey = weekKey; s.weekly = {}; s.zone2 = 0; }
-  s.daily  = s.daily  || {};
-  s.weekly = s.weekly || {};
-  s.zone2  = s.zone2  || 0;
+  if (s.weekKey !== weekKey) { s.weekKey = weekKey; s.weekly = {}; s.zone2 = 0; s.weekendPlan = ''; }
+  s.daily       = s.daily       || {};
+  s.weekly      = s.weekly      || {};
+  s.zone2       = s.zone2       || 0;
+  s.weekendPlan = s.weekendPlan || '';
   return s;
 }
 
@@ -820,6 +951,7 @@ function render() {
   updateBars();
   renderZone2();
   renderQuickPills();
+  renderWeekendPlan();
   document.getElementById('resetInfo').textContent =
     `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
 }
@@ -873,6 +1005,33 @@ function renderQuickPills() {
     });
     container.appendChild(pill);
   });
+}
+
+function renderWeekendPlan() {
+  const plan = (state.weekendPlan || '').trim();
+  const prompt = document.getElementById('wpPromptBtn');
+  const filled = document.getElementById('wpFilled');
+  const planText = document.getElementById('wpPlanText');
+  if (plan) {
+    prompt.style.display = 'none';
+    filled.style.display = 'flex';
+    planText.textContent = plan;
+  } else {
+    prompt.style.display = '';
+    filled.style.display = 'none';
+  }
+}
+
+function openWeekendPlanDrawer() {
+  document.getElementById('wpTextarea').value = state.weekendPlan || '';
+  document.getElementById('wpBackdrop').classList.add('open');
+  document.getElementById('wpDrawer').classList.add('open');
+  setTimeout(() => document.getElementById('wpTextarea').focus(), 320);
+}
+
+function closeWeekendPlanDrawer() {
+  document.getElementById('wpBackdrop').classList.remove('open');
+  document.getElementById('wpDrawer').classList.remove('open');
 }
 
 function makeCheckItem(name, checked, onClick) {
@@ -961,11 +1120,12 @@ render();
   try {
     const remote = await apiRead(getDayKey(), getWeekKey());
     state = ensureFreshKeys({
-      dayKey:  remote.dayKey,
-      weekKey: remote.weekKey,
-      daily:   remote.daily,
-      weekly:  remote.weekly,
-      zone2:   remote.zone2,
+      dayKey:      remote.dayKey,
+      weekKey:     remote.weekKey,
+      daily:       remote.daily,
+      weekly:      remote.weekly,
+      zone2:       remote.zone2,
+      weekendPlan: remote.weekendPlan || '',
     });
     cacheLocal(state);
     render();
@@ -1013,6 +1173,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
+
+  // Weekend plan drawer
+  document.getElementById('wpPromptBtn').addEventListener('click', openWeekendPlanDrawer);
+  document.getElementById('wpEditBtn').addEventListener('click', openWeekendPlanDrawer);
+  document.getElementById('wpBackdrop').addEventListener('click', closeWeekendPlanDrawer);
+  document.getElementById('wpSaveBtn').addEventListener('click', () => {
+    const val = document.getElementById('wpTextarea').value.trim();
+    state.weekendPlan = val;
+    cacheLocal(state);
+    renderWeekendPlan();
+    closeWeekendPlanDrawer();
+    apiWrite({ weekKey: state.weekKey, weekendPlan: val })
+      .catch(err => console.warn('weekend plan save failed', err));
+  });
 });
 
 setInterval(render, 60000);
@@ -1109,6 +1283,14 @@ setInterval(render, 60000);
     data-src="https://kevincook0.github.io/French-lessons/french-vocab-trainer"
     id="frenchIframe"
   ></iframe>
+</div>
+
+<!-- Weekend Plan drawer -->
+<div class="wp-backdrop" id="wpBackdrop"></div>
+<div class="wp-drawer" id="wpDrawer">
+  <div class="wp-drawer-handle"></div>
+  <textarea class="wp-textarea" id="wpTextarea" placeholder="What's the plan for the weekend?"></textarea>
+  <button class="wp-save-btn" id="wpSaveBtn">Save</button>
 </div>
 
 <!-- Breathing timer panel -->
