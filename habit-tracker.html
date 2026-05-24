@@ -713,11 +713,61 @@ const DAILY_HABITS = [
 const ZONE2_GOAL = 180;
 const RESET_HOUR = 3;
 
-function getState() {
-  try { return JSON.parse(localStorage.getItem('habitState') || '{}'); }
-  catch { return {}; }
+// ── Supabase backend ─────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://qbyuyoiiuoaeinvfiudv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_h9lE4du-71hsCRzxnICHyQ__GG2pE_m';
+const APP_SECRET = '7265d62639a9ec3e37c5c3a2ac7e0e193aba9c00128efd719c59a78aebe2091e'; // must match APP_SECRET env var on the Edge Functions
+
+const apiHeaders = () => ({
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'x-habit-secret': APP_SECRET,
+});
+
+async function apiRead(dayKey, weekKey) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-read`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ dayKey, weekKey }),
+  });
+  if (!res.ok) throw new Error(`read failed: ${res.status}`);
+  return res.json();
 }
-function saveState(s) { localStorage.setItem('habitState', JSON.stringify(s)); }
+
+async function apiWrite(payload) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`write failed: ${res.status}`);
+  return res.json();
+}
+
+function cacheLocal(s) {
+  try { localStorage.setItem('habitState', JSON.stringify(s)); } catch {}
+}
+
+function readLocalCache() {
+  try { return JSON.parse(localStorage.getItem('habitState') || 'null'); }
+  catch { return null; }
+}
+
+let saveTimer = null;
+function saveState() {
+  cacheLocal(state);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    apiWrite({
+      dayKey: state.dayKey,
+      weekKey: state.weekKey,
+      daily: state.daily,
+      weekly: state.weekly,
+      zone2: state.zone2,
+    }).catch(err => console.warn('habit save failed', err));
+  }, 400);
+}
 
 function getDayKey(d = new Date()) {
   const adj = new Date(d.getTime());
@@ -745,8 +795,8 @@ function timeUntilReset() {
   return `${h}h ${m}m`;
 }
 
-function initState() {
-  let s = getState();
+function ensureFreshKeys(s) {
+  s = s || {};
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
@@ -754,14 +804,13 @@ function initState() {
   s.daily  = s.daily  || {};
   s.weekly = s.weekly || {};
   s.zone2  = s.zone2  || 0;
-  saveState(s);
   return s;
 }
 
-let state;
+let state = ensureFreshKeys(readLocalCache());
 
 function render() {
-  state = initState();
+  state = ensureFreshKeys(state);
   const now    = new Date();
   const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -781,7 +830,7 @@ function renderDaily() {
   DAILY_HABITS.forEach(name => {
     list.appendChild(makeCheckItem(name, !!state.daily[name], () => {
       state.daily[name] = !state.daily[name];
-      saveState(state);
+      saveState();
       render();
     }));
   });
@@ -818,7 +867,7 @@ function renderQuickPills() {
       pill.classList.add('pill-popping');
       pill.addEventListener('animationend', () => pill.classList.remove('pill-popping'), { once: true });
       state.weekly[name] = !state.weekly[name];
-      saveState(state);
+      saveState();
       if (state.weekly[name]) burst(e);
       render();
     });
@@ -907,20 +956,38 @@ function burst(e) {
 
 render();
 
+// Hydrate from the API after initial cached render
+(async () => {
+  try {
+    const remote = await apiRead(getDayKey(), getWeekKey());
+    state = ensureFreshKeys({
+      dayKey:  remote.dayKey,
+      weekKey: remote.weekKey,
+      daily:   remote.daily,
+      weekly:  remote.weekly,
+      zone2:   remote.zone2,
+    });
+    cacheLocal(state);
+    render();
+  } catch (err) {
+    console.warn('initial habit fetch failed', err);
+  }
+})();
+
 document.getElementById('z2minus').addEventListener('click', e => {
-  state = initState();
+  state = ensureFreshKeys(state);
   state.zone2 = Math.max(0, state.zone2 - 15);
-  saveState(state);
+  saveState();
   renderZone2();
   updateBars();
 });
 
 document.getElementById('z2plus').addEventListener('click', e => {
-  state = initState();
+  state = ensureFreshKeys(state);
   const wasDone = state.zone2 >= ZONE2_GOAL;
   state.zone2 += 15;
   if (state.zone2 >= ZONE2_GOAL && !wasDone) burst(e);
-  saveState(state);
+  saveState();
   renderZone2();
   updateBars();
 });
