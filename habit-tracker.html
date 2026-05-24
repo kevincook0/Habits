@@ -9,19 +9,22 @@
 <link rel="apple-touch-icon" href="Check.png">
 <title>Habits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f2f2f0;
+    --bg: #f5f5f3;
     --white: #ffffff;
-    --grey: #ebebea;
-    --border: #d8d8d5;
-    --text: #1a1a18;
-    --muted: #888884;
-    --accent: #b09040;
-    --green: #4a8f4a;
+    --grey: #eeeeec;
+    --border: #e0e0dd;
+    --text: #111110;
+    --muted: #999994;
+    --dim: #ccccca;
+    --green: #2d6e2d;
+    --green-bg: #edf4ed;
+    --green-border: #c5dcc5;
     --blue: #3a7a9a;
-    --radius: 14px;
+    --gap: 10px;
+    --radius: 10px;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -31,9 +34,11 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
     min-height: 100dvh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   .app {
@@ -42,24 +47,23 @@
     padding: 0 0 calc(var(--safe-bottom) + 40px);
   }
 
-  /* ── Sticky header ── */
+  /* ── Sticky header ────────────────────────────────────────── */
   .sticky-bar {
     position: sticky;
     top: 0;
     z-index: 50;
     background: var(--bg);
-    padding: calc(var(--safe-top) + 14px) 16px 12px;
+    padding: calc(var(--safe-top) + 16px) 16px 14px;
     border-bottom: 1px solid transparent;
     transition: border-color 0.2s;
   }
-
   .sticky-bar.scrolled { border-bottom-color: var(--border); }
 
   .bar-top {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .header-date {
@@ -77,139 +81,147 @@
     text-transform: uppercase;
   }
 
-  .bar-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 5px;
-  }
-  .bar-row:last-child { margin-bottom: 0; }
-
-  .bar-row-label {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    min-width: 44px;
-  }
-
-  .progress-bar-wrap {
-    flex: 1;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .weekly-bar-fill {
-    height: 100%;
-    background: var(--blue);
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-
-  /* ── Zone 2 in header ── */
-  .header-divider {
+  /* ── Weekly progress track ── */
+  .progress-track {
+    width: 100%;
     height: 1px;
     background: var(--border);
-    margin: 8px 0;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .progress-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--text);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .zone2-bar-row {
-    margin-bottom: 0;
+  /* ── Activity cards ── */
+  .activity-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--gap);
+    margin-bottom: var(--gap);
   }
 
-  .zone2-bar-fill {
-    height: 100%;
-    background: var(--blue);
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-
-  .zone2-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .zone2-btn {
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
+  .act-card {
+    background: var(--white);
     border: 1px solid var(--border);
-    background: var(--grey);
-    color: var(--text);
-    font-size: 15px;
-    cursor: pointer;
+    border-radius: var(--radius);
+    padding: 11px 4px 9px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    transition: background 0.12s;
-    font-family: 'DM Mono', monospace;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-  .zone2-btn:active { background: var(--border); }
-
-  .zone2-value {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--blue);
-    min-width: 60px;
-    text-align: center;
-  }
-
-  /* ── Weekly quick-pills ── */
-  .quick-pills {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-  }
-
-  .quick-pill {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    padding: 4px 10px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--grey);
-    color: var(--muted);
+    gap: 7px;
     cursor: pointer;
     user-select: none;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    line-height: 1;
+    transition: background 0.14s, border-color 0.14s, transform 0.1s;
+  }
+  .act-card:active { transform: scale(0.94); }
+  .act-card.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
   }
 
-  .quick-pill:active { opacity: 0.7; }
+  .act-icon {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--grey);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: visible;
+    flex-shrink: 0;
+    transition: background 0.14s;
+  }
+  .act-card.done .act-icon { background: var(--green); }
 
-  .quick-pill.done {
-    background: var(--green);
-    border-color: var(--green);
-    color: #fff;
-    text-decoration: line-through;
-    text-decoration-color: rgba(255,255,255,0.6);
+  .act-icon svg {
+    width: 14px; height: 14px;
+    stroke: var(--muted); fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 0.14s;
+    flex-shrink: 0;
+  }
+  .act-card.done .act-icon svg { stroke: #fff; }
+
+  .core-dot { fill: var(--muted); stroke: none !important; transition: fill 0.14s; }
+  .act-card.done .core-dot { fill: #fff; }
+
+  .act-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    transition: color 0.14s;
+  }
+  .act-card.done .act-label { color: var(--green); }
+
+  /* ── List rows ── */
+  .list-row {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 13px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: var(--gap);
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .list-row:last-child { margin-bottom: 0; }
+  .list-row:active { opacity: 0.7; }
+  .list-row.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
   }
 
-  @keyframes pill-pop {
-    0%   { transform: scale(1); }
-    35%  { transform: scale(0.92); }
-    70%  { transform: scale(1.05); }
-    100% { transform: scale(1); }
+  .list-icon {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--grey);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.14s;
   }
-  .pill-popping { animation: pill-pop 0.22s ease; }
+  .list-row.done .list-icon { background: var(--green); }
+  .list-icon svg {
+    width: 13px; height: 13px;
+    stroke: var(--muted); fill: none;
+    stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 0.14s;
+  }
+  .list-row.done .list-icon svg { stroke: #fff; }
 
-  /* ── Habit sections ── */
+  .list-text { flex: 1; min-width: 0; }
+  .list-title {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 1px;
+    transition: color 0.14s;
+  }
+  .list-row.done .list-title { color: var(--green); }
+  .list-sub {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Daily habit section ── */
   .habit-section {
     margin: 12px 16px 0;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
   }
-
-  .habit-section.daily  { background: var(--white); }
-  .habit-section.weekly { background: var(--grey); }
+  .habit-section.daily { background: var(--white); }
 
   .habit-list { display: flex; flex-direction: column; }
 
@@ -224,9 +236,7 @@
     border-bottom: 1px solid var(--border);
   }
   .habit-item:last-child { border-bottom: none; }
-
-  .daily  .habit-item:active { background: #f5f5f3; }
-  .weekly .habit-item:active { background: #e2e2e0; }
+  .daily .habit-item:active { background: #f0f0ee; }
 
   .habit-item.done { opacity: 0.38; }
   .habit-item.done .habit-name {
@@ -235,14 +245,11 @@
   }
 
   .checkbox {
-    width: 21px;
-    height: 21px;
+    width: 21px; height: 21px;
     border-radius: 5px;
     border: 1.5px solid var(--border);
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     transition: all 0.18s;
     background: transparent;
   }
@@ -252,7 +259,7 @@
   .habit-item.done .checkmark { opacity: 1; transform: scale(1); }
 
   .habit-name {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text);
     flex: 1;
     line-height: 1.3;
@@ -276,7 +283,7 @@
   }
   .popping { animation: pop 0.18s ease; }
 
-  .burst { position: fixed; pointer-events: none; z-index: 100; }
+  .burst { position: fixed; pointer-events: none; z-index: 9999; }
   .burst-dot {
     position: absolute;
     width: 6px; height: 6px;
@@ -288,15 +295,153 @@
     100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
   }
 
+  /* ── Cardio modal ── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.2);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: all; }
+
+  .cardio-modal {
+    position: fixed;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(0.94);
+    width: calc(100% - 48px);
+    max-width: 300px;
+    background: var(--white);
+    border-radius: 16px;
+    padding: 28px 24px 22px;
+    z-index: 101;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.1), 0 0 0 1px var(--border);
+  }
+  .cardio-modal.open {
+    opacity: 1; pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .modal-label {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); text-align: center; margin-bottom: 10px;
+  }
+  .modal-number {
+    font-size: 56px; font-weight: 300;
+    color: var(--text); text-align: center;
+    line-height: 1; letter-spacing: -0.02em; margin-bottom: 2px;
+  }
+  .modal-unit {
+    font-size: 11px; color: var(--muted);
+    text-align: center; margin-bottom: 12px;
+  }
+  .modal-track {
+    width: 100%; height: 1px;
+    background: var(--border); position: relative; margin-bottom: 8px;
+  }
+  .modal-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--green); transition: width 0.3s ease;
+  }
+  .modal-remaining {
+    font-size: 10px; color: var(--muted);
+    text-align: center; margin-bottom: 22px; letter-spacing: 0.04em;
+  }
+  .modal-controls { display: flex; align-items: center; gap: 10px; }
+  .ctrl-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    transition: opacity 0.12s; flex-shrink: 0;
+  }
+  .ctrl-btn:active { opacity: 0.6; }
+  .ctrl-minus { background: var(--grey); border: 1px solid var(--border); color: var(--text); }
+  .ctrl-plus  { background: var(--green); border: none; color: #fff; }
+  .ctrl-label {
+    flex: 1; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-align: center;
+  }
+
+  /* ── Drawers ── */
+  .drawer-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s;
+  }
+  .drawer-bg.open { opacity: 1; pointer-events: all; }
+
+  .drawer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 201;
+    transform: translateY(100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer.open { transform: translateY(0); }
+
+  .drawer-inner {
+    padding: 12px 16px calc(var(--safe-bottom) + 20px);
+  }
+  .drawer-pip {
+    width: 32px; height: 3px;
+    background: var(--dim); border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .drawer-heading {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .drawer-textarea {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 400;
+    color: var(--text);
+    background: var(--grey);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    resize: none; outline: none;
+    line-height: 1.5; height: 80px;
+    margin-bottom: 10px; display: block;
+    -webkit-font-smoothing: antialiased;
+  }
+  .drawer-textarea::placeholder { color: var(--dim); }
+  .drawer-textarea:focus { border-color: var(--muted); background: var(--white); }
+
+  .drawer-actions { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 8px; padding: 13px;
+    cursor: pointer;
+    transition: opacity 0.14s;
+    border: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  .btn:active { opacity: 0.65; }
+  .btn-secondary { background: var(--grey); border: 1px solid var(--border); color: var(--text); }
+  .btn-primary   { background: var(--text); color: var(--white); }
+  .btn-complete  { background: var(--green); color: #fff; }
+
   /* ── Breathing panel ── */
   .breathing-panel {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: #1a2a1a;
     z-index: 500;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: flex; flex-direction: column; align-items: center;
     transform: translateY(100%);
     transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -304,465 +449,192 @@
 
   .breathing-header {
     width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     padding: calc(var(--safe-top) + 14px) 20px 12px;
     flex-shrink: 0;
   }
-
   .breathing-back {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: rgba(255,255,255,0.5);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 0;
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    background: none; border: none; cursor: pointer; padding: 4px 0;
   }
   .breathing-back:active { opacity: 0.5; }
-
   .breathing-title {
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 11px; color: rgba(255,255,255,0.35);
+    letter-spacing: 0.08em; text-transform: uppercase;
   }
 
   .breathing-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    width: 100%;
-    padding-bottom: 40px;
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0; width: 100%; padding-bottom: 40px;
   }
-
   .breath-circle-wrap {
-    position: relative;
-    width: 220px;
-    height: 220px;
-    margin-bottom: 40px;
+    position: relative; width: 220px; height: 220px; margin-bottom: 40px;
   }
-
   .breath-circle-bg {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
+    position: absolute; inset: 0; border-radius: 50%;
     background: rgba(255,255,255,0.04);
   }
-
   .breath-circle {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
+    position: absolute; inset: 0; border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, rgba(122,184,122,0.25), rgba(122,184,122,0.08));
     border: 1.5px solid rgba(122,184,122,0.3);
     transform: scale(0.7);
     transition: transform 4s ease-in-out, background 1s ease, border-color 1s ease;
   }
-
   .breath-circle.exhale {
     transform: scale(0.55);
     background: radial-gradient(circle at 50% 50%, rgba(122,184,184,0.2), rgba(122,184,184,0.06));
     border-color: rgba(122,184,184,0.25);
     transition: transform 6s ease-in-out, background 1s ease, border-color 1s ease;
   }
-
   .breath-circle.inhale {
     transform: scale(1);
     background: radial-gradient(circle at 50% 50%, rgba(122,184,122,0.3), rgba(122,184,122,0.1));
     border-color: rgba(122,184,122,0.4);
     transition: transform 4s ease-in-out, background 1s ease, border-color 1s ease;
   }
-
   .breath-label {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'Fraunces', serif;
-    font-size: 22px;
-    font-weight: 300;
-    color: rgba(255,255,255,0.8);
-    letter-spacing: 0.02em;
+    font-size: 22px; font-weight: 300;
+    color: rgba(255,255,255,0.8); letter-spacing: 0.02em;
   }
-
   .breath-counter {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: rgba(255,255,255,0.3);
-    margin-bottom: 8px;
-    letter-spacing: 0.06em;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; color: rgba(255,255,255,0.3);
+    margin-bottom: 8px; letter-spacing: 0.06em;
   }
-
   .breath-time-left {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: rgba(255,255,255,0.2);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; color: rgba(255,255,255,0.2);
     letter-spacing: 0.06em;
   }
-
   .breathing-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding-bottom: calc(var(--safe-bottom) + 32px);
-    width: 100%;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding-bottom: calc(var(--safe-bottom) + 32px); width: 100%;
   }
-
   .breath-start-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.06em;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; letter-spacing: 0.06em;
     color: rgba(255,255,255,0.8);
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 99px;
-    padding: 12px 36px;
-    cursor: pointer;
+    border-radius: 99px; padding: 12px 36px; cursor: pointer;
     transition: background 0.15s;
   }
   .breath-start-btn:active { background: rgba(255,255,255,0.14); }
-
-  .breath-duration-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
+  .breath-duration-row { display: flex; align-items: center; gap: 14px; }
   .breath-dur-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 15px;
-    color: rgba(255,255,255,0.35);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px; color: rgba(255,255,255,0.35);
+    background: none; border: none; cursor: pointer; padding: 4px 8px;
   }
   .breath-dur-btn:active { color: rgba(255,255,255,0.7); }
-
   .breath-dur-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.06em;
-    min-width: 52px;
-    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    letter-spacing: 0.06em; min-width: 52px; text-align: center;
   }
+
+  /* ── Detail panels ── */
+  .detail-panel {
+    position: fixed; inset: 0;
+    background: var(--bg); z-index: 200;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .detail-panel.open { transform: translateX(0); }
+
+  .detail-header {
+    position: sticky; top: 0;
+    background: var(--bg);
+    padding: calc(var(--safe-top) + 14px) 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; color: var(--blue);
+    background: none; border: none; cursor: pointer; padding: 4px 0; flex-shrink: 0;
+  }
+  .back-btn:active { opacity: 0.6; }
+  .detail-title {
+    font-size: 13px; color: var(--muted);
+    flex: 1; text-align: right; letter-spacing: 0.02em;
+  }
+  .detail-body { padding: 16px 16px calc(var(--safe-bottom) + 32px); }
+  .routine-list {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .routine-item {
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+  }
+  .routine-item:last-child { border-bottom: none; }
+  .routine-num {
+    font-size: 11px; color: var(--muted);
+    min-width: 16px; text-align: right; flex-shrink: 0;
+  }
+  .routine-info { flex: 1; }
+  .routine-name { font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .routine-detail { font-size: 11px; color: var(--muted); }
+
+  /* ── Info button ── */
+  .info-btn {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: none; background: #c96a36; color: #fff; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s; line-height: 1;
+  }
+  .info-btn:active { background: #a8552a; }
+
+  /* ── French bottom sheet ── */
   .sheet-backdrop {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: rgba(0,0,0,0.3);
     z-index: 300;
-    opacity: 0;
-    pointer-events: none;
+    opacity: 0; pointer-events: none;
     transition: opacity 0.28s ease;
   }
-  .sheet-backdrop.open {
-    opacity: 1;
-    pointer-events: all;
-  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: all; }
 
   .bottom-sheet {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    height: 100dvh;
-    background: var(--white);
-    border-radius: 0;
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: 100dvh; background: var(--white); border-radius: 0;
     z-index: 400;
     transform: translateY(100%);
     transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    display: flex; flex-direction: column; overflow: hidden;
   }
   .bottom-sheet.open { transform: translateY(0); }
 
   .sheet-handle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     padding: calc(var(--safe-top) + 12px) 16px 10px;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
+    flex-shrink: 0; border-bottom: 1px solid var(--border);
   }
-
   .sheet-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 10px;
+    width: 36px; height: 4px; background: var(--border); border-radius: 2px;
+    margin: 0 auto; position: absolute; left: 50%; transform: translateX(-50%); top: 10px;
   }
-
-  .sheet-title {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-  }
-
+  .sheet-title { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
   .sheet-close {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--blue);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 0;
+    font-family: 'Inter', sans-serif; font-size: 12px; color: var(--blue);
+    background: none; border: none; cursor: pointer; padding: 4px 0;
   }
   .sheet-close:active { opacity: 0.6; }
-
-  .sheet-iframe {
-    flex: 1;
-    width: 100%;
-    border: none;
-    display: block;
-  }
-  .detail-panel {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    z-index: 200;
-    transform: translateX(100%);
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .detail-panel.open { transform: translateX(0); }
-
-  .detail-header {
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    padding: calc(var(--safe-top) + 14px) 16px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--blue);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 0;
-    flex-shrink: 0;
-  }
-
-  .back-btn:active { opacity: 0.6; }
-
-  .detail-title {
-    font-size: 13px;
-    color: var(--muted);
-    flex: 1;
-    text-align: right;
-    letter-spacing: 0.02em;
-  }
-
-  .detail-body {
-    padding: 16px 16px calc(var(--safe-bottom) + 32px);
-  }
-
-  .routine-list {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .routine-item {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-    padding: 13px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .routine-item:last-child { border-bottom: none; }
-
-  .routine-num {
-    font-size: 11px;
-    color: var(--muted);
-    min-width: 16px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .routine-info { flex: 1; }
-
-  .routine-name {
-    font-size: 14px;
-    color: var(--text);
-    margin-bottom: 2px;
-  }
-
-  .routine-detail {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  /* ── Info button on habit row ── */
-  .info-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: none;
-    background: #c96a36;
-    color: #fff;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-family: 'DM Mono', monospace;
-    transition: background 0.15s;
-    line-height: 1;
-  }
-  .info-btn:active { background: #a8552a; }
+  .sheet-iframe { flex: 1; width: 100%; border: none; display: block; }
 
   ::-webkit-scrollbar { width: 0; }
-
-  /* ── Weekend Plan row ── */
-  .weekend-plan-row {
-    margin-top: 6px;
-    margin-bottom: 0;
-    min-height: 22px;
-    align-items: center;
-  }
-
-  .wp-prompt-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-style: italic;
-    color: var(--muted);
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    line-height: 1;
-    opacity: 0.75;
-    transition: opacity 0.15s;
-  }
-  .wp-prompt-btn:active { opacity: 0.45; }
-
-  .wp-filled {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .wp-plan-text {
-    font-size: 12px;
-    color: var(--text);
-    flex: 1;
-    line-height: 1.35;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .wp-edit-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 2px 7px;
-    cursor: pointer;
-    flex-shrink: 0;
-    line-height: 1.6;
-    transition: background 0.12s;
-  }
-  .wp-edit-btn:active { background: var(--grey); }
-
-  /* ── Weekend Plan drawer ── */
-  .wp-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.3);
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.28s ease;
-  }
-  .wp-backdrop.open { opacity: 1; pointer-events: all; }
-
-  .wp-drawer {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    background: var(--white);
-    border-radius: 16px 16px 0 0;
-    z-index: 310;
-    transform: translateY(100%);
-    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 16px 16px calc(var(--safe-bottom) + 20px);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .wp-drawer.open { transform: translateY(0); }
-
-  .wp-drawer-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 4px;
-    flex-shrink: 0;
-  }
-
-  .wp-textarea {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--text);
-    background: var(--grey);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    resize: none;
-    height: 120px;
-    outline: none;
-    width: 100%;
-    line-height: 1.5;
-  }
-  .wp-textarea::placeholder { color: var(--muted); }
-  .wp-textarea:focus { border-color: var(--muted); }
-
-  .wp-save-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    color: #fff;
-    background: var(--text);
-    border: none;
-    border-radius: 10px;
-    padding: 14px;
-    cursor: pointer;
-    width: 100%;
-    transition: opacity 0.15s;
-  }
-  .wp-save-btn:active { opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -771,36 +643,275 @@
   <div class="sticky-bar" id="stickyBar">
     <div class="bar-top">
       <div class="header-date" id="headerDate"></div>
-      <div class="header-day" id="headerDay"></div>
+      <div class="header-day"  id="headerDay"></div>
     </div>
-    <div class="quick-pills" id="quickPills"></div>
-    <div class="bar-row zone2-bar-row">
-      <span class="bar-row-label">Zone 2</span>
-      <div class="progress-bar-wrap">
-        <div class="zone2-bar-fill" id="z2barFill" style="width:0%"></div>
+
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+
+    <!-- Activity cards -->
+    <div class="activity-row">
+
+      <div class="act-card" id="cardPush" data-habit="Push">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </div>
+        <span class="act-label">Push</span>
       </div>
-      <div class="zone2-controls">
-        <button class="zone2-btn" id="z2minus">−</button>
-        <span class="zone2-value" id="z2value">0 / 180 min</span>
-        <button class="zone2-btn" id="z2plus">＋</button>
+
+      <div class="act-card" id="cardPull" data-habit="Pull">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <span class="act-label">Pull</span>
+      </div>
+
+      <div class="act-card" id="cardCore" data-habit="Core">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <circle class="core-dot" cx="12" cy="12" r="2.5"/>
+          </svg>
+        </div>
+        <span class="act-label">Core</span>
+      </div>
+
+      <div class="act-card" id="cardTennis" data-habit="Tennis">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M 5.5 6.5 C 8 9 8 15 5.5 17.5" fill="none"/>
+            <path d="M 18.5 6.5 C 16 9 16 15 18.5 17.5" fill="none"/>
+          </svg>
+        </div>
+        <span class="act-label">Tennis</span>
+      </div>
+
+      <!-- Cardio — tap to open minutes modal -->
+      <div class="act-card" id="cardCardio">
+        <svg id="cardioSvg" width="34" height="34" viewBox="0 0 34 34">
+          <circle cx="17" cy="17" r="17" fill="var(--grey)" id="cardioBg"/>
+          <circle cx="17" cy="17" r="15" fill="none" stroke="var(--border)" stroke-width="3" transform="rotate(-90 17 17)"/>
+          <circle cx="17" cy="17" r="15" fill="none" stroke="var(--green)" stroke-width="3"
+            stroke-dasharray="94.25" stroke-dashoffset="94.25"
+            stroke-linecap="round"
+            transform="rotate(-90 17 17)"
+            id="cardioRingFill"
+            style="transition: stroke-dashoffset 0.4s ease;"/>
+          <g transform="translate(17,17) scale(0.56) translate(-12,-12)">
+            <path id="cardioHeart"
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="transition: stroke 0.14s;"/>
+          </g>
+        </svg>
+        <span class="act-label" id="cardioLabel">Cardio</span>
+      </div>
+
+    </div><!-- /activity-row -->
+
+    <!-- Remote day -->
+    <div class="list-row" id="remoteRow">
+      <div class="list-icon" id="remoteIcon">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="list-text">
+        <div class="list-title">Remote day</div>
+        <div class="list-sub" id="remoteSub">Where are you working from?</div>
       </div>
     </div>
-    <div class="bar-row weekend-plan-row" id="weekendPlanRow">
-      <button class="wp-prompt-btn" id="wpPromptBtn">Plan your weekend →</button>
-      <div class="wp-filled" id="wpFilled" style="display:none">
-        <span class="wp-plan-text" id="wpPlanText"></span>
-        <button class="wp-edit-btn" id="wpEditBtn">edit</button>
+
+    <!-- Weekend plan -->
+    <div class="list-row" id="weekendRow">
+      <div class="list-icon" id="weekendIcon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="list-text">
+        <div class="list-title">Weekend plan</div>
+        <div class="list-sub" id="weekendSub">What are you doing this weekend?</div>
       </div>
     </div>
-  </div>
+
+  </div><!-- /sticky-bar -->
 
   <div class="habit-section daily">
     <div class="habit-list" id="dailyList"></div>
   </div>
 
   <div class="reset-info" id="resetInfo"></div>
+</div><!-- /app -->
+
+<!-- ── Cardio modal ── -->
+<div class="modal-bg" id="cardioModalBg"></div>
+<div class="cardio-modal" id="cardioModal">
+  <div class="modal-label">Cardio this week</div>
+  <div class="modal-number" id="modalNum">0</div>
+  <div class="modal-unit">/ 180 min</div>
+  <div class="modal-track"><div class="modal-fill" id="modalFill" style="width:0%"></div></div>
+  <div class="modal-remaining" id="modalRem">180 min to go</div>
+  <div class="modal-controls">
+    <button class="ctrl-btn ctrl-minus" id="cardioMinus">−</button>
+    <span class="ctrl-label">15 min</span>
+    <button class="ctrl-btn ctrl-plus" id="cardioPlus">+</button>
+  </div>
 </div>
 
+<!-- ── Remote drawer ── -->
+<div class="drawer-bg" id="remoteBg"></div>
+<div class="drawer" id="remoteDrawer">
+  <div class="drawer-inner">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Remote day</div>
+    <textarea class="drawer-textarea" id="remoteTa" placeholder="Where are you working from?"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="remoteToggle">Mark complete</button>
+      <button class="btn btn-primary"   id="remoteSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Weekend drawer ── -->
+<div class="drawer-bg" id="weekendBg"></div>
+<div class="drawer" id="weekendDrawer">
+  <div class="drawer-inner">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Weekend plan</div>
+    <textarea class="drawer-textarea" id="weekendTa" placeholder="What are you doing this weekend?"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="weekendClearBtn">Clear</button>
+      <button class="btn btn-primary"   id="weekendSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Morning mobility detail panel ── -->
+<div class="detail-panel" id="mobilityPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="backBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">10-min morning mobility</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Hop / shake</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Jumping twist</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Sun salutations</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Seated straddle</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">90/90s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Windshield wipers</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Cossack squats</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">Curl up</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">Bird dog</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">10</span><div class="routine-info"><div class="routine-name">Side bridge</div><div class="routine-detail">12 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">11</span><div class="routine-info"><div class="routine-name">Banded SLS</div><div class="routine-detail">12 reps, each side</div></div></div>
+      <div class="routine-item"><span class="routine-num">12</span><div class="routine-info"><div class="routine-name">Wall ankle mobility</div><div class="routine-detail">1 min</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tennis elbow rehab detail panel ── -->
+<div class="detail-panel" id="elbowPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="elbowBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Tennis elbow rehab</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Broomstick pronation</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Broomstick supination</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Reverse wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Wrist extensors stretch</div><div class="routine-detail">2 × 1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Lacrosse ball release</div><div class="routine-detail">1–3 min</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Evening mobility detail panel ── -->
+<div class="detail-panel" id="eveningPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="eveningBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">10-min evening mobility</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Ragdolls</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Open books</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Bolster</div><div class="routine-detail">5 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Couch stretch</div><div class="routine-detail">2 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Passive 90/90s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Figure 4s</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Wall ankle stretch</div><div class="routine-detail">1 min</div></div></div>
+      <div class="routine-item" id="breathingRow"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div><button class="info-btn" id="breathingInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── French app bottom sheet ── -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="bottom-sheet" id="frenchSheet">
+  <div class="sheet-handle-row">
+    <div class="sheet-handle"></div>
+    <span class="sheet-title">1 French moment</span>
+    <button class="sheet-close" id="sheetCloseBtn">Done</button>
+  </div>
+  <iframe
+    class="sheet-iframe"
+    src="about:blank"
+    data-src="https://kevincook0.github.io/French-lessons/french-vocab-trainer"
+    id="frenchIframe"
+  ></iframe>
+</div>
+
+<!-- ── Breathing timer panel ── -->
+<div class="breathing-panel" id="breathingPanel">
+  <div class="breathing-header">
+    <button class="breathing-back" id="breathingBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="breathing-title">4 / 6 breathing</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="breathing-main">
+    <div class="breath-circle-wrap">
+      <div class="breath-circle-bg"></div>
+      <div class="breath-circle" id="breathCircle"></div>
+      <div class="breath-label" id="breathLabel">—</div>
+    </div>
+    <div class="breath-counter"  id="breathCounter"></div>
+    <div class="breath-time-left" id="breathTimeLeft"></div>
+  </div>
+  <div class="breathing-controls">
+    <button class="breath-start-btn" id="breathStartBtn">Begin</button>
+    <div class="breath-duration-row">
+      <button class="breath-dur-btn" id="breathDurMinus">−</button>
+      <span  class="breath-dur-label" id="breathDurLabel">2 min</span>
+      <button class="breath-dur-btn" id="breathDurPlus">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN SCRIPT
+     ═══════════════════════════════════════════════════════════ -->
 <script>
 const DAILY_HABITS = [
   "Out of bed by 7:30am",
@@ -818,13 +929,15 @@ const DAILY_HABITS = [
   "In bed by 11:00pm",
 ];
 
-const ZONE2_GOAL = 180;
-const RESET_HOUR = 3;
+const ACTIVITY_HABITS = ['Push', 'Pull', 'Core', 'Tennis'];
+const ZONE2_GOAL  = 180;
+const WEEKLY_TOTAL = 7; // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
+const RESET_HOUR  = 3;
 
-// ── Supabase backend ─────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://qbyuyoiiuoaeinvfiudv.supabase.co';
+// ── Supabase ─────────────────────────────────────────────────
+const SUPABASE_URL      = 'https://qbyuyoiiuoaeinvfiudv.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_h9lE4du-71hsCRzxnICHyQ__GG2pE_m';
-const APP_SECRET = '7265d62639a9ec3e37c5c3a2ac7e0e193aba9c00128efd719c59a78aebe2091e'; // must match APP_SECRET env var on the Edge Functions
+const APP_SECRET        = '7265d62639a9ec3e37c5c3a2ac7e0e193aba9c00128efd719c59a78aebe2091e';
 
 const apiHeaders = () => ({
   'Content-Type': 'application/json',
@@ -856,7 +969,6 @@ async function apiWrite(payload) {
 function cacheLocal(s) {
   try { localStorage.setItem('habitState', JSON.stringify(s)); } catch {}
 }
-
 function readLocalCache() {
   try { return JSON.parse(localStorage.getItem('habitState') || 'null'); }
   catch { return null; }
@@ -868,15 +980,18 @@ function saveState() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     apiWrite({
-      dayKey: state.dayKey,
-      weekKey: state.weekKey,
-      daily: state.daily,
-      weekly: state.weekly,
-      zone2: state.zone2,
+      dayKey:      state.dayKey,
+      weekKey:     state.weekKey,
+      daily:       state.daily,
+      weekly:      state.weekly,
+      zone2:       state.zone2,
+      weekendPlan: state.weekendPlan,
+      remoteText:  state.remoteText,
     }).catch(err => console.warn('habit save failed', err));
   }, 400);
 }
 
+// ── Keys & state helpers ─────────────────────────────────────
 function getDayKey(d = new Date()) {
   const adj = new Date(d.getTime());
   if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
@@ -893,7 +1008,7 @@ function getWeekKey(d = new Date()) {
 }
 
 function timeUntilReset() {
-  const now = new Date();
+  const now  = new Date();
   const next = new Date(now);
   next.setHours(RESET_HOUR, 0, 0, 0);
   if (now.getHours() >= RESET_HOUR) next.setDate(next.getDate() + 1);
@@ -908,16 +1023,24 @@ function ensureFreshKeys(s) {
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
-  if (s.weekKey !== weekKey) { s.weekKey = weekKey; s.weekly = {}; s.zone2 = 0; s.weekendPlan = ''; }
+  if (s.weekKey !== weekKey) {
+    s.weekKey     = weekKey;
+    s.weekly      = {};
+    s.zone2       = 0;
+    s.weekendPlan = '';
+    s.remoteText  = '';
+  }
   s.daily       = s.daily       || {};
   s.weekly      = s.weekly      || {};
   s.zone2       = s.zone2       || 0;
   s.weekendPlan = s.weekendPlan || '';
+  s.remoteText  = s.remoteText  || '';
   return s;
 }
 
 let state = ensureFreshKeys(readLocalCache());
 
+// ── Render ───────────────────────────────────────────────────
 function render() {
   state = ensureFreshKeys(state);
   const now    = new Date();
@@ -926,13 +1049,135 @@ function render() {
   document.getElementById('headerDate').textContent = `${months[now.getMonth()]} ${now.getDate()}`;
   document.getElementById('headerDay').textContent  = days[now.getDay()];
   renderDaily();
-  renderZone2();
-  renderQuickPills();
-  renderWeekendPlan();
+  syncActivityCards();
+  syncCardioCard();
+  syncRemoteRow();
+  syncWeekendRow();
+  updateProgress();
   document.getElementById('resetInfo').textContent =
     `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
 }
 
+// ── Weekly progress ──────────────────────────────────────────
+function updateProgress() {
+  const actDone   = ACTIVITY_HABITS.filter(h => !!state.weekly[h]).length;
+  const cardioDone = state.zone2 >= ZONE2_GOAL ? 1 : 0;
+  const remoteDone = state.weekly['Work remote'] ? 1 : 0;
+  const weekendDone = state.weekendPlan.trim() ? 1 : 0;
+  const total = actDone + cardioDone + remoteDone + weekendDone;
+  document.getElementById('progressFill').style.width = (total / WEEKLY_TOTAL * 100) + '%';
+}
+
+// ── Activity cards ───────────────────────────────────────────
+function syncActivityCards() {
+  ACTIVITY_HABITS.forEach(name => {
+    const id   = 'card' + name.charAt(0).toUpperCase() + name.slice(1);
+    const card = document.getElementById(id);
+    if (card) card.classList.toggle('done', !!state.weekly[name]);
+  });
+}
+
+// ── Cardio card + modal ──────────────────────────────────────
+function syncCardioCard() {
+  const pct    = Math.min(state.zone2 / ZONE2_GOAL, 1);
+  const circ   = 2 * Math.PI * 15; // r=15 → 94.25
+  const offset = circ - pct * circ;
+  document.getElementById('cardioRingFill').style.strokeDashoffset = offset;
+  document.getElementById('cardioLabel').textContent = state.zone2 > 0 ? `${state.zone2}m` : 'Cardio';
+  const isDone = state.zone2 >= ZONE2_GOAL;
+  document.getElementById('cardCardio').classList.toggle('done', isDone);
+  document.getElementById('cardioBg').setAttribute('fill', isDone ? 'var(--green)' : 'var(--grey)');
+  document.getElementById('cardioHeart').style.stroke = isDone ? '#fff' : 'var(--muted)';
+}
+
+function syncModal() {
+  const pct = Math.min(state.zone2 / ZONE2_GOAL * 100, 100);
+  const rem = Math.max(ZONE2_GOAL - state.zone2, 0);
+  document.getElementById('modalNum').textContent  = state.zone2;
+  document.getElementById('modalFill').style.width = pct + '%';
+  document.getElementById('modalRem').textContent  = rem > 0 ? `${rem} min to go` : 'Goal reached ✓';
+}
+
+function openCardioModal() {
+  syncModal();
+  document.getElementById('cardioModalBg').classList.add('open');
+  document.getElementById('cardioModal').classList.add('open');
+}
+function closeCardioModal() {
+  document.getElementById('cardioModalBg').classList.remove('open');
+  document.getElementById('cardioModal').classList.remove('open');
+}
+
+// ── Keyboard-aware drawer positioning ───────────────────────
+function attachKeyboard(drawerId) {
+  const el = document.getElementById(drawerId);
+  if (!window.visualViewport) return;
+  const fn = () => {
+    const kb = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+    el.style.bottom = Math.max(kb, 0) + 'px';
+  };
+  window.visualViewport.addEventListener('resize', fn);
+  window.visualViewport.addEventListener('scroll', fn);
+  fn();
+  el._cleanup = () => {
+    window.visualViewport.removeEventListener('resize', fn);
+    window.visualViewport.removeEventListener('scroll', fn);
+    el.style.bottom = '';
+  };
+}
+function detachKeyboard(drawerId) {
+  const el = document.getElementById(drawerId);
+  if (el._cleanup) { el._cleanup(); el._cleanup = null; }
+}
+
+// ── Remote day ───────────────────────────────────────────────
+function openRemoteDrawer() {
+  document.getElementById('remoteTa').value = state.remoteText;
+  syncRemoteToggleBtn();
+  document.getElementById('remoteBg').classList.add('open');
+  document.getElementById('remoteDrawer').classList.add('open');
+  attachKeyboard('remoteDrawer');
+  setTimeout(() => document.getElementById('remoteTa').focus(), 280);
+}
+function closeRemoteDrawer() {
+  detachKeyboard('remoteDrawer');
+  document.getElementById('remoteBg').classList.remove('open');
+  document.getElementById('remoteDrawer').classList.remove('open');
+}
+function syncRemoteToggleBtn() {
+  const btn    = document.getElementById('remoteToggle');
+  const isDone = !!state.weekly['Work remote'];
+  btn.textContent = isDone ? 'Mark incomplete' : 'Mark complete';
+  btn.className   = isDone ? 'btn btn-secondary' : 'btn btn-complete';
+}
+function syncRemoteRow() {
+  const isDone = !!state.weekly['Work remote'];
+  document.getElementById('remoteRow').classList.toggle('done', isDone);
+  document.getElementById('remoteSub').textContent =
+    state.remoteText || (isDone ? 'Done' : 'Where are you working from?');
+}
+
+// ── Weekend plan ─────────────────────────────────────────────
+function openWeekendDrawer() {
+  document.getElementById('weekendTa').value = state.weekendPlan;
+  document.getElementById('weekendBg').classList.add('open');
+  document.getElementById('weekendDrawer').classList.add('open');
+  attachKeyboard('weekendDrawer');
+  setTimeout(() => document.getElementById('weekendTa').focus(), 280);
+}
+function closeWeekendDrawer() {
+  detachKeyboard('weekendDrawer');
+  document.getElementById('weekendBg').classList.remove('open');
+  document.getElementById('weekendDrawer').classList.remove('open');
+}
+function syncWeekendRow() {
+  const has = state.weekendPlan.trim().length > 0;
+  document.getElementById('weekendRow').classList.toggle('done', has);
+  document.getElementById('weekendSub').textContent =
+    has ? state.weekendPlan : 'What are you doing this weekend?';
+}
+
+// ── Daily habits list ────────────────────────────────────────
 function renderDaily() {
   const list = document.getElementById('dailyList');
   list.innerHTML = '';
@@ -943,65 +1188,6 @@ function renderDaily() {
       render();
     }));
   });
-}
-
-const WEEKLY_HABITS = ["Push", "Pull", "Tennis", "Core", "Work remote"];
-
-function renderZone2() {
-  const done  = state.zone2 >= ZONE2_GOAL;
-  const pct   = Math.min(state.zone2 / ZONE2_GOAL * 100, 100);
-  const color = done ? 'var(--green)' : 'var(--blue)';
-  document.getElementById('z2value').textContent       = `${state.zone2} / ${ZONE2_GOAL} min`;
-  document.getElementById('z2value').style.color       = color;
-  document.getElementById('z2barFill').style.width     = pct + '%';
-  document.getElementById('z2barFill').style.background = color;
-}
-
-function renderQuickPills() {
-  const container = document.getElementById('quickPills');
-  container.innerHTML = '';
-  WEEKLY_HABITS.forEach(name => {
-    const done = !!state.weekly[name];
-    const pill = document.createElement('button');
-    pill.className = 'quick-pill' + (done ? ' done' : '');
-    pill.textContent = name;
-    pill.addEventListener('click', (e) => {
-      pill.classList.add('pill-popping');
-      pill.addEventListener('animationend', () => pill.classList.remove('pill-popping'), { once: true });
-      state.weekly[name] = !state.weekly[name];
-      saveState();
-      if (state.weekly[name]) burst(e);
-      render();
-    });
-    container.appendChild(pill);
-  });
-}
-
-function renderWeekendPlan() {
-  const plan = (state.weekendPlan || '').trim();
-  const prompt = document.getElementById('wpPromptBtn');
-  const filled = document.getElementById('wpFilled');
-  const planText = document.getElementById('wpPlanText');
-  if (plan) {
-    prompt.style.display = 'none';
-    filled.style.display = 'flex';
-    planText.textContent = plan;
-  } else {
-    prompt.style.display = '';
-    filled.style.display = 'none';
-  }
-}
-
-function openWeekendPlanDrawer() {
-  document.getElementById('wpTextarea').value = state.weekendPlan || '';
-  document.getElementById('wpBackdrop').classList.add('open');
-  document.getElementById('wpDrawer').classList.add('open');
-  setTimeout(() => document.getElementById('wpTextarea').focus(), 320);
-}
-
-function closeWeekendPlanDrawer() {
-  document.getElementById('wpBackdrop').classList.remove('open');
-  document.getElementById('wpDrawer').classList.remove('open');
 }
 
 function makeCheckItem(name, checked, onClick) {
@@ -1024,35 +1210,33 @@ function makeCheckItem(name, checked, onClick) {
     ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
   `;
   if (isMobility) {
-    div.querySelector('#mobilityInfoBtn').addEventListener('click', (e) => {
+    div.querySelector('#mobilityInfoBtn').addEventListener('click', e => {
       e.stopPropagation();
       document.getElementById('mobilityPanel').classList.add('open');
     });
   }
   if (isElbow) {
-    div.querySelector('#elbowInfoBtn').addEventListener('click', (e) => {
+    div.querySelector('#elbowInfoBtn').addEventListener('click', e => {
       e.stopPropagation();
       document.getElementById('elbowPanel').classList.add('open');
     });
   }
   if (isEvening) {
-    div.querySelector('#eveningInfoBtn').addEventListener('click', (e) => {
+    div.querySelector('#eveningInfoBtn').addEventListener('click', e => {
       e.stopPropagation();
       document.getElementById('eveningPanel').classList.add('open');
     });
   }
   if (isFrench) {
-    div.querySelector('#frenchInfoBtn').addEventListener('click', (e) => {
+    div.querySelector('#frenchInfoBtn').addEventListener('click', e => {
       e.stopPropagation();
       const iframe = document.getElementById('frenchIframe');
-      if (!iframe.src || iframe.src === 'about:blank') {
-        iframe.src = iframe.dataset.src;
-      }
+      if (!iframe.src || iframe.src === 'about:blank') iframe.src = iframe.dataset.src;
       document.getElementById('sheetBackdrop').classList.add('open');
       document.getElementById('frenchSheet').classList.add('open');
     });
   }
-  div.addEventListener('click', (e) => {
+  div.addEventListener('click', e => {
     div.classList.add('popping');
     div.addEventListener('animationend', () => div.classList.remove('popping'), { once: true });
     onClick(e);
@@ -1060,9 +1244,10 @@ function makeCheckItem(name, checked, onClick) {
   return div;
 }
 
+// ── Confetti burst ───────────────────────────────────────────
 function burst(e) {
-  const colors = ['#b09040','#4a8f4a','#3a7a9a','#1a1a18'];
-  const x = e.clientX || window.innerWidth / 2;
+  const colors = ['#2d6e2d','#b09040','#3a7a9a','#111110'];
+  const x = e.clientX || window.innerWidth  / 2;
   const y = e.clientY || window.innerHeight / 2;
   const c = document.createElement('div');
   c.className = 'burst';
@@ -1070,7 +1255,7 @@ function burst(e) {
   c.style.top  = y + 'px';
   document.body.appendChild(c);
   for (let i = 0; i < 10; i++) {
-    const dot = document.createElement('div');
+    const dot   = document.createElement('div');
     dot.className = 'burst-dot';
     const angle = (i / 10) * Math.PI * 2;
     const dist  = 30 + Math.random() * 30;
@@ -1083,9 +1268,10 @@ function burst(e) {
   setTimeout(() => c.remove(), 700);
 }
 
+// ── Boot ─────────────────────────────────────────────────────
 render();
 
-// Hydrate from the API after initial cached render
+// Hydrate from API (overwrites cached render)
 (async () => {
   try {
     const remote = await apiRead(getDayKey(), getWeekKey());
@@ -1096,6 +1282,7 @@ render();
       weekly:      remote.weekly,
       zone2:       remote.zone2,
       weekendPlan: remote.weekendPlan || '',
+      remoteText:  remote.remoteText  || '',
     });
     cacheLocal(state);
     render();
@@ -1104,27 +1291,81 @@ render();
   }
 })();
 
-document.getElementById('z2minus').addEventListener('click', e => {
-  state = ensureFreshKeys(state);
-  state.zone2 = Math.max(0, state.zone2 - 15);
-  saveState();
-  renderZone2();
-});
-
-document.getElementById('z2plus').addEventListener('click', e => {
-  state = ensureFreshKeys(state);
-  const wasDone = state.zone2 >= ZONE2_GOAL;
-  state.zone2 += 15;
-  if (state.zone2 >= ZONE2_GOAL && !wasDone) burst(e);
-  saveState();
-  renderZone2();
-});
-
-window.addEventListener('scroll', () => {
-  document.getElementById('stickyBar').classList.toggle('scrolled', window.scrollY > 4);
-});
-
+// ── Event listeners ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+
+  // Activity cards
+  ACTIVITY_HABITS.forEach(name => {
+    const card = document.getElementById('card' + name.charAt(0).toUpperCase() + name.slice(1));
+    card.addEventListener('click', e => {
+      const wasDone = !!state.weekly[name];
+      state = ensureFreshKeys(state);
+      state.weekly[name] = !wasDone;
+      saveState();
+      syncActivityCards();
+      updateProgress();
+      if (!wasDone) burst(e);
+      card.classList.add('popping');
+      card.addEventListener('animationend', () => card.classList.remove('popping'), { once: true });
+    });
+  });
+
+  // Cardio
+  document.getElementById('cardCardio').addEventListener('click', openCardioModal);
+  document.getElementById('cardioModalBg').addEventListener('click', closeCardioModal);
+  document.getElementById('cardioMinus').addEventListener('click', e => {
+    state = ensureFreshKeys(state);
+    state.zone2 = Math.max(0, state.zone2 - 15);
+    saveState();
+    syncModal(); syncCardioCard(); updateProgress();
+  });
+  document.getElementById('cardioPlus').addEventListener('click', e => {
+    state = ensureFreshKeys(state);
+    const wasDone = state.zone2 >= ZONE2_GOAL;
+    state.zone2 += 15;
+    if (state.zone2 >= ZONE2_GOAL && !wasDone) burst(e);
+    saveState();
+    syncModal(); syncCardioCard(); updateProgress();
+  });
+
+  // Remote
+  document.getElementById('remoteRow').addEventListener('click', openRemoteDrawer);
+  document.getElementById('remoteBg').addEventListener('click', closeRemoteDrawer);
+  document.getElementById('remoteSaveBtn').addEventListener('click', () => {
+    state.remoteText = document.getElementById('remoteTa').value.trim();
+    saveState();
+    syncRemoteRow();
+    closeRemoteDrawer();
+  });
+  document.getElementById('remoteToggle').addEventListener('click', () => {
+    state.remoteText = document.getElementById('remoteTa').value.trim();
+    state.weekly['Work remote'] = !state.weekly['Work remote'];
+    saveState();
+    syncRemoteToggleBtn();
+    syncRemoteRow();
+    updateProgress();
+    closeRemoteDrawer();
+  });
+
+  // Weekend
+  document.getElementById('weekendRow').addEventListener('click', openWeekendDrawer);
+  document.getElementById('weekendBg').addEventListener('click', closeWeekendDrawer);
+  document.getElementById('weekendSaveBtn').addEventListener('click', () => {
+    state.weekendPlan = document.getElementById('weekendTa').value.trim();
+    saveState();
+    syncWeekendRow();
+    closeWeekendDrawer();
+    updateProgress();
+  });
+  document.getElementById('weekendClearBtn').addEventListener('click', () => {
+    state.weekendPlan = '';
+    saveState();
+    syncWeekendRow();
+    closeWeekendDrawer();
+    updateProgress();
+  });
+
+  // Detail panel back buttons
   document.getElementById('backBtn').addEventListener('click', () => {
     document.getElementById('mobilityPanel').classList.remove('open');
   });
@@ -1135,165 +1376,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('eveningPanel').classList.remove('open');
   });
 
+  // French sheet
   function closeSheet() {
     document.getElementById('sheetBackdrop').classList.remove('open');
     document.getElementById('frenchSheet').classList.remove('open');
   }
   document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
   document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
+});
 
-  // Weekend plan drawer
-  document.getElementById('wpPromptBtn').addEventListener('click', openWeekendPlanDrawer);
-  document.getElementById('wpEditBtn').addEventListener('click', openWeekendPlanDrawer);
-  document.getElementById('wpBackdrop').addEventListener('click', closeWeekendPlanDrawer);
-  document.getElementById('wpSaveBtn').addEventListener('click', () => {
-    const val = document.getElementById('wpTextarea').value.trim();
-    state.weekendPlan = val;
-    cacheLocal(state);
-    renderWeekendPlan();
-    closeWeekendPlanDrawer();
-    apiWrite({ weekKey: state.weekKey, weekendPlan: val })
-      .catch(err => console.warn('weekend plan save failed', err));
-  });
+window.addEventListener('scroll', () => {
+  document.getElementById('stickyBar').classList.toggle('scrolled', window.scrollY > 4);
 });
 
 setInterval(render, 60000);
 </script>
 
-<!-- Morning mobility detail panel -->
-<div class="detail-panel" id="mobilityPanel">
-  <div class="detail-header">
-    <button class="back-btn" id="backBtn">
-      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Back
-    </button>
-    <span class="detail-title">10-min morning mobility</span>
-  </div>
-  <div class="detail-body">
-    <div class="routine-list">
-      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Hop / shake</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Jumping twist</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Sun salutations</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Seated straddle</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">90/90s</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Windshield wipers</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Cossack squats</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">Curl up</div><div class="routine-detail">12 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">Bird dog</div><div class="routine-detail">12 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">10</span><div class="routine-info"><div class="routine-name">Side bridge</div><div class="routine-detail">12 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">11</span><div class="routine-info"><div class="routine-name">Banded SLS</div><div class="routine-detail">12 reps, each side</div></div></div>
-      <div class="routine-item"><span class="routine-num">12</span><div class="routine-info"><div class="routine-name">Wall ankle mobility</div><div class="routine-detail">1 min</div></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- Tennis elbow rehab detail panel -->
-<div class="detail-panel" id="elbowPanel">
-  <div class="detail-header">
-    <button class="back-btn" id="elbowBackBtn">
-      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Back
-    </button>
-    <span class="detail-title">Tennis elbow rehab</span>
-  </div>
-  <div class="detail-body">
-    <div class="routine-list">
-      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Broomstick pronation</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Broomstick supination</div><div class="routine-detail">2 × 8–10 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Reverse wrist curls</div><div class="routine-detail">2 × 8 reps</div></div></div>
-      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Wrist extensors stretch</div><div class="routine-detail">2 × 1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Lacrosse ball release</div><div class="routine-detail">1–3 min</div></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- Evening mobility detail panel -->
-<div class="detail-panel" id="eveningPanel">
-  <div class="detail-header">
-    <button class="back-btn" id="eveningBackBtn">
-      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Back
-    </button>
-    <span class="detail-title">10-min evening mobility</span>
-  </div>
-  <div class="detail-body">
-    <div class="routine-list">
-      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Ragdolls</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Open books</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Bolster</div><div class="routine-detail">5 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Couch stretch</div><div class="routine-detail">2 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Passive 90/90s</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Figure 4s</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Wall ankle stretch</div><div class="routine-detail">1 min</div></div></div>
-      <div class="routine-item" id="breathingRow"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div><button class="info-btn" id="breathingInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div>
-    </div>
-  </div>
-</div>
-
-<!-- French app bottom sheet -->
-<div class="sheet-backdrop" id="sheetBackdrop"></div>
-<div class="bottom-sheet" id="frenchSheet">
-  <div class="sheet-handle-row">
-    <div class="sheet-handle"></div>
-    <span class="sheet-title">1 French moment</span>
-    <button class="sheet-close" id="sheetCloseBtn">Done</button>
-  </div>
-  <iframe
-    class="sheet-iframe"
-    src="about:blank"
-    data-src="https://kevincook0.github.io/French-lessons/french-vocab-trainer"
-    id="frenchIframe"
-  ></iframe>
-</div>
-
-<!-- Weekend Plan drawer -->
-<div class="wp-backdrop" id="wpBackdrop"></div>
-<div class="wp-drawer" id="wpDrawer">
-  <div class="wp-drawer-handle"></div>
-  <textarea class="wp-textarea" id="wpTextarea" placeholder="What's the plan for the weekend?"></textarea>
-  <button class="wp-save-btn" id="wpSaveBtn">Save</button>
-</div>
-
-<!-- Breathing timer panel -->
-<div class="breathing-panel" id="breathingPanel">
-  <div class="breathing-header">
-    <button class="breathing-back" id="breathingBackBtn">
-      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Back
-    </button>
-    <span class="breathing-title">4 / 6 breathing</span>
-    <div style="width:44px"></div>
-  </div>
-  <div class="breathing-main">
-    <div class="breath-circle-wrap">
-      <div class="breath-circle-bg"></div>
-      <div class="breath-circle" id="breathCircle"></div>
-      <div class="breath-label" id="breathLabel">—</div>
-    </div>
-    <div class="breath-counter" id="breathCounter"></div>
-    <div class="breath-time-left" id="breathTimeLeft"></div>
-  </div>
-  <div class="breathing-controls">
-    <button class="breath-start-btn" id="breathStartBtn">Begin</button>
-    <div class="breath-duration-row">
-      <button class="breath-dur-btn" id="breathDurMinus">−</button>
-      <span class="breath-dur-label" id="breathDurLabel">2 min</span>
-      <button class="breath-dur-btn" id="breathDurPlus">+</button>
-    </div>
-  </div>
-</div>
-
+<!-- ═══════════════════════════════════════════════════════════
+     BREATHING TIMER
+     ═══════════════════════════════════════════════════════════ -->
 <script>
-// ── Breathing timer ───────────────────────────────────────────────────────────
 (function() {
   const INHALE = 4, EXHALE = 6, CYCLE = INHALE + EXHALE;
   let durationMin = 2;
@@ -1301,22 +1403,21 @@ setInterval(render, 60000);
   let elapsed = 0;
   let phase = 'idle'; // idle | inhale | exhale | done
 
-  const panel      = document.getElementById('breathingPanel');
-  const circle     = document.getElementById('breathCircle');
-  const label      = document.getElementById('breathLabel');
-  const counter    = document.getElementById('breathCounter');
-  const timeLeft   = document.getElementById('breathTimeLeft');
-  const startBtn   = document.getElementById('breathStartBtn');
-  const durLabel   = document.getElementById('breathDurLabel');
-  const durMinus   = document.getElementById('breathDurMinus');
-  const durPlus    = document.getElementById('breathDurPlus');
-  const backBtn    = document.getElementById('breathingBackBtn');
-  const infoBtn    = document.getElementById('breathingInfoBtn');
+  const panel    = document.getElementById('breathingPanel');
+  const circle   = document.getElementById('breathCircle');
+  const label    = document.getElementById('breathLabel');
+  const counter  = document.getElementById('breathCounter');
+  const timeLeft = document.getElementById('breathTimeLeft');
+  const startBtn = document.getElementById('breathStartBtn');
+  const durLabel = document.getElementById('breathDurLabel');
+  const durMinus = document.getElementById('breathDurMinus');
+  const durPlus  = document.getElementById('breathDurPlus');
+  const backBtn  = document.getElementById('breathingBackBtn');
+  const infoBtn  = document.getElementById('breathingInfoBtn');
 
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
 
-  // Tiny silent MP3 as base64 — unlocks iOS audio session on tap
   const SILENT_MP3 = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADQADMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMz/////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAADQJ3oxgAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAENtAxn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUAGf9BQARTQAZ/0FAAEN8Awn/QUAAU2wDGf9BQAAA';
   const silentAudio = new Audio(SILENT_MP3);
   silentAudio.volume = 0.001;
@@ -1326,17 +1427,14 @@ setInterval(render, 60000);
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
-
   function unlockAudio() {
-    // Play silent audio to unlock iOS media session
     silentAudio.play().catch(() => {});
     getAudioCtx();
   }
-
   function playTone(freq, duration) {
     try {
-      const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
+      const ctx  = getAudioCtx();
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -1349,19 +1447,11 @@ setInterval(render, 60000);
       osc.stop(ctx.currentTime + duration + 0.05);
     } catch(e) {}
   }
+  function playChime()      { [523, 659, 784].forEach((f, i) => setTimeout(() => playTone(f, 0.6), i * 250)); }
+  function playInhaleTone() { playTone(432, 0.35); }
+  function playExhaleTone() { playTone(320, 0.45); }
 
-  function playChime() {
-    [523, 659, 784].forEach((freq, i) => {
-      setTimeout(() => playTone(freq, 0.6), i * 250);
-    });
-  }
-
-  function playInhaleTone()  { playTone(432, 0.35); }
-  function playExhaleTone()  { playTone(320, 0.45); }
-
-  function updateDurLabel() {
-    durLabel.textContent = `${durationMin} min`;
-  }
+  function updateDurLabel() { durLabel.textContent = `${durationMin} min`; }
 
   function formatTimeLeft(sec) {
     const m = Math.floor(sec / 60);
@@ -1372,34 +1462,20 @@ setInterval(render, 60000);
   function setPhase(p) {
     phase = p;
     circle.classList.remove('inhale', 'exhale');
-    if (p === 'inhale') {
-      circle.classList.add('inhale');
-      label.textContent = 'Inhale';
-      playInhaleTone();
-    } else if (p === 'exhale') {
-      circle.classList.add('exhale');
-      label.textContent = 'Exhale';
-      playExhaleTone();
-    }
+    if (p === 'inhale') { circle.classList.add('inhale'); label.textContent = 'Inhale'; playInhaleTone(); }
+    else if (p === 'exhale') { circle.classList.add('exhale'); label.textContent = 'Exhale'; playExhaleTone(); }
   }
 
   function tick() {
     elapsed++;
-    const totalSec = durationMin * 60;
+    const totalSec  = durationMin * 60;
     const remaining = totalSec - elapsed;
-    const cyclePos = elapsed % CYCLE;
-
-    // Phase transitions
-    if (cyclePos === 0) setPhase('inhale');
+    const cyclePos  = elapsed % CYCLE;
+    if (cyclePos === 0)      setPhase('inhale');
     else if (cyclePos === INHALE) setPhase('exhale');
-
-    // Count within phase
-    const phaseCount = cyclePos < INHALE
-      ? INHALE - cyclePos
-      : CYCLE - cyclePos;
-    counter.textContent = phaseCount > 0 ? phaseCount : '';
+    const phaseCount = cyclePos < INHALE ? INHALE - cyclePos : CYCLE - cyclePos;
+    counter.textContent  = phaseCount > 0 ? phaseCount : '';
     timeLeft.textContent = formatTimeLeft(remaining);
-
     if (remaining <= 0) finish();
   }
 
@@ -1408,30 +1484,23 @@ setInterval(render, 60000);
     clearInterval(timer);
     startBtn.textContent = 'Stop';
     timeLeft.textContent = formatTimeLeft(durationMin * 60);
-    // Kick off immediately
     setPhase('inhale');
     counter.textContent = INHALE;
     timer = setInterval(tick, 1000);
   }
-
   function stop() {
-    clearInterval(timer);
-    timer = null;
-    phase = 'idle';
+    clearInterval(timer); timer = null; phase = 'idle';
     circle.classList.remove('inhale', 'exhale');
-    label.textContent = '—';
+    label.textContent   = '—';
     counter.textContent = '';
     timeLeft.textContent = '';
     startBtn.textContent = 'Begin';
   }
-
   function finish() {
-    clearInterval(timer);
-    timer = null;
-    phase = 'done';
+    clearInterval(timer); timer = null; phase = 'done';
     circle.classList.remove('inhale', 'exhale');
-    label.textContent = '✓';
-    counter.textContent = '';
+    label.textContent    = '✓';
+    counter.textContent  = '';
     timeLeft.textContent = 'done';
     startBtn.textContent = 'Again';
     playChime();
@@ -1443,22 +1512,10 @@ setInterval(render, 60000);
     else if (phase === 'done') { stop(); start(); }
     else start();
   });
-
-  durMinus.addEventListener('click', () => {
-    if (durationMin > 1) { durationMin--; updateDurLabel(); }
-  });
-  durPlus.addEventListener('click', () => {
-    if (durationMin < 10) { durationMin++; updateDurLabel(); }
-  });
-
-  backBtn.addEventListener('click', () => {
-    stop();
-    panel.classList.remove('open');
-  });
-
-  infoBtn.addEventListener('click', () => {
-    panel.classList.add('open');
-  });
+  durMinus.addEventListener('click', () => { if (durationMin > 1)  { durationMin--; updateDurLabel(); } });
+  durPlus.addEventListener('click',  () => { if (durationMin < 10) { durationMin++; updateDurLabel(); } });
+  backBtn.addEventListener('click',  () => { stop(); panel.classList.remove('open'); });
+  infoBtn.addEventListener('click',  () => { panel.classList.add('open'); });
 })();
 </script>
 

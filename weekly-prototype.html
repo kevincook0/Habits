@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Weekly Rituals</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f3;
+    --white: #ffffff;
+    --grey: #eeeeec;
+    --border: #e0e0dd;
+    --text: #111110;
+    --muted: #999994;
+    --dim: #ccccca;
+    --green: #2d6e2d;
+    --green-bg: #edf4ed;
+    --green-border: #c5dcc5;
+    --gap: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─────────────────────────────────────────────
+     HEADER
+  ───────────────────────────────────────────── */
+  .header {
+    padding: calc(var(--safe-top) + 20px) 20px 20px;
+    background: var(--bg);
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--gap);
+  }
+
+  .header-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    position: relative;
+    margin-bottom: var(--gap);
+  }
+
+  .progress-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--text);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ─────────────────────────────────────────────
+     ACTIVITY ROW
+  ───────────────────────────────────────────── */
+  .activity-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--gap);
+    margin-bottom: var(--gap);
+  }
+
+  .act-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 4px 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.14s, border-color 0.14s, transform 0.1s;
+  }
+
+  .act-card:active { transform: scale(0.94); }
+
+  .act-card.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .act-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--grey);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.14s;
+  }
+
+  .act-card.done .act-icon { background: var(--green); }
+
+  .act-icon svg {
+    width: 14px; height: 14px;
+    stroke: var(--muted);
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.14s;
+    flex-shrink: 0;
+  }
+
+  .act-card.done .act-icon svg { stroke: #fff; }
+
+  .core-dot {
+    fill: var(--muted);
+    stroke: none !important;
+    transition: fill 0.14s;
+  }
+  .act-card.done .core-dot { fill: #fff; }
+
+  .act-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    transition: color 0.14s;
+  }
+
+  .act-card.done .act-label { color: var(--green); }
+
+  .cardio-ring-svg {
+    position: absolute;
+    inset: -6px;
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .act-icon {
+    overflow: visible;
+  }
+
+  /* ─────────────────────────────────────────────
+     LIST ROWS
+  ───────────────────────────────────────────── */
+  .list-row {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: var(--gap);
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .list-row:last-child { margin-bottom: 0; }
+  .list-row:active { opacity: 0.7; }
+  .list-row.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .list-icon {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    background: var(--grey);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.14s;
+  }
+  .list-row.done .list-icon { background: var(--green); }
+  .list-icon svg {
+    width: 14px; height: 14px;
+    stroke: var(--muted); fill: none;
+    stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 0.14s;
+  }
+  .list-row.done .list-icon svg { stroke: #fff; }
+
+  .list-text { flex: 1; min-width: 0; }
+
+  .list-title {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 1px;
+    transition: color 0.14s;
+  }
+  .list-row.done .list-title { color: var(--green); }
+
+  .list-sub {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
+  }
+
+  /* ─────────────────────────────────────────────
+     CONTENT
+  ───────────────────────────────────────────── */
+  .content {
+    padding: var(--gap) 20px calc(var(--safe-bottom) + 40px);
+  }
+
+  .content-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 16px;
+  }
+
+  .placeholder {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─────────────────────────────────────────────
+     CARDIO MODAL
+  ───────────────────────────────────────────── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.2);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: all; }
+
+  .cardio-modal {
+    position: fixed;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(0.94);
+    width: calc(100% - 48px);
+    max-width: 300px;
+    background: var(--white);
+    border-radius: 16px;
+    padding: 28px 24px 22px;
+    z-index: 101;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.1), 0 0 0 1px var(--border);
+  }
+  .cardio-modal.open {
+    opacity: 1; pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .modal-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .modal-number {
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--text);
+    text-align: center;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+
+  .modal-unit {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .modal-track {
+    width: 100%; height: 1px;
+    background: var(--border);
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .modal-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--green);
+    transition: width 0.3s ease;
+  }
+
+  .modal-remaining {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 22px;
+    letter-spacing: 0.04em;
+  }
+
+  .modal-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ctrl-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    transition: opacity 0.12s;
+    flex-shrink: 0;
+  }
+  .ctrl-btn:active { opacity: 0.6; }
+
+  .ctrl-minus {
+    background: var(--grey);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .ctrl-plus {
+    background: var(--green);
+    border: none;
+    color: white;
+  }
+
+  .ctrl-label {
+    flex: 1;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ─────────────────────────────────────────────
+     DRAWERS
+  ───────────────────────────────────────────── */
+  .drawer-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.15);
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s;
+  }
+  .drawer-bg.open { opacity: 1; pointer-events: all; }
+
+  .drawer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 201;
+    transform: translateY(100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer.open { transform: translateY(0); }
+
+  .drawer-inner {
+    padding: 12px 20px 20px;
+  }
+
+  .drawer-pip {
+    width: 32px; height: 3px;
+    background: var(--dim);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .drawer-heading {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .drawer-textarea {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text);
+    background: var(--grey);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    resize: none; outline: none;
+    line-height: 1.5; height: 72px;
+    margin-bottom: 10px; display: block;
+    -webkit-font-smoothing: antialiased;
+  }
+  .drawer-textarea::placeholder { color: var(--dim); }
+  .drawer-textarea:focus { border-color: var(--muted); background: var(--white); }
+
+  .drawer-actions { display: flex; gap: 8px; }
+
+  .btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 8px;
+    padding: 13px;
+    cursor: pointer;
+    transition: opacity 0.14s;
+    border: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  .btn:active { opacity: 0.65; }
+
+  .btn-secondary {
+    background: var(--grey);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--white);
+  }
+
+  .btn-complete {
+    background: var(--green);
+    color: white;
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(0.93); }
+    75%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .popping { animation: pop 0.2s ease; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-meta">
+    <span class="header-label">This week</span>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- Activity cards -->
+  <div class="activity-row">
+
+    <div class="act-card" data-habit="Push" onclick="toggleCard(this)">
+      <div class="act-icon">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </div>
+      <span class="act-label">Push</span>
+    </div>
+
+    <div class="act-card" data-habit="Pull" onclick="toggleCard(this)">
+      <div class="act-icon">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+      </div>
+      <span class="act-label">Pull</span>
+    </div>
+
+    <div class="act-card" data-habit="Core" onclick="toggleCard(this)">
+      <div class="act-icon">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <circle class="core-dot" cx="12" cy="12" r="2.5"/>
+        </svg>
+      </div>
+      <span class="act-label">Core</span>
+    </div>
+
+    <div class="act-card" data-habit="Tennis" onclick="toggleCard(this)">
+      <div class="act-icon">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M 5.5 6.5 C 8 9 8 15 5.5 17.5" fill="none"/>
+          <path d="M 18.5 6.5 C 16 9 16 15 18.5 17.5" fill="none"/>
+        </svg>
+      </div>
+      <span class="act-label">Tennis</span>
+    </div>
+
+    <div class="act-card" data-habit="Cardio" onclick="openCardioModal()" id="cardioCard">
+      <!-- Single SVG: the circle IS the icon, ring fills from the edge -->
+      <svg id="cardioSvg" width="34" height="34" viewBox="0 0 34 34">
+        <!-- grey fill -->
+        <circle cx="17" cy="17" r="17" fill="var(--grey)" id="cardioBg"/>
+        <!-- ring track (sits on the very edge, r=16 so stroke stays inside) -->
+        <circle cx="17" cy="17" r="15" fill="none" stroke="var(--border)" stroke-width="3" transform="rotate(-90 17 17)"/>
+        <!-- ring progress -->
+        <circle cx="17" cy="17" r="15" fill="none" stroke="var(--green)" stroke-width="3"
+          stroke-dasharray="94.25" stroke-dashoffset="94.25"
+          stroke-linecap="round"
+          transform="rotate(-90 17 17)"
+          id="cardioRingFill"
+          style="transition: stroke-dashoffset 0.4s ease;"/>
+        <!-- heart, centered, same visual weight as other 14px icons -->
+        <g transform="translate(17,17) scale(0.56) translate(-12,-12)">
+          <path id="cardioHeart"
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="transition: stroke 0.14s;"/>
+        </g>
+      </svg>
+      <span class="act-label" id="cardioLabel">Cardio</span>
+    </div>
+
+  </div>
+
+  <!-- Remote day -->
+  <div class="list-row" id="remoteRow" onclick="openRemoteDrawer()">
+    <div class="list-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="list-text">
+      <div class="list-title">Remote day</div>
+      <div class="list-sub" id="remoteSub">Where are you working from?</div>
+    </div>
+  </div>
+
+  <!-- Weekend plan -->
+  <div class="list-row" id="weekendRow" onclick="openWeekendDrawer()">
+    <div class="list-icon" id="weekendIcon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+    <div class="list-text">
+      <div class="list-title">Weekend plan</div>
+      <div class="list-sub" id="weekendSub">What are you doing this weekend?</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Content ── -->
+<div class="content">
+  <div class="placeholder">Daily habits go here</div>
+</div>
+
+<!-- Cardio modal -->
+<div class="modal-bg" id="cardioModalBg" onclick="closeCardioModal()"></div>
+<div class="cardio-modal" id="cardioModal">
+  <div class="modal-label">Cardio this week</div>
+  <div class="modal-number" id="modalNum">0</div>
+  <div class="modal-unit">/ 180 min</div>
+  <div class="modal-track"><div class="modal-fill" id="modalFill" style="width:0%"></div></div>
+  <div class="modal-remaining" id="modalRem">180 min to go</div>
+  <div class="modal-controls">
+    <button class="ctrl-btn ctrl-minus" onclick="adjustZone2(-15)">−</button>
+    <span class="ctrl-label">15 min</span>
+    <button class="ctrl-btn ctrl-plus" onclick="adjustZone2(15)">+</button>
+  </div>
+</div>
+
+<!-- Remote drawer -->
+<div class="drawer-bg" id="remoteBg" onclick="closeRemoteDrawer()"></div>
+<div class="drawer" id="remoteDrawer">
+  <div class="drawer-inner">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Remote day</div>
+    <textarea class="drawer-textarea" id="remoteTa" placeholder="Where are you working from?"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="remoteToggle" onclick="toggleRemoteDone()">Mark complete</button>
+      <button class="btn btn-primary" onclick="saveRemote()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Weekend drawer -->
+<div class="drawer-bg" id="weekendBg" onclick="closeWeekendDrawer()"></div>
+<div class="drawer" id="weekendDrawer">
+  <div class="drawer-inner">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Weekend plan</div>
+    <textarea class="drawer-textarea" id="weekendTa" placeholder="What are you doing this weekend?"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" onclick="clearWeekend()">Clear</button>
+      <button class="btn btn-primary" onclick="saveWeekend()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ZONE2_GOAL = 180;
+const TOTAL = 7;
+
+const S = {
+  weekly: { Push: false, Pull: false, Core: false, Tennis: false },
+  zone2: 0,
+  remoteDone: false,
+  remoteText: '',
+  weekendPlan: '',
+};
+
+// ── Progress ────────────────────────────────
+function updateProgress() {
+  const done =
+    Object.values(S.weekly).filter(Boolean).length +
+    (S.zone2 >= ZONE2_GOAL ? 1 : 0) +
+    (S.remoteDone ? 1 : 0) +
+    (S.weekendPlan.trim() ? 1 : 0);
+  document.getElementById('progressFill').style.width = (done / TOTAL * 100) + '%';
+}
+
+// ── Cards ────────────────────────────────────
+function toggleCard(el) {
+  const h = el.dataset.habit;
+  S.weekly[h] = !S.weekly[h];
+  el.classList.toggle('done', S.weekly[h]);
+  el.classList.add('popping');
+  el.addEventListener('animationend', () => el.classList.remove('popping'), { once: true });
+  updateProgress();
+}
+
+// ── Cardio ───────────────────────────────────
+function openCardioModal() {
+  syncModal();
+  document.getElementById('cardioModalBg').classList.add('open');
+  document.getElementById('cardioModal').classList.add('open');
+}
+function closeCardioModal() {
+  document.getElementById('cardioModalBg').classList.remove('open');
+  document.getElementById('cardioModal').classList.remove('open');
+}
+function adjustZone2(d) {
+  S.zone2 = Math.max(0, S.zone2 + d);
+  syncModal(); syncCardioCard(); updateProgress();
+}
+function syncModal() {
+  const pct = Math.min(S.zone2 / ZONE2_GOAL * 100, 100);
+  const rem = Math.max(ZONE2_GOAL - S.zone2, 0);
+  document.getElementById('modalNum').textContent = S.zone2;
+  document.getElementById('modalFill').style.width = pct + '%';
+  document.getElementById('modalRem').textContent = rem > 0 ? `${rem} min to go` : 'Goal reached';
+}
+function syncCardioCard() {
+  const pct    = Math.min(S.zone2 / ZONE2_GOAL, 1);
+  const circ   = 2 * Math.PI * 15; // r=15 → 94.25
+  const offset = circ - pct * circ;
+  document.getElementById('cardioRingFill').style.strokeDashoffset = offset;
+  document.getElementById('cardioLabel').textContent = S.zone2 > 0 ? `${S.zone2}m` : 'Cardio';
+  const isDone = S.zone2 >= ZONE2_GOAL;
+  document.querySelector('[data-habit="Cardio"]').classList.toggle('done', isDone);
+  document.getElementById('cardioBg').setAttribute('fill', isDone ? 'var(--green)' : 'var(--grey)');
+  document.getElementById('cardioHeart').style.stroke = isDone ? '#fff' : 'var(--muted)';
+}
+
+// ── Keyboard-aware positioning ───────────────
+function attachKeyboard(drawerId) {
+  const el = document.getElementById(drawerId);
+  if (!window.visualViewport) return;
+  const fn = () => {
+    const kb = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+    el.style.bottom = Math.max(kb, 0) + 'px';
+  };
+  window.visualViewport.addEventListener('resize', fn);
+  window.visualViewport.addEventListener('scroll', fn);
+  fn();
+  el._cleanup = () => {
+    window.visualViewport.removeEventListener('resize', fn);
+    window.visualViewport.removeEventListener('scroll', fn);
+    el.style.bottom = '';
+  };
+}
+function detachKeyboard(drawerId) {
+  const el = document.getElementById(drawerId);
+  if (el._cleanup) { el._cleanup(); el._cleanup = null; }
+}
+
+// ── Remote ───────────────────────────────────
+function openRemoteDrawer() {
+  document.getElementById('remoteTa').value = S.remoteText;
+  syncRemoteBtn();
+  document.getElementById('remoteBg').classList.add('open');
+  document.getElementById('remoteDrawer').classList.add('open');
+  attachKeyboard('remoteDrawer');
+  setTimeout(() => document.getElementById('remoteTa').focus(), 280);
+}
+function closeRemoteDrawer() {
+  detachKeyboard('remoteDrawer');
+  document.getElementById('remoteBg').classList.remove('open');
+  document.getElementById('remoteDrawer').classList.remove('open');
+}
+function saveRemote() {
+  S.remoteText = document.getElementById('remoteTa').value.trim();
+  syncRemoteRow(); closeRemoteDrawer();
+}
+function toggleRemoteDone() {
+  S.remoteText = document.getElementById('remoteTa').value.trim();
+  S.remoteDone = !S.remoteDone;
+  syncRemoteBtn(); syncRemoteRow();
+  closeRemoteDrawer(); updateProgress();
+}
+function syncRemoteBtn() {
+  const btn = document.getElementById('remoteToggle');
+  btn.textContent = S.remoteDone ? 'Mark incomplete' : 'Mark complete';
+  btn.className = S.remoteDone ? 'btn btn-secondary' : 'btn btn-complete';
+}
+function syncRemoteRow() {
+  document.getElementById('remoteRow').classList.toggle('done', S.remoteDone);
+  document.getElementById('remoteSub').textContent =
+    S.remoteText || (S.remoteDone ? 'Done' : 'Where are you working from?');
+}
+
+// ── Weekend ───────────────────────────────────
+function openWeekendDrawer() {
+  document.getElementById('weekendTa').value = S.weekendPlan;
+  document.getElementById('weekendBg').classList.add('open');
+  document.getElementById('weekendDrawer').classList.add('open');
+  attachKeyboard('weekendDrawer');
+  setTimeout(() => document.getElementById('weekendTa').focus(), 280);
+}
+function closeWeekendDrawer() {
+  detachKeyboard('weekendDrawer');
+  document.getElementById('weekendBg').classList.remove('open');
+  document.getElementById('weekendDrawer').classList.remove('open');
+}
+function saveWeekend() {
+  S.weekendPlan = document.getElementById('weekendTa').value.trim();
+  syncWeekendRow(); closeWeekendDrawer(); updateProgress();
+}
+function clearWeekend() {
+  S.weekendPlan = '';
+  syncWeekendRow();
+  closeWeekendDrawer();
+  updateProgress();
+}
+function syncWeekendRow() {
+  const has  = S.weekendPlan.length > 0;
+  const row  = document.getElementById('weekendRow');
+  const icon = document.getElementById('weekendIcon');
+  row.classList.toggle('done', has);
+  icon.style.background  = has ? 'var(--green)' : '';
+  icon.querySelector('svg').style.stroke = has ? '#fff' : '';
+  document.getElementById('weekendSub').textContent =
+    has ? S.weekendPlan : 'What are you doing this weekend?';
+}
+</script>
+</body>
+</html>
