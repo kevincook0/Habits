@@ -66,20 +66,33 @@
     margin-bottom: 12px;
   }
 
-  .header-date {
-    font-family: 'Fraunces', serif;
-    font-size: 26px;
-    font-weight: 300;
-    color: var(--text);
-    letter-spacing: -0.5px;
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .header-day {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+  .header-date {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.3px;
   }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: var(--muted);
+    padding: 0 2px;
+    line-height: 1;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-btn:disabled { opacity: 0.2; cursor: default; }
+  .nav-btn:not(:disabled):active { opacity: 0.5; }
 
   /* ── Weekly progress track ── */
   .progress-track {
@@ -642,8 +655,11 @@
 
   <div class="sticky-bar" id="stickyBar">
     <div class="bar-top">
-      <div class="header-date" id="headerDate"></div>
-      <div class="header-day"  id="headerDay"></div>
+      <div class="header-nav">
+        <button class="nav-btn" id="navBack" aria-label="Previous day">‹</button>
+        <div class="header-date" id="headerDate"></div>
+        <button class="nav-btn" id="navFwd" aria-label="Next day" disabled>›</button>
+      </div>
     </div>
 
     <div class="progress-track">
@@ -977,6 +993,7 @@ function readLocalCache() {
 
 let saveTimer = null;
 function saveState() {
+  if (historyMode) return; // never overwrite live state while browsing history
   cacheLocal(state);
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -1056,22 +1073,77 @@ function ensureFreshKeys(s) {
 
 let state = ensureFreshKeys(readLocalCache());
 
+// ── History navigation ────────────────────────────────────────
+let viewOffset  = 0;   // days back from today (0 = live)
+let historyMode = false;
+
+function getViewDate() {
+  const d = new Date();
+  if (viewOffset > 0) d.setDate(d.getDate() - viewOffset);
+  return d;
+}
+
+async function navigateTo(offset) {
+  viewOffset  = Math.max(0, offset);
+  historyMode = viewOffset > 0;
+  document.getElementById('navFwd').disabled = (viewOffset === 0);
+
+  if (!historyMode) {
+    // Return to live state: reload from cache then re-hydrate from API
+    state = ensureFreshKeys(readLocalCache());
+    render();
+    try {
+      const remote = await apiRead(getDayKey(), getWeekKey());
+      state = ensureFreshKeys({
+        dayKey: remote.dayKey, weekKey: remote.weekKey,
+        daily: remote.daily,   weekly: remote.weekly,
+        zone2: remote.zone2,   weekendPlan: remote.weekendPlan || '',
+        remoteText: remote.remoteText || '',
+      });
+      cacheLocal(state);
+      render();
+    } catch(e) { console.warn('re-hydrate failed', e); }
+    return;
+  }
+
+  const d       = getViewDate();
+  const dayKey  = getDayKey(d);
+  const weekKey = getWeekKey(d);
+  try {
+    const remote = await apiRead(dayKey, weekKey);
+    state = {
+      dayKey, weekKey,
+      daily:       remote.daily       || {},
+      weekly:      remote.weekly      || {},
+      zone2:       remote.zone2       || 0,
+      weekendPlan: remote.weekendPlan || '',
+      remoteText:  remote.remoteText  || '',
+    };
+  } catch(e) {
+    console.warn('history fetch failed', e);
+    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: '', remoteText: '' };
+  }
+  render();
+}
+
 // ── Render ───────────────────────────────────────────────────
 function render() {
-  state = ensureFreshKeys(state);
-  const now    = new Date();
+  if (!historyMode) state = ensureFreshKeys(state);
+  const now    = getViewDate();
   const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('headerDate').textContent = `${months[now.getMonth()]} ${now.getDate()}`;
-  document.getElementById('headerDay').textContent  = days[now.getDay()];
+  document.getElementById('headerDate').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  document.getElementById('navFwd').disabled = (viewOffset === 0);
   renderDaily();
   syncActivityCards();
   syncCardioCard();
   syncRemoteRow();
   syncWeekendRow();
   updateProgress();
-  document.getElementById('resetInfo').textContent =
-    `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
+  document.getElementById('resetInfo').textContent = historyMode
+    ? ''
+    : `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
 }
 
 // ── Weekly progress ──────────────────────────────────────────
@@ -1380,6 +1452,10 @@ document.addEventListener('DOMContentLoaded', () => {
     closeWeekendDrawer();
     updateProgress();
   });
+
+  // History nav
+  document.getElementById('navBack').addEventListener('click', () => navigateTo(viewOffset + 1));
+  document.getElementById('navFwd').addEventListener('click',  () => navigateTo(viewOffset - 1));
 
   // Detail panel back buttons
   document.getElementById('backBtn').addEventListener('click', () => {
