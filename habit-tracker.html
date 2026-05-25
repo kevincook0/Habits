@@ -933,6 +933,7 @@ const ACTIVITY_HABITS = ['Push', 'Pull', 'Core', 'Tennis'];
 const ZONE2_GOAL  = 180;
 const WEEKLY_TOTAL = 7; // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
 const RESET_HOUR  = 3;
+const STATE_VERSION = 2; // bumped to flush UTC-key bug data
 
 // ── Supabase ─────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://qbyuyoiiuoaeinvfiudv.supabase.co';
@@ -992,10 +993,19 @@ function saveState() {
 }
 
 // ── Keys & state helpers ─────────────────────────────────────
+function localDateStr(d) {
+  // Use local date parts — toISOString() always returns UTC and produces
+  // wrong day keys for timezones behind UTC (e.g. EDT = UTC-4).
+  const y  = d.getFullYear();
+  const m  = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dy}`;
+}
+
 function getDayKey(d = new Date()) {
   const adj = new Date(d.getTime());
   if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
-  return adj.toISOString().slice(0, 10);
+  return localDateStr(adj);
 }
 
 function getWeekKey(d = new Date()) {
@@ -1004,7 +1014,7 @@ function getWeekKey(d = new Date()) {
   const day = adj.getDay();
   const monday = new Date(adj);
   monday.setDate(adj.getDate() - ((day + 6) % 7));
-  return monday.toISOString().slice(0, 10);
+  return localDateStr(monday);
 }
 
 function timeUntilReset() {
@@ -1020,6 +1030,12 @@ function timeUntilReset() {
 
 function ensureFreshKeys(s) {
   s = s || {};
+  // One-time migration: wipe daily state saved under old UTC-based day keys.
+  if ((s.stateVersion || 1) < STATE_VERSION) {
+    s.daily      = {};
+    s.dayKey     = null; // force key mismatch below so fresh key is assigned
+    s.stateVersion = STATE_VERSION;
+  }
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
