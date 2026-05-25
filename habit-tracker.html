@@ -1054,12 +1054,6 @@ function timeUntilReset() {
 
 function ensureFreshKeys(s) {
   s = s || {};
-  // One-time migration: wipe daily state saved under old UTC-based day keys.
-  if ((s.stateVersion || 1) < STATE_VERSION) {
-    s.daily      = {};
-    s.dayKey     = null; // force key mismatch below so fresh key is assigned
-    s.stateVersion = STATE_VERSION;
-  }
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
