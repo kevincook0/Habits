@@ -285,6 +285,22 @@
     line-height: 1.3;
   }
 
+  .habit-badges {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .streak-badge {
+    font-size: 10px;
+    line-height: 1;
+  }
+  .habit-pct {
+    font-size: 10px;
+    color: var(--dim);
+    font-weight: 400;
+  }
+
   /* ── Reset info ── */
   .reset-info {
     text-align: center;
@@ -997,6 +1013,23 @@ function readLocalCache() {
   try { return JSON.parse(localStorage.getItem('habitState') || 'null'); }
   catch { return null; }
 }
+function cacheHistory(h) {
+  try { localStorage.setItem('habitHistory', JSON.stringify(h)); } catch {}
+}
+function readHistoryCache() {
+  try { return JSON.parse(localStorage.getItem('habitHistory') || 'null'); }
+  catch { return null; }
+}
+
+async function apiHistory(fromDay, toDay) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-history`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ fromDay, toDay }),
+  });
+  if (!res.ok) throw new Error(`history failed: ${res.status}`);
+  return res.json();
+}
 
 let saveTimer = null;
 function saveState() {
@@ -1070,6 +1103,46 @@ function ensureFreshKeys(s) {
 }
 
 let state = ensureFreshKeys(readLocalCache());
+let habitHistory = readHistoryCache() || {};
+
+// ── Streak & completion-rate helpers ─────────────────────────
+function prevDayKey(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  const date = new Date(y, m - 1, d, 12, 0, 0); // noon avoids DST edge cases
+  date.setDate(date.getDate() - 1);
+  return localDateStr(date);
+}
+
+// Consecutive days the habit has been done, counting from today backwards.
+// Returns 0 if not done today, otherwise 1+ for each unbroken prior day.
+function computeStreak(name) {
+  if (!state.daily[name]) return 0;
+  let streak = 1;
+  let key = prevDayKey(getDayKey());
+  for (let i = 0; i < 365; i++) {
+    if (!habitHistory[key]?.[name]) break;
+    streak++;
+    key = prevDayKey(key);
+  }
+  return streak;
+}
+
+// Completion % over the last windowDays days that have recorded data.
+// Returns null until 7 or more tracked days exist (avoids misleading early stats).
+function computeCompletionRate(name, windowDays = 30) {
+  const today = getDayKey();
+  let done = 0, total = 0;
+  let key = today;
+  for (let i = 0; i < windowDays; i++) {
+    const dayData = (key === today) ? state.daily : habitHistory[key];
+    if (dayData !== undefined) {
+      total++;
+      if (dayData[name]) done++;
+    }
+    key = prevDayKey(key);
+  }
+  return total >= 7 ? Math.round(done / total * 100) : null;
+}
 
 // ── History navigation ────────────────────────────────────────
 let viewOffset  = 0;   // days back from today (0 = live)
@@ -1290,11 +1363,31 @@ function makeCheckItem(name, checked, onClick) {
       </svg>
     </div>
     <span class="habit-name">${name}</span>
+    <div class="habit-badges"></div>
     ${isMobility ? `<button class="info-btn" id="mobilityInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
     ${isElbow    ? `<button class="info-btn" id="elbowInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
     ${isEvening  ? `<button class="info-btn" id="eveningInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
     ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
   `;
+
+  // Populate streak + completion rate badges (live mode only)
+  if (!historyMode) {
+    const badgesEl = div.querySelector('.habit-badges');
+    const streak = computeStreak(name);
+    if (streak > 0) {
+      const s = document.createElement('span');
+      s.className = 'streak-badge';
+      s.textContent = `🔥${streak}`;
+      badgesEl.appendChild(s);
+    }
+    const pct = computeCompletionRate(name);
+    if (pct !== null) {
+      const p = document.createElement('span');
+      p.className = 'habit-pct';
+      p.textContent = `${pct}%`;
+      badgesEl.appendChild(p);
+    }
+  }
   if (isMobility) {
     div.querySelector('#mobilityInfoBtn').addEventListener('click', e => {
       e.stopPropagation();
@@ -1357,19 +1450,40 @@ function burst(e) {
 // ── Boot ─────────────────────────────────────────────────────
 render();
 
-// Hydrate from API (overwrites cached render)
+// Hydrate from API + load 60-day history for streaks/completion rates
 (async () => {
   try {
-    const remote = await apiRead(getDayKey(), getWeekKey());
-    state = ensureFreshKeys({
-      dayKey:      remote.dayKey,
-      weekKey:     remote.weekKey,
-      daily:       remote.daily,
-      weekly:      remote.weekly,
-      zone2:       remote.zone2,
-      weekendPlan: remote.weekendPlan || '',
-    });
-    cacheLocal(state);
+    const today    = getDayKey();
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 60);
+    const fromDay  = localDateStr(fromDate);
+
+    const [stateResult, historyResult] = await Promise.allSettled([
+      apiRead(today, getWeekKey()),
+      apiHistory(fromDay, today),
+    ]);
+
+    if (stateResult.status === 'fulfilled') {
+      const remote = stateResult.value;
+      state = ensureFreshKeys({
+        dayKey:      remote.dayKey,
+        weekKey:     remote.weekKey,
+        daily:       remote.daily,
+        weekly:      remote.weekly,
+        zone2:       remote.zone2,
+        weekendPlan: remote.weekendPlan || '',
+      });
+      cacheLocal(state);
+    }
+
+    if (historyResult.status === 'fulfilled') {
+      habitHistory = {};
+      (historyResult.value.rows || []).forEach(r => {
+        habitHistory[r.day_key] = r.daily || {};
+      });
+      cacheHistory(habitHistory);
+    }
+
     render();
   } catch (err) {
     console.warn('initial habit fetch failed', err);
