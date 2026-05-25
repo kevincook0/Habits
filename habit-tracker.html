@@ -1011,7 +1011,6 @@ function saveState() {
       weekly:      state.weekly,
       zone2:       state.zone2,
       weekendPlan: state.weekendPlan,
-      remoteText:  state.remoteText,
     }).catch(err => console.warn('habit save failed', err));
   }, 400);
 }
@@ -1062,13 +1061,11 @@ function ensureFreshKeys(s) {
     s.weekly      = {};
     s.zone2       = 0;
     s.weekendPlan = '';
-    s.remoteText  = '';
   }
   s.daily       = s.daily       || {};
   s.weekly      = s.weekly      || {};
   s.zone2       = s.zone2       || 0;
   s.weekendPlan = s.weekendPlan || '';
-  s.remoteText  = s.remoteText  || '';
   return s;
 }
 
@@ -1099,7 +1096,6 @@ async function navigateTo(offset) {
         dayKey: remote.dayKey, weekKey: remote.weekKey,
         daily: remote.daily,   weekly: remote.weekly,
         zone2: remote.zone2,   weekendPlan: remote.weekendPlan || '',
-        remoteText: remote.remoteText || '',
       });
       cacheLocal(state);
       render();
@@ -1118,11 +1114,10 @@ async function navigateTo(offset) {
       weekly:      remote.weekly      || {},
       zone2:       remote.zone2       || 0,
       weekendPlan: remote.weekendPlan || '',
-      remoteText:  remote.remoteText  || '',
     };
   } catch(e) {
     console.warn('history fetch failed', e);
-    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: '', remoteText: '' };
+    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: '' };
   }
   render();
 }
@@ -1151,7 +1146,7 @@ function render() {
 function updateProgress() {
   const actDone   = ACTIVITY_HABITS.filter(h => !!state.weekly[h]).length;
   const cardioDone = state.zone2 >= ZONE2_GOAL ? 1 : 0;
-  const remoteDone = state.weekly['Work remote'] ? 1 : 0;
+  const remoteDone = state.weekly['Work remote']?.done ? 1 : 0;
   const weekendDone = state.weekendPlan.trim() ? 1 : 0;
   const total = actDone + cardioDone + remoteDone + weekendDone;
   document.getElementById('progressFill').style.width = (total / WEEKLY_TOTAL * 100) + '%';
@@ -1221,7 +1216,7 @@ function detachKeyboard(drawerId) {
 
 // ── Remote day ───────────────────────────────────────────────
 function openRemoteDrawer() {
-  document.getElementById('remoteTa').value = state.remoteText;
+  document.getElementById('remoteTa').value = state.weekly['Work remote']?.text || '';
   syncRemoteToggleBtn();
   document.getElementById('remoteBg').classList.add('open');
   document.getElementById('remoteDrawer').classList.add('open');
@@ -1235,15 +1230,17 @@ function closeRemoteDrawer() {
 }
 function syncRemoteToggleBtn() {
   const btn    = document.getElementById('remoteToggle');
-  const isDone = !!state.weekly['Work remote'];
+  const isDone = !!state.weekly['Work remote']?.done;
   btn.textContent = isDone ? 'Mark incomplete' : 'Mark complete';
   btn.className   = isDone ? 'btn btn-secondary' : 'btn btn-complete';
 }
 function syncRemoteRow() {
-  const isDone = !!state.weekly['Work remote'];
+  const wr     = state.weekly['Work remote'];
+  const isDone = !!wr?.done;
+  const text   = wr?.text || '';
   document.getElementById('remoteRow').classList.toggle('done', isDone);
   document.getElementById('remoteSub').textContent =
-    state.remoteText || (isDone ? 'Done' : 'Where are you working from?');
+    text || (isDone ? 'Done' : 'Where are you working from?');
 }
 
 // ── Weekend plan ─────────────────────────────────────────────
@@ -1371,7 +1368,6 @@ render();
       weekly:      remote.weekly,
       zone2:       remote.zone2,
       weekendPlan: remote.weekendPlan || '',
-      remoteText:  remote.remoteText  || '',
     });
     cacheLocal(state);
     render();
@@ -1421,14 +1417,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('remoteRow').addEventListener('click', openRemoteDrawer);
   document.getElementById('remoteBg').addEventListener('click', closeRemoteDrawer);
   document.getElementById('remoteSaveBtn').addEventListener('click', () => {
-    state.remoteText = document.getElementById('remoteTa').value.trim();
+    const text = document.getElementById('remoteTa').value.trim();
+    const prev = state.weekly['Work remote'];
+    state.weekly['Work remote'] = { done: !!prev?.done, text };
     saveState();
     syncRemoteRow();
     closeRemoteDrawer();
   });
   document.getElementById('remoteToggle').addEventListener('click', () => {
-    state.remoteText = document.getElementById('remoteTa').value.trim();
-    state.weekly['Work remote'] = !state.weekly['Work remote'];
+    const text   = document.getElementById('remoteTa').value.trim();
+    const wasDone = !!state.weekly['Work remote']?.done;
+    state.weekly['Work remote'] = { done: !wasDone, text };
     saveState();
     syncRemoteToggleBtn();
     syncRemoteRow();
