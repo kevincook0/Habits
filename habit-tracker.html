@@ -61,15 +61,15 @@
 
   .bar-top {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 12px;
   }
 
   .header-nav {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0;
   }
 
   .header-date {
@@ -78,6 +78,8 @@
     font-weight: 600;
     color: var(--text);
     letter-spacing: -0.3px;
+    text-align: center;
+    min-width: 200px;
   }
 
   .nav-btn {
@@ -86,10 +88,15 @@
     cursor: pointer;
     font-size: 22px;
     color: var(--muted);
-    padding: 0 2px;
-    line-height: 1;
+    /* 44×44pt minimum touch target */
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
   }
   .nav-btn:disabled { opacity: 0.2; cursor: default; }
   .nav-btn:not(:disabled):active { opacity: 0.5; }
