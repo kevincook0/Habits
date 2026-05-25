@@ -677,6 +677,11 @@
   .sheet-close:active { opacity: 0.6; }
   .sheet-iframe { flex: 1; width: 100%; border: none; display: block; }
 
+  #weekendSub {
+    white-space: normal;
+    line-height: 1.6;
+  }
+
   ::-webkit-scrollbar { width: 0; }
 </style>
 </head>
@@ -822,8 +827,10 @@
 <div class="drawer" id="weekendDrawer">
   <div class="drawer-inner">
     <div class="drawer-pip"></div>
-    <div class="drawer-heading">Weekend plan</div>
-    <textarea class="drawer-textarea" id="weekendTa" placeholder="What are you doing this weekend?"></textarea>
+    <div class="drawer-heading">Saturday</div>
+    <textarea class="drawer-textarea" id="satTa" placeholder="What are you doing Saturday?" style="height:64px"></textarea>
+    <div class="drawer-heading" style="margin-top:8px">Sunday</div>
+    <textarea class="drawer-textarea" id="sunTa" placeholder="What are you doing Sunday?" style="height:64px"></textarea>
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="weekendClearBtn">Clear</button>
       <button class="btn btn-primary"   id="weekendSaveBtn">Save</button>
@@ -1100,12 +1107,16 @@ function ensureFreshKeys(s) {
     s.weekKey     = weekKey;
     s.weekly      = {};
     s.zone2       = 0;
-    s.weekendPlan = '';
+    s.weekendPlan = { sat: '', sun: '' };
   }
-  s.daily       = s.daily       || {};
-  s.weekly      = s.weekly      || {};
-  s.zone2       = s.zone2       || 0;
-  s.weekendPlan = s.weekendPlan || '';
+  s.daily  = s.daily  || {};
+  s.weekly = s.weekly || {};
+  s.zone2  = s.zone2  || 0;
+  // Migrate old string format to { sat, sun }
+  if (typeof s.weekendPlan === 'string') s.weekendPlan = { sat: s.weekendPlan, sun: '' };
+  s.weekendPlan     = s.weekendPlan     || { sat: '', sun: '' };
+  s.weekendPlan.sat = s.weekendPlan.sat || '';
+  s.weekendPlan.sun = s.weekendPlan.sun || '';
   return s;
 }
 
@@ -1175,7 +1186,7 @@ async function navigateTo(offset) {
       state = ensureFreshKeys({
         dayKey: remote.dayKey, weekKey: remote.weekKey,
         daily: remote.daily,   weekly: remote.weekly,
-        zone2: remote.zone2,   weekendPlan: remote.weekendPlan || '',
+        zone2: remote.zone2,   weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
       });
       cacheLocal(state);
       render();
@@ -1193,11 +1204,11 @@ async function navigateTo(offset) {
       daily:       remote.daily       || {},
       weekly:      remote.weekly      || {},
       zone2:       remote.zone2       || 0,
-      weekendPlan: remote.weekendPlan || '',
+      weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
     };
   } catch(e) {
     console.warn('history fetch failed', e);
-    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: '' };
+    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: { sat: '', sun: '' } };
   }
   render();
 }
@@ -1227,7 +1238,7 @@ function updateProgress() {
   const actDone   = ACTIVITY_HABITS.filter(h => !!state.weekly[h]).length;
   const cardioDone = state.zone2 >= ZONE2_GOAL ? 1 : 0;
   const remoteDone = state.weekly['Work remote']?.done ? 1 : 0;
-  const weekendDone = state.weekendPlan.trim() ? 1 : 0;
+  const weekendDone = (state.weekendPlan?.sat?.trim() && state.weekendPlan?.sun?.trim()) ? 1 : 0;
   const total = actDone + cardioDone + remoteDone + weekendDone;
   document.getElementById('progressFill').style.width = (total / WEEKLY_TOTAL * 100) + '%';
 }
@@ -1325,11 +1336,12 @@ function syncRemoteRow() {
 
 // ── Weekend plan ─────────────────────────────────────────────
 function openWeekendDrawer() {
-  document.getElementById('weekendTa').value = state.weekendPlan;
+  document.getElementById('satTa').value = state.weekendPlan?.sat || '';
+  document.getElementById('sunTa').value = state.weekendPlan?.sun || '';
   document.getElementById('weekendBg').classList.add('open');
   document.getElementById('weekendDrawer').classList.add('open');
   attachKeyboard('weekendDrawer');
-  setTimeout(() => document.getElementById('weekendTa').focus(), 280);
+  setTimeout(() => document.getElementById('satTa').focus(), 280);
 }
 function closeWeekendDrawer() {
   detachKeyboard('weekendDrawer');
@@ -1337,10 +1349,19 @@ function closeWeekendDrawer() {
   document.getElementById('weekendDrawer').classList.remove('open');
 }
 function syncWeekendRow() {
-  const has = state.weekendPlan.trim().length > 0;
+  const sat = state.weekendPlan?.sat?.trim() || '';
+  const sun = state.weekendPlan?.sun?.trim() || '';
+  const has = sat.length > 0 && sun.length > 0;
   document.getElementById('weekendRow').classList.toggle('done', has);
-  document.getElementById('weekendSub').textContent =
-    has ? state.weekendPlan : 'What are you doing this weekend?';
+  const sub = document.getElementById('weekendSub');
+  if (sat || sun) {
+    sub.innerHTML = [
+      sat ? `Sat · ${sat}` : '',
+      sun ? `Sun · ${sun}` : '',
+    ].filter(Boolean).join('<br>');
+  } else {
+    sub.textContent = 'What are you doing this weekend?';
+  }
 }
 
 // ── Daily habits list ────────────────────────────────────────
@@ -1480,7 +1501,7 @@ render();
         daily:       remote.daily,
         weekly:      remote.weekly,
         zone2:       remote.zone2,
-        weekendPlan: remote.weekendPlan || '',
+        weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
       });
       cacheLocal(state);
     }
@@ -1562,14 +1583,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('weekendRow').addEventListener('click', openWeekendDrawer);
   document.getElementById('weekendBg').addEventListener('click', closeWeekendDrawer);
   document.getElementById('weekendSaveBtn').addEventListener('click', () => {
-    state.weekendPlan = document.getElementById('weekendTa').value.trim();
+    state.weekendPlan = {
+      sat: document.getElementById('satTa').value.trim(),
+      sun: document.getElementById('sunTa').value.trim(),
+    };
     saveState();
     syncWeekendRow();
     closeWeekendDrawer();
     updateProgress();
   });
   document.getElementById('weekendClearBtn').addEventListener('click', () => {
-    state.weekendPlan = '';
+    state.weekendPlan = { sat: '', sun: '' };
     saveState();
     syncWeekendRow();
     closeWeekendDrawer();
