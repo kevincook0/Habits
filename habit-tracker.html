@@ -1374,7 +1374,7 @@ function makeCheckItem(name, checked, onClick) {
   if (!historyMode) {
     const badgesEl = div.querySelector('.habit-badges');
     const streak = computeStreak(name);
-    if (streak > 0) {
+    if (streak > 1) {
       const s = document.createElement('span');
       s.className = 'streak-badge';
       s.textContent = `🔥${streak}`;
