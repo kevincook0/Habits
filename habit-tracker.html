@@ -677,10 +677,39 @@
   .sheet-close:active { opacity: 0.6; }
   .sheet-iframe { flex: 1; width: 100%; border: none; display: block; }
 
-  #weekendSub {
+  #weekendSub, #remoteSub {
     white-space: normal;
     line-height: 1.6;
   }
+
+  .cafe-pills-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 8px;
+  }
+  .cafe-pills-wrap::-webkit-scrollbar { display: none; }
+  .cafe-pills {
+    display: flex;
+    gap: 6px;
+    width: max-content;
+    padding-bottom: 2px;
+  }
+  .cafe-pill {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--grey);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 5px 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .cafe-pill:active { background: var(--border); }
 
   ::-webkit-scrollbar { width: 0; }
 </style>
@@ -762,13 +791,13 @@
 
     </div><!-- /activity-row -->
 
-    <!-- Remote day -->
+    <!-- Remote work -->
     <div class="list-row" id="remoteRow">
       <div class="list-icon" id="remoteIcon">
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
       <div class="list-text">
-        <div class="list-title">Remote day</div>
+        <div class="list-title">Remote work</div>
         <div class="list-sub" id="remoteSub">Where are you working from?</div>
       </div>
     </div>
@@ -808,13 +837,31 @@
   </div>
 </div>
 
-<!-- ── Remote drawer ── -->
+<!-- ── Remote work drawer ── -->
 <div class="drawer-bg" id="remoteBg"></div>
 <div class="drawer" id="remoteDrawer">
   <div class="drawer-inner">
     <div class="drawer-pip"></div>
-    <div class="drawer-heading">Remote day</div>
-    <textarea class="drawer-textarea" id="remoteTa" placeholder="Where are you working from?"></textarea>
+    <div class="drawer-heading">Remote work</div>
+    <div class="cafe-pills-wrap">
+      <div class="cafe-pills">
+        <button class="cafe-pill">Mina mina</button>
+        <button class="cafe-pill">Lili &amp; Oli</button>
+        <button class="cafe-pill">September</button>
+        <button class="cafe-pill">Redwood</button>
+        <button class="cafe-pill">Ma Bicyclette</button>
+        <button class="cafe-pill">Bloom</button>
+        <button class="cafe-pill">Cosé</button>
+        <button class="cafe-pill">Sunday</button>
+        <button class="cafe-pill">Gotsoul</button>
+      </div>
+    </div>
+    <div class="drawer-heading" style="margin-bottom:6px">Where</div>
+    <textarea class="drawer-textarea" id="whereTa" placeholder="Café, home, office…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">When</div>
+    <textarea class="drawer-textarea" id="whenTa" placeholder="9am – 3pm" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">What</div>
+    <textarea class="drawer-textarea" id="whatTa" placeholder="What are you working on?" style="height:64px;margin-bottom:10px"></textarea>
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="remoteToggle">Mark complete</button>
       <button class="btn btn-primary"   id="remoteSaveBtn">Save</button>
@@ -1305,14 +1352,17 @@ function detachKeyboard(drawerId) {
   if (el._cleanup) { el._cleanup(); el._cleanup = null; }
 }
 
-// ── Remote day ───────────────────────────────────────────────
+// ── Remote work ──────────────────────────────────────────────
 function openRemoteDrawer() {
-  document.getElementById('remoteTa').value = state.weekly['Work remote']?.text || '';
+  const wr = state.weekly['Work remote'];
+  document.getElementById('whereTa').value = wr?.where || wr?.text || '';
+  document.getElementById('whenTa').value  = wr?.when  || '';
+  document.getElementById('whatTa').value  = wr?.what  || '';
   syncRemoteToggleBtn();
   document.getElementById('remoteBg').classList.add('open');
   document.getElementById('remoteDrawer').classList.add('open');
   attachKeyboard('remoteDrawer');
-  setTimeout(() => document.getElementById('remoteTa').focus(), 280);
+  setTimeout(() => document.getElementById('whereTa').focus(), 280);
 }
 function closeRemoteDrawer() {
   detachKeyboard('remoteDrawer');
@@ -1326,12 +1376,19 @@ function syncRemoteToggleBtn() {
   btn.className   = isDone ? 'btn btn-secondary' : 'btn btn-complete';
 }
 function syncRemoteRow() {
-  const wr     = state.weekly['Work remote'];
+  const wr    = state.weekly['Work remote'];
   const isDone = !!wr?.done;
-  const text   = wr?.text || '';
+  const where  = wr?.where || wr?.text || '';
+  const when   = wr?.when  || '';
+  const what   = wr?.what  || '';
   document.getElementById('remoteRow').classList.toggle('done', isDone);
-  document.getElementById('remoteSub').textContent =
-    text || (isDone ? 'Done' : 'Where are you working from?');
+  const sub   = document.getElementById('remoteSub');
+  const parts = [where, when, what].filter(Boolean);
+  if (parts.length > 0) {
+    sub.innerHTML = parts.join('<br>');
+  } else {
+    sub.textContent = isDone ? 'Done' : 'Where are you working from?';
+  }
 }
 
 // ── Weekend plan ─────────────────────────────────────────────
@@ -1561,22 +1618,37 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('remoteRow').addEventListener('click', openRemoteDrawer);
   document.getElementById('remoteBg').addEventListener('click', closeRemoteDrawer);
   document.getElementById('remoteSaveBtn').addEventListener('click', () => {
-    const text = document.getElementById('remoteTa').value.trim();
     const prev = state.weekly['Work remote'];
-    state.weekly['Work remote'] = { done: !!prev?.done, text };
+    state.weekly['Work remote'] = {
+      done:  !!prev?.done,
+      where: document.getElementById('whereTa').value.trim(),
+      when:  document.getElementById('whenTa').value.trim(),
+      what:  document.getElementById('whatTa').value.trim(),
+    };
     saveState();
     syncRemoteRow();
     closeRemoteDrawer();
   });
   document.getElementById('remoteToggle').addEventListener('click', () => {
-    const text   = document.getElementById('remoteTa').value.trim();
     const wasDone = !!state.weekly['Work remote']?.done;
-    state.weekly['Work remote'] = { done: !wasDone, text };
+    state.weekly['Work remote'] = {
+      done:  !wasDone,
+      where: document.getElementById('whereTa').value.trim(),
+      when:  document.getElementById('whenTa').value.trim(),
+      what:  document.getElementById('whatTa').value.trim(),
+    };
     saveState();
     syncRemoteToggleBtn();
     syncRemoteRow();
     updateProgress();
     closeRemoteDrawer();
+  });
+
+  // Cafe pill → populate Where field
+  document.querySelectorAll('.cafe-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.getElementById('whereTa').value = pill.textContent;
+    });
   });
 
   // Weekend
