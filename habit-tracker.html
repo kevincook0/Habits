@@ -308,6 +308,39 @@
     font-weight: 400;
   }
 
+  .halo-counter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .halo-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: var(--grey);
+    color: var(--text);
+    font-size: 17px; font-weight: 300;
+    font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.12s;
+  }
+  .halo-btn:active { background: var(--border); }
+  .habit-item.done .halo-btn {
+    border-color: var(--green-border);
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  .halo-count {
+    font-size: 11px; font-weight: 500;
+    color: var(--muted);
+    min-width: 30px; text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .habit-item.done .halo-count { color: var(--green); }
+
   /* ── Reset info ── */
   .reset-info {
     text-align: center;
@@ -1044,6 +1077,7 @@ const DAILY_HABITS = [
 
 const ACTIVITY_HABITS = ['Push', 'Pull', 'Core', 'Tennis'];
 const ZONE2_GOAL  = 180;
+const HALO_GOAL   = 3;
 const WEEKLY_TOTAL = 7; // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
 const RESET_HOUR  = 3;
 const STATE_VERSION = 2; // bumped to flush UTC-key bug data
@@ -1449,6 +1483,7 @@ function renderDaily() {
       saveState();
       render();
     }));
+    if (name === 'Minoxidil (AM)') list.appendChild(makeHaloItem());
   });
 }
 
@@ -1525,6 +1560,48 @@ function makeCheckItem(name, checked, onClick) {
     div.addEventListener('animationend', () => div.classList.remove('popping'), { once: true });
     onClick(e);
   });
+  return div;
+}
+
+// ── Curve correction counter ────────────────────────────────────────
+function makeHaloItem() {
+  const count = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
+  const done  = count >= HALO_GOAL;
+  const div   = document.createElement('div');
+  div.className = 'habit-item' + (done ? ' done' : '');
+  div.innerHTML = `
+    <div class="checkbox">
+      <svg class="checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="habit-name-wrap">
+      <span class="habit-name">Curve correction</span>
+    </div>
+    <div class="halo-counter">
+      <button class="halo-btn halo-minus" ${historyMode ? 'disabled' : ''}>−</button>
+      <span class="halo-count">${count} / ${HALO_GOAL}</span>
+      <button class="halo-btn halo-plus"  ${historyMode ? 'disabled' : ''}>+</button>
+    </div>
+  `;
+  if (!historyMode) {
+    div.querySelector('.halo-minus').addEventListener('click', e => {
+      e.stopPropagation();
+      const cur = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
+      state.daily['Curve correction'] = Math.max(0, cur - 1);
+      saveState();
+      render();
+    });
+    div.querySelector('.halo-plus').addEventListener('click', e => {
+      e.stopPropagation();
+      const cur  = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
+      const next = cur + 1;
+      state.daily['Curve correction'] = next;
+      saveState();
+      if (next === HALO_GOAL) burst(e); // confetti on hitting goal
+      render();
+    });
+  }
   return div;
 }
 
