@@ -328,18 +328,12 @@
     transition: background 0.12s;
   }
   .halo-btn:active { background: var(--border); }
-  .habit-item.done .halo-btn {
-    border-color: var(--green-border);
-    background: var(--green-bg);
-    color: var(--green);
-  }
   .halo-count {
     font-size: 11px; font-weight: 500;
     color: var(--muted);
     min-width: 30px; text-align: center;
     letter-spacing: 0.02em;
   }
-  .habit-item.done .halo-count { color: var(--green); }
 
   /* ── Reset info ── */
   .reset-info {
@@ -1257,6 +1251,9 @@ function computeCompletionRate(name, windowDays = 30) {
 // ── History navigation ────────────────────────────────────────
 let viewOffset  = 0;   // days back from today (0 = live)
 let historyMode = false;
+let navSeq      = 0;   // increments on every nav; used to discard stale responses
+
+const EMPTY_SOCIAL = () => ({ mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' });
 
 function getViewDate() {
   const d = new Date();
@@ -1265,20 +1262,22 @@ function getViewDate() {
 }
 
 async function navigateTo(offset) {
+  const seq   = ++navSeq;
   viewOffset  = Math.max(0, offset);
   historyMode = viewOffset > 0;
   document.getElementById('navFwd').disabled = (viewOffset === 0);
 
   if (!historyMode) {
-    // Return to live state: reload from cache then re-hydrate from API
+    // Return to live — optimistic render from cache, then re-hydrate from API
     state = ensureFreshKeys(readLocalCache());
     render();
     try {
       const remote = await apiRead(getDayKey(), getWeekKey());
+      if (seq !== navSeq) return; // superseded by a later navigation
       state = ensureFreshKeys({
         dayKey: remote.dayKey, weekKey: remote.weekKey,
         daily: remote.daily,   weekly: remote.weekly,
-        zone2: remote.zone2,   socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
+        zone2: remote.zone2,   socialPlans: remote.socialPlans || EMPTY_SOCIAL(),
       });
       cacheLocal(state);
       render();
@@ -1289,18 +1288,24 @@ async function navigateTo(offset) {
   const d       = getViewDate();
   const dayKey  = getDayKey(d);
   const weekKey = getWeekKey(d);
+
+  // Immediately show the correct date with blank state while the fetch is in-flight
+  state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, socialPlans: EMPTY_SOCIAL() };
+  render();
+
   try {
     const remote = await apiRead(dayKey, weekKey);
+    if (seq !== navSeq) return; // superseded by a later navigation
     state = {
       dayKey, weekKey,
       daily:       remote.daily       || {},
       weekly:      remote.weekly      || {},
       zone2:       remote.zone2       || 0,
-      socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
+      socialPlans: remote.socialPlans || EMPTY_SOCIAL(),
     };
   } catch(e) {
     console.warn('history fetch failed', e);
-    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, socialPlans: { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' } };
+    // state already blank from the pre-fetch render above
   }
   render();
 }
@@ -1566,8 +1571,9 @@ function makeCheckItem(name, checked, onClick) {
 // ── Curve correction counter ────────────────────────────────────────
 function makeHaloItem() {
   const count = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
+  const done  = count >= HALO_GOAL;
   const div   = document.createElement('div');
-  div.className = 'habit-item';
+  div.className = 'habit-item' + (done ? ' done' : '');
   div.innerHTML = `
     <div class="checkbox">
       <svg class="checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
