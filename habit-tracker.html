@@ -677,10 +677,12 @@
   .sheet-close:active { opacity: 0.6; }
   .sheet-iframe { flex: 1; width: 100%; border: none; display: block; }
 
-  #weekendSub, #remoteSub {
+  #remoteSub {
     white-space: normal;
     line-height: 1.6;
   }
+
+  #socialSub { white-space: normal; line-height: 1.6; }
 
   .cafe-pills-wrap {
     overflow-x: auto;
@@ -802,14 +804,14 @@
       </div>
     </div>
 
-    <!-- Weekend plan -->
-    <div class="list-row" id="weekendRow">
-      <div class="list-icon" id="weekendIcon">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <!-- Social plans -->
+    <div class="list-row" id="socialRow">
+      <div class="list-icon" id="socialIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
       <div class="list-text">
-        <div class="list-title">Weekend plan</div>
-        <div class="list-sub" id="weekendSub">What are you doing this weekend?</div>
+        <div class="list-title">Social plans</div>
+        <div class="list-sub" id="socialSub">What's the plan this weekend?</div>
       </div>
     </div>
 
@@ -869,18 +871,29 @@
   </div>
 </div>
 
-<!-- ── Weekend drawer ── -->
-<div class="drawer-bg" id="weekendBg"></div>
-<div class="drawer" id="weekendDrawer">
-  <div class="drawer-inner">
+<!-- ── Social plans drawer ── -->
+<div class="drawer-bg" id="socialBg"></div>
+<div class="drawer" id="socialDrawer">
+  <div class="drawer-inner" style="overflow-y:auto;max-height:90dvh">
     <div class="drawer-pip"></div>
-    <div class="drawer-heading">Saturday</div>
-    <textarea class="drawer-textarea" id="satTa" placeholder="What are you doing Saturday?" style="height:64px"></textarea>
-    <div class="drawer-heading" style="margin-top:8px">Sunday</div>
-    <textarea class="drawer-textarea" id="sunTa" placeholder="What are you doing Sunday?" style="height:64px"></textarea>
+    <div class="drawer-heading">Social plans</div>
+    <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
+    <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Tuesday</div>
+    <textarea class="drawer-textarea" id="planTue" placeholder="Plans for Tuesday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Wednesday</div>
+    <textarea class="drawer-textarea" id="planWed" placeholder="Plans for Wednesday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Thursday</div>
+    <textarea class="drawer-textarea" id="planThu" placeholder="Plans for Thursday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Friday</div>
+    <textarea class="drawer-textarea" id="planFri" placeholder="Plans for Friday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Saturday</div>
+    <textarea class="drawer-textarea" id="planSat" placeholder="Plans for Saturday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="drawer-heading" style="margin-bottom:6px">Sunday</div>
+    <textarea class="drawer-textarea" id="planSun" placeholder="Plans for Sunday…" style="height:52px;margin-bottom:10px"></textarea>
     <div class="drawer-actions">
-      <button class="btn btn-secondary" id="weekendClearBtn">Clear</button>
-      <button class="btn btn-primary"   id="weekendSaveBtn">Save</button>
+      <button class="btn btn-secondary" id="socialClearBtn">Clear all</button>
+      <button class="btn btn-primary"   id="socialSaveBtn">Save</button>
     </div>
   </div>
 </div>
@@ -1104,7 +1117,7 @@ function saveState() {
       daily:       state.daily,
       weekly:      state.weekly,
       zone2:       state.zone2,
-      weekendPlan: state.weekendPlan,
+      socialPlans: state.socialPlans,
     }).catch(err => console.warn('habit save failed', err));
   }, 400);
 }
@@ -1154,16 +1167,14 @@ function ensureFreshKeys(s) {
     s.weekKey     = weekKey;
     s.weekly      = {};
     s.zone2       = 0;
-    s.weekendPlan = { sat: '', sun: '' };
+    s.socialPlans = { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' };
   }
   s.daily  = s.daily  || {};
   s.weekly = s.weekly || {};
   s.zone2  = s.zone2  || 0;
-  // Migrate old string format to { sat, sun }
-  if (typeof s.weekendPlan === 'string') s.weekendPlan = { sat: s.weekendPlan, sun: '' };
-  s.weekendPlan     = s.weekendPlan     || { sat: '', sun: '' };
-  s.weekendPlan.sat = s.weekendPlan.sat || '';
-  s.weekendPlan.sun = s.weekendPlan.sun || '';
+  s.socialPlans = s.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' };
+  const days7 = ['mon','tue','wed','thu','fri','sat','sun'];
+  days7.forEach(d => { s.socialPlans[d] = s.socialPlans[d] || ''; });
   return s;
 }
 
@@ -1233,7 +1244,7 @@ async function navigateTo(offset) {
       state = ensureFreshKeys({
         dayKey: remote.dayKey, weekKey: remote.weekKey,
         daily: remote.daily,   weekly: remote.weekly,
-        zone2: remote.zone2,   weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
+        zone2: remote.zone2,   socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
       });
       cacheLocal(state);
       render();
@@ -1251,11 +1262,11 @@ async function navigateTo(offset) {
       daily:       remote.daily       || {},
       weekly:      remote.weekly      || {},
       zone2:       remote.zone2       || 0,
-      weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
+      socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
     };
   } catch(e) {
     console.warn('history fetch failed', e);
-    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, weekendPlan: { sat: '', sun: '' } };
+    state = { dayKey, weekKey, daily: {}, weekly: {}, zone2: 0, socialPlans: { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' } };
   }
   render();
 }
@@ -1273,7 +1284,7 @@ function render() {
   syncActivityCards();
   syncCardioCard();
   syncRemoteRow();
-  syncWeekendRow();
+  syncSocialPlansRow();
   updateProgress();
   document.getElementById('resetInfo').textContent = historyMode
     ? ''
@@ -1285,7 +1296,7 @@ function updateProgress() {
   const actDone   = ACTIVITY_HABITS.filter(h => !!state.weekly[h]).length;
   const cardioDone = state.zone2 >= ZONE2_GOAL ? 1 : 0;
   const remoteDone = state.weekly['Work remote']?.done ? 1 : 0;
-  const weekendDone = (state.weekendPlan?.sat?.trim() && state.weekendPlan?.sun?.trim()) ? 1 : 0;
+  const weekendDone = (state.socialPlans?.sat?.trim() && state.socialPlans?.sun?.trim()) ? 1 : 0;
   const total = actDone + cardioDone + remoteDone + weekendDone;
   document.getElementById('progressFill').style.width = (total / WEEKLY_TOTAL * 100) + '%';
 }
@@ -1391,33 +1402,40 @@ function syncRemoteRow() {
   }
 }
 
-// ── Weekend plan ─────────────────────────────────────────────
-function openWeekendDrawer() {
-  document.getElementById('satTa').value = state.weekendPlan?.sat || '';
-  document.getElementById('sunTa').value = state.weekendPlan?.sun || '';
-  document.getElementById('weekendBg').classList.add('open');
-  document.getElementById('weekendDrawer').classList.add('open');
-  attachKeyboard('weekendDrawer');
-  setTimeout(() => document.getElementById('satTa').focus(), 280);
+// ── Social plans ──────────────────────────────────────────────
+function openSocialDrawer() {
+  const sp = state.socialPlans;
+  document.getElementById('planMon').value = sp?.mon || '';
+  document.getElementById('planTue').value = sp?.tue || '';
+  document.getElementById('planWed').value = sp?.wed || '';
+  document.getElementById('planThu').value = sp?.thu || '';
+  document.getElementById('planFri').value = sp?.fri || '';
+  document.getElementById('planSat').value = sp?.sat || '';
+  document.getElementById('planSun').value = sp?.sun || '';
+  document.getElementById('socialBg').classList.add('open');
+  document.getElementById('socialDrawer').classList.add('open');
+  attachKeyboard('socialDrawer');
+  setTimeout(() => document.getElementById('planSat').focus(), 280);
 }
-function closeWeekendDrawer() {
-  detachKeyboard('weekendDrawer');
-  document.getElementById('weekendBg').classList.remove('open');
-  document.getElementById('weekendDrawer').classList.remove('open');
+function closeSocialDrawer() {
+  detachKeyboard('socialDrawer');
+  document.getElementById('socialBg').classList.remove('open');
+  document.getElementById('socialDrawer').classList.remove('open');
 }
-function syncWeekendRow() {
-  const sat = state.weekendPlan?.sat?.trim() || '';
-  const sun = state.weekendPlan?.sun?.trim() || '';
+function syncSocialPlansRow() {
+  const sp  = state.socialPlans;
+  const sat = sp?.sat?.trim() || '';
+  const sun = sp?.sun?.trim() || '';
   const has = sat.length > 0 && sun.length > 0;
-  document.getElementById('weekendRow').classList.toggle('done', has);
-  const sub = document.getElementById('weekendSub');
+  document.getElementById('socialRow').classList.toggle('done', has);
+  const sub = document.getElementById('socialSub');
   if (sat || sun) {
-    sub.innerHTML = [
-      sat ? `Sat · ${sat}` : '',
-      sun ? `Sun · ${sun}` : '',
-    ].filter(Boolean).join('<br>');
+    const lines = [];
+    if (sat) lines.push(`Saturday: ${sat}`);
+    if (sun) lines.push(`Sunday: ${sun}`);
+    sub.innerHTML = lines.join('<br>');
   } else {
-    sub.textContent = 'What are you doing this weekend?';
+    sub.textContent = "What's the plan this weekend?";
   }
 }
 
@@ -1558,7 +1576,7 @@ render();
         daily:       remote.daily,
         weekly:      remote.weekly,
         zone2:       remote.zone2,
-        weekendPlan: remote.weekendPlan || { sat: '', sun: '' },
+        socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
       });
       cacheLocal(state);
     }
@@ -1651,24 +1669,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Weekend
-  document.getElementById('weekendRow').addEventListener('click', openWeekendDrawer);
-  document.getElementById('weekendBg').addEventListener('click', closeWeekendDrawer);
-  document.getElementById('weekendSaveBtn').addEventListener('click', () => {
-    state.weekendPlan = {
-      sat: document.getElementById('satTa').value.trim(),
-      sun: document.getElementById('sunTa').value.trim(),
+  // Social plans
+  document.getElementById('socialRow').addEventListener('click', openSocialDrawer);
+  document.getElementById('socialBg').addEventListener('click', closeSocialDrawer);
+  document.getElementById('socialSaveBtn').addEventListener('click', () => {
+    state.socialPlans = {
+      mon: document.getElementById('planMon').value.trim(),
+      tue: document.getElementById('planTue').value.trim(),
+      wed: document.getElementById('planWed').value.trim(),
+      thu: document.getElementById('planThu').value.trim(),
+      fri: document.getElementById('planFri').value.trim(),
+      sat: document.getElementById('planSat').value.trim(),
+      sun: document.getElementById('planSun').value.trim(),
     };
     saveState();
-    syncWeekendRow();
-    closeWeekendDrawer();
+    syncSocialPlansRow();
+    closeSocialDrawer();
     updateProgress();
   });
-  document.getElementById('weekendClearBtn').addEventListener('click', () => {
-    state.weekendPlan = { sat: '', sun: '' };
+  document.getElementById('socialClearBtn').addEventListener('click', () => {
+    state.socialPlans = { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' };
     saveState();
-    syncWeekendRow();
-    closeWeekendDrawer();
+    syncSocialPlansRow();
+    closeSocialDrawer();
     updateProgress();
   });
 

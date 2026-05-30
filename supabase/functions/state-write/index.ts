@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
   let body;
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
-  const { dayKey, weekKey, daily, weekly, zone2, weekendPlan } = body;
+  const { dayKey, weekKey, daily, weekly, zone2, socialPlans } = body;
   if (!dayKey || !weekKey) return json({ error: "missing dayKey or weekKey" }, 400);
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -36,8 +36,14 @@ Deno.serve(async (req) => {
     week_key: weekKey,
     weekly: weekly ?? {},
     zone2: typeof zone2 === "number" ? zone2 : 0,
+    plan_mon: socialPlans?.mon ?? "",
+    plan_tue: socialPlans?.tue ?? "",
+    plan_wed: socialPlans?.wed ?? "",
+    plan_thu: socialPlans?.thu ?? "",
+    plan_fri: socialPlans?.fri ?? "",
+    plan_sat: socialPlans?.sat ?? "",
+    plan_sun: socialPlans?.sun ?? "",
   };
-  if (weekendPlan !== undefined) weeklyRow.weekend_plan = weekendPlan;
 
   const [day, week] = await Promise.all([
     supabase

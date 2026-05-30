@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     supabase.from("daily_state").select("daily").eq("day_key", dayKey).maybeSingle(),
     supabase
       .from("weekly_state")
-      .select("weekly, zone2, weekend_plan")
+      .select("weekly, zone2, plan_mon, plan_tue, plan_wed, plan_thu, plan_fri, plan_sat, plan_sun")
       .eq("week_key", weekKey)
       .maybeSingle(),
   ]);
@@ -51,6 +51,14 @@ Deno.serve(async (req) => {
     daily: day.data?.daily ?? {},
     weekly: week.data?.weekly ?? {},
     zone2: week.data?.zone2 ?? 0,
-    weekendPlan: week.data?.weekend_plan ?? null,
+    socialPlans: {
+      mon: week.data?.plan_mon ?? "",
+      tue: week.data?.plan_tue ?? "",
+      wed: week.data?.plan_wed ?? "",
+      thu: week.data?.plan_thu ?? "",
+      fri: week.data?.plan_fri ?? "",
+      sat: week.data?.plan_sat ?? "",
+      sun: week.data?.plan_sun ?? "",
+    },
   });
 });
