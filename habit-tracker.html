@@ -1566,9 +1566,8 @@ function makeCheckItem(name, checked, onClick) {
 // ── Curve correction counter ────────────────────────────────────────
 function makeHaloItem() {
   const count = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
-  const done  = count >= HALO_GOAL;
   const div   = document.createElement('div');
-  div.className = 'habit-item' + (done ? ' done' : '');
+  div.className = 'habit-item';
   div.innerHTML = `
     <div class="checkbox">
       <svg class="checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -1580,7 +1579,7 @@ function makeHaloItem() {
     </div>
     <div class="halo-counter">
       <button class="halo-btn halo-minus" ${historyMode ? 'disabled' : ''}>−</button>
-      <span class="halo-count">${count} / ${HALO_GOAL}</span>
+      <span class="halo-count">${count}</span>
       <button class="halo-btn halo-plus"  ${historyMode ? 'disabled' : ''}>+</button>
     </div>
   `;
