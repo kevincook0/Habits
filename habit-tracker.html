@@ -244,7 +244,7 @@
     margin-bottom: 2px;
     transition: color 0.14s;
   }
-  .list-row.done .list-title { color: var(--muted); }
+  .list-row.done .list-title { color: var(--text); }
   .list-sub {
     font-size: 12px;
     color: var(--muted);
@@ -700,14 +700,14 @@
   /* ── Info button ── */
   .info-btn {
     width: 30px; height: 30px; border-radius: 9px;
-    border: none; background: #ea580c; color: #fff; font-size: 14px;
+    border: none; background: var(--accent); color: #fff; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
     font-family: 'Inter', sans-serif;
     transition: background 0.15s; line-height: 1;
     box-shadow: var(--shadow-sm);
   }
-  .info-btn:active { background: #c2410c; }
+  .info-btn:active { background: #4338ca; }
 
   /* ── French bottom sheet ── */
   .sheet-backdrop {
@@ -1397,7 +1397,7 @@ function syncCardioCard() {
   document.getElementById('cardioLabel').textContent = state.zone2 > 0 ? `${state.zone2}m` : 'Cardio';
   const isDone = state.zone2 >= ZONE2_GOAL;
   document.getElementById('cardCardio').classList.toggle('done', isDone);
-  document.getElementById('cardioBg').setAttribute('fill', isDone ? 'var(--green)' : 'var(--grey)');
+  document.getElementById('cardioBg').setAttribute('fill', isDone ? 'var(--done-check)' : 'var(--grey)');
   document.getElementById('cardioHeart').style.stroke = isDone ? '#fff' : 'var(--muted)';
 }
 
