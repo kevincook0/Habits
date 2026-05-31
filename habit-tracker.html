@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* ── Palette (Tailwind Slate / Green) ── */
+    /* ── Palette (Tailwind Slate / Indigo) ── */
     --bg:           #f8fafc;   /* slate-50 */
     --white:        #ffffff;
     --grey:         #f1f5f9;   /* slate-100 */
@@ -20,11 +20,19 @@
     --text:         #0f172a;   /* slate-900 */
     --muted:        #64748b;   /* slate-500 — 4.6:1 on white, passes AA */
     --dim:          #94a3b8;   /* slate-400 */
-    --green:        #16a34a;   /* green-600 */
-    --green-bg:     #f0fdf4;   /* green-50 */
-    --green-border: #bbf7d0;   /* green-200 */
-    --green-text:   #15803d;   /* green-700 */
-    --blue:         #3b82f6;   /* blue-500 */
+    /* Done state — no color, just weight reduction */
+    --done-check:   #1e293b;   /* slate-800 — filled checkbox/icon */
+    --done-text:    #94a3b8;   /* slate-400 — receded text */
+    --done-bg:      #f8fafc;   /* barely-there tint */
+    /* Indigo for interactive/progress elements */
+    --accent:       #6366f1;   /* indigo-500 */
+    --accent-bg:    #eef2ff;   /* indigo-50 */
+    /* Keep a green alias only for the cardio ring */
+    --green:        #6366f1;   /* repurposed to indigo */
+    --green-bg:     #eef2ff;
+    --green-border: #c7d2fe;   /* indigo-200 */
+    --green-text:   #4338ca;   /* indigo-700 */
+    --blue:         #6366f1;   /* indigo — links */
     --gap:          10px;
     --radius:       12px;
     --shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
@@ -149,8 +157,8 @@
   }
   .act-card:active { transform: scale(0.93); box-shadow: none; }
   .act-card.done {
-    background: var(--green-bg);
-    border-color: var(--green-border);
+    background: var(--white);
+    border-color: var(--border);
   }
 
   .act-icon {
@@ -163,7 +171,7 @@
     flex-shrink: 0;
     transition: background 0.14s;
   }
-  .act-card.done .act-icon { background: var(--green); }
+  .act-card.done .act-icon { background: var(--done-check); }
 
   .act-icon svg {
     width: 15px; height: 15px;
@@ -187,7 +195,7 @@
     text-align: center;
     transition: color 0.14s;
   }
-  .act-card.done .act-label { color: var(--green-text); }
+  .act-card.done .act-label { color: var(--muted); }
 
   /* ── List rows ── */
   .list-row {
@@ -207,8 +215,8 @@
   .list-row:last-child { margin-bottom: 0; }
   .list-row:active { opacity: 0.75; box-shadow: none; }
   .list-row.done {
-    background: var(--green-bg);
-    border-color: var(--green-border);
+    background: var(--white);
+    border-color: var(--border);
   }
 
   .list-icon {
@@ -219,7 +227,7 @@
     flex-shrink: 0;
     transition: background 0.14s;
   }
-  .list-row.done .list-icon { background: var(--green); }
+  .list-row.done .list-icon { background: var(--done-check); }
   .list-icon svg {
     width: 15px; height: 15px;
     stroke: var(--muted); fill: none;
@@ -236,7 +244,7 @@
     margin-bottom: 2px;
     transition: color 0.14s;
   }
-  .list-row.done .list-title { color: var(--green-text); }
+  .list-row.done .list-title { color: var(--muted); }
   .list-sub {
     font-size: 12px;
     color: var(--muted);
@@ -271,11 +279,11 @@
   .habit-item:last-child { border-bottom: none; }
   .daily .habit-item:active { background: var(--grey); }
 
-  .habit-item.done { background: var(--green-bg); }
+  .habit-item.done { background: var(--white); }
   .habit-item.done .habit-name {
     text-decoration: line-through;
-    text-decoration-color: var(--green-border);
-    color: var(--green-text);
+    text-decoration-color: var(--dim);
+    color: var(--done-text);
   }
 
   .checkbox {
@@ -287,7 +295,7 @@
     transition: all 0.18s;
     background: transparent;
   }
-  .habit-item.done .checkbox { background: var(--green); border-color: var(--green); }
+  .habit-item.done .checkbox { background: var(--done-check); border-color: var(--done-check); }
 
   .checkmark { opacity: 0; transform: scale(0.5); transition: all 0.18s; }
   .habit-item.done .checkmark { opacity: 1; transform: scale(1); }
@@ -459,7 +467,7 @@
   }
   .ctrl-btn:active { opacity: 0.6; }
   .ctrl-minus { background: var(--grey); border: 1.5px solid var(--border); color: var(--text); }
-  .ctrl-plus  { background: var(--green); border: none; color: #fff; }
+  .ctrl-plus  { background: var(--accent); border: none; color: #fff; }
   .ctrl-label {
     flex: 1; font-size: 11px; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase;
