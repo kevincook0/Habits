@@ -1823,6 +1823,33 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('navBack').addEventListener('click', () => navigateTo(viewOffset + 1));
   document.getElementById('navFwd').addEventListener('click',  () => navigateTo(viewOffset - 1));
 
+  // ── Swipe gestures to navigate days ──────────────────────────
+  let swipeStartX = null, swipeStartY = null;
+  const SWIPE_MIN_X = 50;   // px horizontal travel required
+  const SWIPE_MAX_Y = 60;   // px vertical travel allowed (avoids scroll conflicts)
+
+  document.addEventListener('touchstart', e => {
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (swipeStartX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
+    swipeStartX = swipeStartY = null;
+    if (dy > SWIPE_MAX_Y || Math.abs(dx) < SWIPE_MIN_X) return;
+    // Ignore swipes that originate inside an open drawer or sheet
+    if (document.querySelector('.drawer.open, .bottom-sheet.open, .detail-panel.open, .breathing-panel.open')) return;
+    if (dx < 0) {
+      // swipe left → forward (toward today)
+      if (viewOffset > 0) navigateTo(viewOffset - 1);
+    } else {
+      // swipe right → back in time
+      navigateTo(viewOffset + 1);
+    }
+  }, { passive: true });
+
   // Detail panel back buttons
   document.getElementById('backBtn').addEventListener('click', () => {
     document.getElementById('mobilityPanel').classList.remove('open');
