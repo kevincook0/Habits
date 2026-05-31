@@ -1760,12 +1760,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('remoteRow').addEventListener('click', openRemoteDrawer);
   document.getElementById('remoteBg').addEventListener('click', closeRemoteDrawer);
   document.getElementById('remoteSaveBtn').addEventListener('click', () => {
-    const prev = state.weekly['Work remote'];
+    const where = document.getElementById('whereTa').value.trim();
+    const when  = document.getElementById('whenTa').value.trim();
+    const what  = document.getElementById('whatTa').value.trim();
     state.weekly['Work remote'] = {
-      done:  !!prev?.done,
-      where: document.getElementById('whereTa').value.trim(),
-      when:  document.getElementById('whenTa').value.trim(),
-      what:  document.getElementById('whatTa').value.trim(),
+      done:  !!(where || when || what),
+      where, when, what,
     };
     saveState();
     syncRemoteRow();
