@@ -1669,6 +1669,9 @@ render();
         habitHistory[r.day_key] = r.daily || {};
       });
       cacheHistory(habitHistory);
+      console.log('[habits] history loaded:', Object.keys(habitHistory).length, 'days', Object.keys(habitHistory));
+    } else {
+      console.warn('[habits] history fetch failed:', historyResult.reason);
     }
 
     render();
