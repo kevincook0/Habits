@@ -1,35 +1,31 @@
 // ═══════════════════════════════════════════════════════════════
 //  Habit Button — Wemos D1 Mini (ESP8266)
-//  Press the button → reads today's state from Supabase,
-//  toggles this habit, writes it back, updates the LED.
+//  Statin, Magnesium, CoQ10
 //
-//  LED:  green  = habit already done
-//        red    = habit not done yet
-//        blue   = connecting / working
-//        rapid red flash = error
+//  LED:  green        = habit done
+//        red          = habit not done
+//        pulsing blue = reminder (10:30pm – 11:59pm, if not done)
+//        rapid red    = error
 //
-//  Phase 1 (prototype): USB-powered, stays awake, LED shows
-//  live status. Press button to toggle.
+//  Reminder behaviour:
+//    10:30pm → LED slowly pulses blue until button pressed or 11:59pm
+//    11:59pm → pulse stops, LED goes red (habit counts as not done)
+//    Button press → triple green blink, then solid green
 // ═══════════════════════════════════════════════════════════════
 
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include <math.h>
 
 // ── ✏️  Edit these for each button ─────────────────────────────
 
 const char* WIFI_SSID     = "Fred";
 const char* WIFI_PASSWORD = "PinkBear2";
 
-// Paste the exact habit name from your tracker (case-sensitive):
 const char* HABIT_NAME = "Statin, Magnesium, CoQ10";
 
-// Your timezone string (POSIX format).
-// Pacific:  "PST8PDT,M3.2.0,M11.1.0"
-// Mountain: "MST7MDT,M3.2.0,M11.1.0"
-// Central:  "CST6CDT,M3.2.0,M11.1.0"
-// Eastern:  "EST5EDT,M4.1.0,M10.5.0"
 const char* TIMEZONE = "EST5EDT,M3.2.0,M11.1.0";
 
 // ── Supabase config (same for all buttons) ─────────────────────
@@ -38,55 +34,73 @@ const char* SUPABASE_URL = "https://qbyuyoiiuoaeinvfiudv.supabase.co";
 const char* APP_SECRET   = "7265d62639a9ec3e37c5c3a2ac7e0e193aba9c00128efd719c59a78aebe2091e";
 
 // ── Pin assignments ─────────────────────────────────────────────
-//
-//  Wemos D1 Mini pinout:
-//
-//    D1 Mini    GPIO    Use
-//    ────────   ────    ───────────────────────────
-//    D3         GPIO0   Button (to GND)  ← keep free at boot!
-//    D5         GPIO14  LED Red   (220Ω to GND)
-//    D6         GPIO12  LED Green (220Ω to GND)
-//    D7         GPIO13  LED Blue  (220Ω to GND)
-//
-//  For a common-cathode RGB LED: R→D5, G→D6, B→D7, GND→GND
-//  For two separate LEDs: Red→D5, Green→D6
 
-const int PIN_BUTTON = D3;  // GPIO0 — pulled HIGH, LOW when pressed
-const int PIN_R      = D5;
-const int PIN_G      = D6;
-const int PIN_B      = D7;
+const int PIN_BUTTON = D3;   // GPIO0 — pulled HIGH, LOW when pressed
+const int PIN_R      = D5;   // GPIO14
+const int PIN_G      = D6;   // GPIO12
+const int PIN_B      = D7;   // GPIO13
 
 // ── Internal constants ──────────────────────────────────────────
-const int  RESET_HOUR    = 3;    // habits roll over at 3am local
-const long DEBOUNCE_MS   = 300;  // button debounce delay
+
+const int  RESET_HOUR      = 3;     // habits roll over at 3am local
+const long DEBOUNCE_MS     = 500;   // button debounce
+const int  REMIND_START    = 22*60+30;  // 10:30pm in minutes-since-midnight
+const int  REMIND_END      = 23*60+59;  // 11:59pm
+const int  PULSE_PERIOD_MS = 4000;  // one full breathing cycle (slower = more natural)
+
+// ── Runtime state ───────────────────────────────────────────────
+
+bool habitDone      = false;  // local cache — updated on boot + every toggle
+bool reminderActive = false;  // true while pulsing blue
+bool autoExpired    = false;  // true after 11:59pm cutoff (resets next day)
 
 
 // ── LED helpers ─────────────────────────────────────────────────
 
+// Stop any PWM and set all pins digitally.
 void setLED(bool r, bool g, bool b) {
+  analogWrite(PIN_B, 0);  // clear any PWM on blue first
   digitalWrite(PIN_R, r ? HIGH : LOW);
   digitalWrite(PIN_G, g ? HIGH : LOW);
   digitalWrite(PIN_B, b ? HIGH : LOW);
 }
 
-void ledRed()    { setLED(true,  false, false); }
-void ledGreen()  { setLED(false, true,  false); }
-void ledBlue()   { setLED(false, false, true);  }
-void ledYellow() { setLED(true,  true,  false); }
-void ledOff()    { setLED(false, false, false); }
+void ledRed()   { setLED(true,  false, false); }
+void ledGreen() { setLED(false, true,  false); }
+void ledBlue()  { setLED(false, false, true);  }
+void ledOff()   { setLED(false, false, false); }
 
 void ledError() {
   for (int i = 0; i < 6; i++) {
-    ledRed(); delay(120);
-    ledOff(); delay(120);
+    ledBlue(); delay(120);
+    ledOff();  delay(120);
   }
+}
+
+// Slow sine-wave pulse on the blue channel.
+// Call repeatedly from loop() while reminder is active.
+void pulseBlueTick() {
+  // Breathing curve: sine lifted to 0–1, then squared to spend more
+  // time near the bottom (dim) and peak briefly — like a real breath.
+  float phase = (millis() % PULSE_PERIOD_MS) / (float)PULSE_PERIOD_MS * TWO_PI;
+  float s = 0.5f + 0.5f * sin(phase - HALF_PI);  // 0→1→0, starts at 0
+  float brightness = s * s;                        // square for perceptual curve
+  digitalWrite(PIN_R, LOW);
+  digitalWrite(PIN_G, LOW);
+  analogWrite(PIN_B, (int)(brightness * 900));     // cap at 900 — not blindingly bright
+}
+
+void ledTripleGreen() {
+  for (int i = 0; i < 3; i++) {
+    ledGreen(); delay(200);
+    ledOff();   delay(150);
+  }
+  // LED stays off — bedroom-friendly
 }
 
 
 // ── Date/key helpers ────────────────────────────────────────────
 
-// Returns "YYYY-MM-DD" adjusted for the 3am reset.
-// Matches the getDayKey() logic in habit-tracker.html.
 String getDayKey() {
   time_t now = time(nullptr);
   struct tm t;
@@ -100,15 +114,12 @@ String getDayKey() {
   return String(buf);
 }
 
-// Returns "YYYY-MM-DD" of the Monday that starts this week.
-// Matches the getWeekKey() logic in habit-tracker.html.
 String getWeekKey() {
   time_t now = time(nullptr);
   struct tm t;
   localtime_r(&now, &t);
   if (t.tm_hour < RESET_HOUR) now -= 86400;
   localtime_r(&now, &t);
-  // tm_wday: 0=Sun, 1=Mon … 6=Sat  →  days since Monday
   int daysToMon = (t.tm_wday == 0) ? 6 : t.tm_wday - 1;
   now -= (time_t)daysToMon * 86400;
   localtime_r(&now, &t);
@@ -123,8 +134,6 @@ String getWeekKey() {
 WiFiClientSecure wifiClient;
 HTTPClient http;
 
-// Calls state-read, fills doc with the full state object.
-// Returns true on success.
 bool readState(const String& dayKey, const String& weekKey, JsonDocument& doc) {
   String url = String(SUPABASE_URL) + "/functions/v1/state-read";
   http.begin(wifiClient, url);
@@ -151,7 +160,6 @@ bool readState(const String& dayKey, const String& weekKey, JsonDocument& doc) {
   return true;
 }
 
-// Calls state-write with the full doc.  Returns true on success.
 bool writeState(JsonDocument& doc) {
   String url = String(SUPABASE_URL) + "/functions/v1/state-write";
   http.begin(wifiClient, url);
@@ -187,50 +195,6 @@ IRAM_ATTR void onButtonPress() {
 
 // ── Core logic ──────────────────────────────────────────────────
 
-// Toggles the habit for today and updates the LED.
-void handleToggle() {
-  ledBlue();  // working…
-
-  String dayKey  = getDayKey();
-  String weekKey = getWeekKey();
-  Serial.printf("dayKey=%s  weekKey=%s\n", dayKey.c_str(), weekKey.c_str());
-
-  // 1. Read current state
-  DynamicJsonDocument doc(4096);
-  if (!readState(dayKey, weekKey, doc)) {
-    ledError();
-    return;
-  }
-
-  // 2. Toggle this habit
-  bool wasDone = doc["daily"][HABIT_NAME].as<bool>();
-  doc["daily"][HABIT_NAME] = !wasDone;
-  Serial.printf("'%s' %s → %s\n", HABIT_NAME,
-    wasDone ? "done" : "not done",
-    wasDone ? "unmarking" : "marking done");
-
-  // 3. Write back
-  if (!writeState(doc)) {
-    ledError();
-    return;
-  }
-
-  // 4. Celebrate / show new state
-  bool nowDone = !wasDone;
-  if (nowDone) {
-    // Brief white flash then settle on green
-    for (int i = 0; i < 2; i++) {
-      setLED(true, true, true); delay(80);
-      ledOff();                  delay(80);
-    }
-    ledGreen();
-  } else {
-    // Just go back to red
-    ledRed();
-  }
-}
-
-// Reads today's state on boot/reconnect and sets the LED.
 void refreshLED() {
   ledBlue();
 
@@ -240,13 +204,83 @@ void refreshLED() {
   DynamicJsonDocument doc(4096);
   if (!readState(dayKey, weekKey, doc)) {
     ledError();
-    ledRed();  // default to "not done" on error
+    habitDone = false;
+    ledOff();
     return;
   }
 
-  bool isDone = doc["daily"][HABIT_NAME].as<bool>();
-  Serial.printf("Current state of '%s': %s\n", HABIT_NAME, isDone ? "DONE" : "not done");
-  isDone ? ledGreen() : ledRed();
+  habitDone = doc["daily"][HABIT_NAME].as<bool>();
+  Serial.printf("Current state of '%s': %s\n", HABIT_NAME, habitDone ? "DONE" : "not done");
+  ledOff();  // always off after boot — no light in bedroom
+}
+
+void handleToggle() {
+  reminderActive = false;   // stop any pulse immediately
+
+  ledBlue();
+
+  String dayKey  = getDayKey();
+  String weekKey = getWeekKey();
+  Serial.printf("dayKey=%s  weekKey=%s\n", dayKey.c_str(), weekKey.c_str());
+
+  DynamicJsonDocument doc(4096);
+  if (!readState(dayKey, weekKey, doc)) {
+    ledError();
+    habitDone ? ledGreen() : ledOff();
+    return;
+  }
+
+  bool wasDone = doc["daily"][HABIT_NAME].as<bool>();
+  doc["daily"][HABIT_NAME] = !wasDone;
+  Serial.printf("'%s' %s → %s\n", HABIT_NAME,
+    wasDone ? "done" : "not done",
+    wasDone ? "unmarking" : "marking done");
+
+  if (!writeState(doc)) {
+    ledError();
+    habitDone ? ledGreen() : ledOff();
+    return;
+  }
+
+  habitDone = !wasDone;
+
+  if (habitDone) {
+    ledTripleGreen();   // ✓ triple blink then solid green
+  } else {
+    ledOff();
+  }
+}
+
+// Called every loop tick — manages the 10:30pm reminder window.
+void checkReminder() {
+  // Don't mess with LEDs if done or already expired
+  if (habitDone || autoExpired) return;
+
+  time_t now = time(nullptr);
+  struct tm t;
+  localtime_r(&now, &t);
+  int totalMin = t.tm_hour * 60 + t.tm_min;
+
+  // Daytime: make sure flags are clear
+  if (totalMin >= RESET_HOUR * 60 && totalMin < REMIND_START) {
+    reminderActive = false;
+    autoExpired    = false;
+    return;
+  }
+
+  // 11:59pm cutoff: stop pulse, habit stays not-done
+  if (totalMin >= REMIND_END && !autoExpired) {
+    autoExpired    = true;
+    reminderActive = false;
+    ledOff();
+    Serial.println("11:59pm — habit expired as not done, LED off.");
+    return;
+  }
+
+  // Reminder window: 10:30pm – 11:59pm
+  if (totalMin >= REMIND_START && totalMin < REMIND_END) {
+    reminderActive = true;
+  }
 }
 
 
@@ -262,7 +296,6 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   ledOff();
 
-  // Connect to WiFi
   ledBlue();
   Serial.printf("Connecting to %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -272,11 +305,8 @@ void setup() {
   }
   Serial.printf("\nConnected! IP: %s\n", WiFi.localIP().toString().c_str());
 
-  // HTTPS — skip cert verification for prototype.
-  // (Fine on a trusted home network; swap for proper cert in v2.)
   wifiClient.setInsecure();
 
-  // Sync time via NTP so getDayKey() / getWeekKey() are correct
   configTzTime(TIMEZONE, "pool.ntp.org", "time.nist.gov");
   Serial.print("Syncing NTP");
   while (time(nullptr) < 1000000000UL) {
@@ -285,10 +315,8 @@ void setup() {
   }
   Serial.println(" done");
 
-  // Attach button interrupt
   attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), onButtonPress, FALLING);
 
-  // Show today's status
   refreshLED();
 }
 
@@ -298,8 +326,14 @@ void loop() {
     handleToggle();
   }
 
-  // Reconnect if WiFi dropped
+  checkReminder();
+
+  if (reminderActive) {
+    pulseBlueTick();
+  }
+
   if (WiFi.status() != WL_CONNECTED) {
+    reminderActive = false;
     ledBlue();
     Serial.println("WiFi lost, reconnecting…");
     WiFi.reconnect();
@@ -307,5 +341,5 @@ void loop() {
     refreshLED();
   }
 
-  delay(50);
+  delay(20);  // tighter loop for smooth PWM pulse
 }
