@@ -2130,6 +2130,32 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // History nav
+  // ── Flush pending save on page unload ────────────────────────
+  window.addEventListener('beforeunload', () => {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (historyMode) return;
+    fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'x-habit-secret': APP_SECRET,
+      },
+      body: JSON.stringify({
+        dayKey:      state.dayKey,
+        weekKey:     state.weekKey,
+        daily:       state.daily,
+        weekly:      state.weekly,
+        zone2:       state.zone2,
+        socialPlans: state.socialPlans,
+      }),
+    });
+  });
+
   document.getElementById('navBack').addEventListener('click', () => navigateTo(viewOffset + 1));
   document.getElementById('navFwd').addEventListener('click',  () => navigateTo(viewOffset - 1));
 
