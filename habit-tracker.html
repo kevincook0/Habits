@@ -780,6 +780,170 @@
   .cafe-pill:active { background: var(--border); }
 
   ::-webkit-scrollbar { width: 0; }
+
+  /* ── Section tabs ── */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    margin: 12px 16px 0;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+  .section-tab {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .section-tab.active {
+    background: var(--white);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border);
+  }
+  .section-tab:not(.active):active { background: var(--border); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Tab completion dot ── */
+  .tab-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-left: 5px;
+    vertical-align: middle;
+    margin-top: -2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tab-dot.visible { opacity: 1; }
+
+  /* ── Symptoms panel ── */
+  .symptom-section {
+    margin: 12px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .symptom-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .symptom-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .symptom-row:last-child { border-bottom: none; }
+  .symptom-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .symptom-label {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+  }
+  .symptom-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 20px;
+    text-align: right;
+  }
+  .symptom-value.set { color: var(--accent); }
+  .scale-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+  }
+  .scale-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0;
+    height: 30px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .scale-btn:active { background: var(--border); }
+  .scale-btn.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* ── Objective inputs (HRV, Sleep) ── */
+  .sym-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sym-input-row:last-child { border-bottom: none; }
+  .sym-input-label {
+    font-size: 15px;
+    color: var(--text);
+    min-width: 52px;
+  }
+  .sym-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 72px;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  .sym-input::-webkit-inner-spin-button,
+  .sym-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .sym-input::placeholder { color: var(--border); font-weight: 400; font-size: 20px; }
+  .sym-input-unit {
+    font-size: 12px;
+    color: var(--dim);
+    font-weight: 500;
+  }
+  .sym-culprit-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .sym-culprit-input::placeholder { color: var(--dim); }
+  .sym-culprit-input:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 </style>
 </head>
 <body>
@@ -883,11 +1047,40 @@
 
   </div><!-- /sticky-bar -->
 
-  <div class="habit-section daily">
-    <div class="habit-list" id="dailyList"></div>
+  <!-- Section tabs -->
+  <div class="section-tabs">
+    <button class="section-tab active" id="tabHabits">Habits</button>
+    <button class="section-tab" id="tabSymptoms">Symptoms<span class="tab-dot" id="symDot"></span></button>
   </div>
 
-  <div class="reset-info" id="resetInfo"></div>
+  <!-- Tab: Habits -->
+  <div class="tab-panel active" id="panelHabits">
+    <div class="habit-section daily">
+      <div class="habit-list" id="dailyList"></div>
+    </div>
+    <div class="reset-info" id="resetInfo"></div>
+  </div>
+
+  <!-- Tab: Symptoms -->
+  <div class="tab-panel" id="panelSymptoms">
+    <div class="symptom-section">
+      <!-- Subjective ratings -->
+      <div class="symptom-card" id="symptomSubjective"></div>
+      <!-- Objective scores -->
+      <div class="symptom-card">
+        <div class="sym-input-row">
+          <span class="sym-input-label">HRV</span>
+          <input class="sym-input" id="symHrv" type="number" min="0" max="300" placeholder="—">
+          <span class="sym-input-unit">ms</span>
+        </div>
+        <div class="sym-input-row">
+          <span class="sym-input-label">Sleep</span>
+          <input class="sym-input" id="symSleep" type="number" min="0" max="100" placeholder="—">
+          <span class="sym-input-unit">/ 100</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div><!-- /app -->
 
 <!-- ── Cardio modal ── -->
@@ -1110,6 +1303,7 @@ const DAILY_HABITS = [
   "Out of bed by 7:30am",
   "Make bed + open window",
   "Omega-3, VitD, Creatine",
+  "VitC, Collagen",
   "10-min morning mobility",
   "Minoxidil (AM)",
   "Salad",
@@ -1377,6 +1571,8 @@ function render() {
   syncCardioCard();
   syncRemoteRow();
   syncSocialPlansRow();
+  renderSymptoms();
+  syncSymDot();
   updateProgress();
   document.getElementById('resetInfo').textContent = historyMode
     ? ''
@@ -1453,6 +1649,70 @@ function attachKeyboard(drawerId) {
 function detachKeyboard(drawerId) {
   const el = document.getElementById(drawerId);
   if (el._cleanup) { el._cleanup(); el._cleanup = null; }
+}
+
+// ── Symptoms ─────────────────────────────────────────────────
+const SYMPTOM_KEYS = [
+  { key: 'sym_neck',   label: 'Neck' },
+  { key: 'sym_mood',   label: 'Mood' },
+  { key: 'sym_energy', label: 'Energy' },
+  { key: 'sym_focus',  label: 'Focus' },
+];
+
+function renderSymptoms() {
+  const container = document.getElementById('symptomSubjective');
+  container.innerHTML = '';
+
+  SYMPTOM_KEYS.forEach(({ key, label }) => {
+    const current = state.daily[key] || null;
+    const row = document.createElement('div');
+    row.className = 'symptom-row';
+
+    const isNeck = key === 'sym_neck';
+    const culprit = isNeck ? (state.daily['sym_neck_culprit'] || '') : '';
+
+    row.innerHTML = `
+      <div class="symptom-row-top">
+        <span class="symptom-label">${label}</span>
+        <span class="symptom-value ${current ? 'set' : ''}">${current || '—'}</span>
+      </div>
+      <div class="scale-grid">
+        ${Array.from({length: 10}, (_, i) => i + 1).map(n =>
+          `<button class="scale-btn${current === n ? ' selected' : ''}" data-val="${n}">${n}</button>`
+        ).join('')}
+      </div>
+      ${isNeck ? `<input class="sym-culprit-input" placeholder="Suspected culprit (optional)" value="${culprit}" ${historyMode ? 'disabled' : ''}>` : ''}
+    `;
+    if (!historyMode) {
+      row.querySelectorAll('.scale-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = Number(btn.dataset.val);
+          state.daily[key] = (state.daily[key] === val) ? null : val;
+          saveState();
+          renderSymptoms();
+          syncSymDot();
+        });
+      });
+      if (isNeck) {
+        row.querySelector('.sym-culprit-input').addEventListener('change', e => {
+          state.daily['sym_neck_culprit'] = e.target.value.trim() || null;
+          saveState();
+        });
+      }
+    }
+    container.appendChild(row);
+  });
+
+  // Sync objective inputs
+  const hrv   = document.getElementById('symHrv');
+  const sleep = document.getElementById('symSleep');
+  if (hrv)   hrv.value   = state.daily['sym_hrv']   || '';
+  if (sleep) sleep.value = state.daily['sym_sleep']  || '';
+}
+
+function syncSymDot() {
+  const allSet = SYMPTOM_KEYS.every(({ key }) => !!state.daily[key]);
+  document.getElementById('symDot').classList.toggle('visible', allSet);
 }
 
 // ── Remote work ──────────────────────────────────────────────
@@ -1836,6 +2096,29 @@ document.addEventListener('DOMContentLoaded', () => {
   // History nav
   document.getElementById('navBack').addEventListener('click', () => navigateTo(viewOffset + 1));
   document.getElementById('navFwd').addEventListener('click',  () => navigateTo(viewOffset - 1));
+
+  // ── Section tabs ─────────────────────────────────────────────
+  document.getElementById('tabHabits').addEventListener('click', () => {
+    document.getElementById('tabHabits').classList.add('active');
+    document.getElementById('tabSymptoms').classList.remove('active');
+    document.getElementById('panelHabits').classList.add('active');
+    document.getElementById('panelSymptoms').classList.remove('active');
+  });
+  document.getElementById('tabSymptoms').addEventListener('click', () => {
+    document.getElementById('tabSymptoms').classList.add('active');
+    document.getElementById('tabHabits').classList.remove('active');
+    document.getElementById('panelSymptoms').classList.add('active');
+    document.getElementById('panelHabits').classList.remove('active');
+  });
+
+  // ── Symptom objective inputs ─────────────────────────────────
+  ['symHrv', 'symSleep'].forEach(id => {
+    document.getElementById(id).addEventListener('change', e => {
+      const val = e.target.value === '' ? null : Number(e.target.value);
+      state.daily[id === 'symHrv' ? 'sym_hrv' : 'sym_sleep'] = val;
+      saveState();
+    });
+  });
 
   // ── Swipe gestures to navigate days ──────────────────────────
   let swipeStartX = null, swipeStartY = null;
