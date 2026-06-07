@@ -1593,7 +1593,7 @@ function render() {
   syncSocialPlansRow();
   renderSymptoms();
   syncSymDot();
-  renderSymptomChart();
+  if (typeof renderSymptomChart === 'function') renderSymptomChart();
   updateProgress();
   document.getElementById('resetInfo').textContent = historyMode
     ? ''
@@ -2445,6 +2445,11 @@ function renderSymptomChart() {
     symChart.update('none');
   }
 }
+
+function initSymptomChart() {
+  renderSymptomChart();
+}
+setTimeout(initSymptomChart, 0);
 
 function buildSymLegend() {
   const wrap = document.getElementById('symChartLegend');
