@@ -2330,6 +2330,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('excitedCancelBtn').addEventListener('click',  () => closeJournalDrawer('excitedDrawer', 'excitedBg'));
   document.getElementById('excitedSaveBtn').addEventListener('click',    () => saveJournalEntry('daily_excited', 'excitedDrawer', 'excitedBg'));
 
+  // Hide history while keyboard is open
+  document.getElementById('gratefulTa').addEventListener('focus', () => { document.getElementById('gratefulHistory').style.display = 'none'; });
+  document.getElementById('gratefulTa').addEventListener('blur',  () => { document.getElementById('gratefulHistory').style.display = ''; });
+  document.getElementById('excitedTa').addEventListener('focus',  () => { document.getElementById('excitedHistory').style.display = 'none'; });
+  document.getElementById('excitedTa').addEventListener('blur',   () => { document.getElementById('excitedHistory').style.display = ''; });
+
   // ── Flush pending save on page unload ────────────────────────
   window.addEventListener('beforeunload', () => {
     if (!saveTimer) return;
