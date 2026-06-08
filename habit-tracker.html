@@ -66,7 +66,6 @@
     z-index: 50;
     background: var(--bg);
     padding: calc(var(--safe-top) + 16px) 16px 14px;
-    /* daily-progress-bar sits absolutely at bottom — no separate border needed */
   }
 
   .bar-top {
@@ -130,6 +129,7 @@
 
   /* ── Weekly block — unified card ── */
   .weekly-block {
+    margin: 12px 16px 0;
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
@@ -1039,6 +1039,86 @@
     text-align: left; border-top: 1px solid var(--border);
   }
 
+  /* ── Routine drawers (Tennis + Cardio) ── */
+  .routine-drawer {
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .routine-drawer-header { flex-shrink: 0; padding: 12px 20px 0; }
+  .routine-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 20px;
+  }
+  .routine-drawer-footer {
+    flex-shrink: 0;
+    padding: 10px 20px calc(var(--safe-bottom) + 14px);
+    border-top: 1px solid var(--border);
+    background: var(--white);
+  }
+
+  /* ── In-drawer tab bar ── */
+  .drawer-tabs {
+    display: flex;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    margin: 10px 0 0;
+  }
+  .drawer-tab-btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: none; border-radius: 8px;
+    padding: 7px 4px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+  }
+  .drawer-tab-btn.active {
+    background: var(--white);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border);
+  }
+  .drawer-tab-panel { display: none; }
+  .drawer-tab-panel.active { display: block; }
+
+  /* ── Cardio stepper (inside drawer footer) ── */
+  .cardio-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+  }
+  .cardio-stepper-label { font-size: 13px; color: var(--muted); font-weight: 500; flex: 1; }
+  .cardio-stepper-val {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    min-width: 96px; text-align: center; letter-spacing: -0.02em;
+    transition: color 0.2s;
+  }
+  .cardio-stepper-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--white); border: 1.5px solid var(--border);
+    color: var(--text); font-size: 20px; font-weight: 300;
+    font-family: 'Inter', sans-serif; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.12s;
+  }
+  .cardio-stepper-btn:active { background: var(--border); }
+
   /* ── Affirmations tab ── */
   .affirmation-section {
     margin: 12px 16px 0;
@@ -1096,7 +1176,19 @@
       </div>
     </div>
 
-    <!-- Unified weekly block -->
+    <!-- Section tabs — sticky header -->
+    <div class="section-tabs" style="margin: 10px 0 0">
+      <button class="section-tab active" id="tabHabits">Habits</button>
+      <button class="section-tab" id="tabSymptoms">Symptoms<span class="tab-dot" id="symDot"></span></button>
+      <button class="section-tab" id="tabAffirmations">Affirmations</button>
+    </div>
+
+  </div><!-- /sticky-bar -->
+
+  <!-- Tab: Habits -->
+  <div class="tab-panel active" id="panelHabits">
+
+    <!-- Weekly block — scrollable within Habits tab -->
     <div class="weekly-block">
     <div class="activity-row">
 
@@ -1181,27 +1273,11 @@
     </div>
     </div><!-- /weekly-block -->
 
-    <!-- Daily progress bar — full-width separator -->
-    <div class="daily-progress-bar">
-      <div class="progress-fill" id="progressFill" style="width:0%"></div>
-    </div>
-
-  </div><!-- /sticky-bar -->
-
-  <!-- Section tabs -->
-  <div class="section-tabs">
-    <button class="section-tab active" id="tabHabits">Habits</button>
-    <button class="section-tab" id="tabSymptoms">Symptoms<span class="tab-dot" id="symDot"></span></button>
-    <button class="section-tab" id="tabAffirmations">Affirmations</button>
-  </div>
-
-  <!-- Tab: Habits -->
-  <div class="tab-panel active" id="panelHabits">
     <div class="habit-section daily">
       <div class="habit-list" id="dailyList"></div>
     </div>
     <div class="reset-info" id="resetInfo"></div>
-  </div>
+  </div><!-- /panelHabits -->
 
   <!-- Tab: Affirmations -->
   <div class="tab-panel" id="panelAffirmations">
@@ -1398,6 +1474,123 @@
       <button class="btn btn-primary" id="excitedSaveBtn">Save</button>
     </div>
     <div class="journal-history" id="excitedHistory"></div>
+  </div>
+</div>
+
+<!-- ── Tennis drawer ── -->
+<div class="drawer-bg" id="tennisBg"></div>
+<div class="drawer routine-drawer" id="tennisDrawer">
+  <div class="routine-drawer-header">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading" style="margin-bottom:0">Tennis</div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab-btn active" data-target="tennisWarmup">Warm up</button>
+      <button class="drawer-tab-btn"        data-target="tennisAffirm">Affirmations</button>
+      <button class="drawer-tab-btn"        data-target="tennisCool">Cool down</button>
+    </div>
+  </div>
+  <div class="routine-drawer-body">
+
+    <div class="drawer-tab-panel active" id="tennisWarmup">
+      <div class="routine-list">
+        <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Glute bridge with hip abduction</div><div class="routine-detail">10 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Standing band lateral walk</div><div class="routine-detail">10 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Half-kneeling thoracic rotation</div><div class="routine-detail">8 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Ankle circles + single-leg calf raise</div><div class="routine-detail">30 sec + 5 reps</div></div></div>
+        <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Easy jog</div><div class="routine-detail">Baseline to net and back</div></div></div>
+        <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Lateral shuffles across the baseline</div><div class="routine-detail">4 ways</div></div></div>
+        <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Split step jumps</div><div class="routine-detail">10 reps</div></div></div>
+        <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">Arm swings</div><div class="routine-detail">10 reps</div></div></div>
+        <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">Mini tennis</div><div class="routine-detail">10 mins</div></div></div>
+      </div>
+    </div>
+
+    <div class="drawer-tab-panel" id="tennisAffirm">
+      <div class="routine-list">
+        <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">I visualize myself as worthy and successful and give myself permission to win.</div></div></div>
+        <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">I see competition as a challenge to rise to, not a threat to back down from.</div></div></div>
+        <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">I will concentrate on what I can control and focus on having quality "at-bats."</div></div></div>
+        <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">I play to win, not to avoid losing.</div></div></div>
+        <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">I am prepared. My body knows what to do.</div></div></div>
+        <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">I will get myself to the right emotional state and stress/arousal level.</div></div></div>
+        <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">I breathe in energy, I breathe out stress and negativity.</div></div></div>
+        <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">If I start to think negative thoughts, I try to think less.</div></div></div>
+        <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">I am a champion. I move on fast.</div></div></div>
+        <div class="routine-item"><span class="routine-num">10</span><div class="routine-info"><div class="routine-name">I am brave until the last point.</div></div></div>
+      </div>
+    </div>
+
+    <div class="drawer-tab-panel" id="tennisCool">
+      <div class="routine-list">
+        <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Easy walk</div><div class="routine-detail">2–3 baseline lengths</div></div></div>
+        <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Cross-body posterior shoulder stretch</div><div class="routine-detail">45 sec, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Doorway or wall chest opener</div><div class="routine-detail">30 sec, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Wrist flexor &amp; extensor stretch</div><div class="routine-detail">30 sec, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Figure-4 against a wall</div><div class="routine-detail">1 min</div></div></div>
+        <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Side lunge</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Kneeling hip flexor stretch</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">Passive windshield wiper</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">9</span><div class="routine-info"><div class="routine-name">Standing hamstring stretch</div><div class="routine-detail">1 min</div></div></div>
+        <div class="routine-item"><span class="routine-num">10</span><div class="routine-info"><div class="routine-name">Wall ankle dorsiflexion</div><div class="routine-detail">1 min</div></div></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="routine-drawer-footer">
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="tennisCancelBtn">Cancel</button>
+      <button class="btn btn-primary"   id="tennisDoneBtn">Mark as done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cardio drawer ── -->
+<div class="drawer-bg" id="cardioBg"></div>
+<div class="drawer routine-drawer" id="cardioDrawer">
+  <div class="routine-drawer-header">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading" style="margin-bottom:0">Cycling</div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab-btn active" data-target="cardioWarmup">Warm up</button>
+      <button class="drawer-tab-btn"        data-target="cardioCool">Cool down</button>
+    </div>
+  </div>
+  <div class="routine-drawer-body">
+
+    <div class="drawer-tab-panel active" id="cardioWarmup">
+      <div class="routine-list">
+        <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Glute bridge holds</div><div class="routine-detail">10 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Clamshells with band</div><div class="routine-detail">15 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Kneeling hip flexor pulse stretch</div><div class="routine-detail">10 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Thoracic rotations</div><div class="routine-detail">5 reps, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Ankle circles</div><div class="routine-detail">30 seconds, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Calf raises</div><div class="routine-detail">30 seconds, each side</div></div></div>
+      </div>
+    </div>
+
+    <div class="drawer-tab-panel" id="cardioCool">
+      <div class="routine-list">
+        <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Standing hip flexor stretch</div><div class="routine-detail">30 sec, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Figure-4 stretch</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Single-leg hamstring stretch</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Child's pose with lateral reach</div><div class="routine-detail">1 min</div></div></div>
+        <div class="routine-item"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Wall ankle dorsiflexion stretch</div><div class="routine-detail">1 min, each side</div></div></div>
+        <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Bolster chest opener</div><div class="routine-detail">3 mins</div></div></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="routine-drawer-footer">
+    <div class="cardio-stepper">
+      <span class="cardio-stepper-label">Zone 2 this week</span>
+      <button class="cardio-stepper-btn" id="cardioDrawerMinus">−</button>
+      <span class="cardio-stepper-val" id="cardioDrawerVal">0 / 180 min</span>
+      <button class="cardio-stepper-btn" id="cardioDrawerPlus">+</button>
+    </div>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="cardioDrawerCancelBtn">Cancel</button>
+      <button class="btn btn-primary"   id="cardioDrawerSaveBtn">Save</button>
+    </div>
   </div>
 </div>
 
@@ -1811,15 +2004,9 @@ function render() {
 }
 
 // ── Daily progress ────────────────────────────────────────────
+// Progress bar removed — kept as no-op for call-site compatibility
 function updateProgress() {
-  const habitsDone  = DAILY_HABITS.filter(h => !!state.daily[h]).length;
-  const curveDone   = (typeof state.daily['Curve correction'] === 'number'
-                       && state.daily['Curve correction'] >= HALO_GOAL) ? 1 : 0;
-  const journalDone = (state.daily['daily_grateful'] ? 1 : 0)
-                    + (state.daily['daily_excited']  ? 1 : 0);
-  const total = DAILY_HABITS.length + 1 + 2; // 14 habits + curve correction + 2 journals = 17
-  const done  = habitsDone + curveDone + journalDone;
-  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  // no-op
 }
 
 // ── Activity cards ───────────────────────────────────────────
@@ -1976,6 +2163,38 @@ function saveSymptoms() {
 function syncSymDot() {
   const allSet = SYMPTOM_KEYS.every(({ key }) => !!state.daily[key]);
   document.getElementById('symDot').classList.toggle('visible', allSet);
+}
+
+// ── Tennis drawer ────────────────────────────────────────
+function openTennisDrawer() {
+  const done = !!state.weekly['Tennis'];
+  document.getElementById('tennisDoneBtn').textContent = done ? 'Mark as undone' : 'Mark as done';
+  document.getElementById('tennisBg').classList.add('open');
+  document.getElementById('tennisDrawer').classList.add('open');
+}
+function closeTennisDrawer() {
+  document.getElementById('tennisBg').classList.remove('open');
+  document.getElementById('tennisDrawer').classList.remove('open');
+}
+
+// ── Cardio drawer ─────────────────────────────────────────
+let cardioDrawerOrigZone2 = 0;
+function syncCardioDrawerStepper() {
+  const val  = state.zone2;
+  const done = val >= ZONE2_GOAL;
+  const el   = document.getElementById('cardioDrawerVal');
+  el.textContent = `${val} / ${ZONE2_GOAL} min`;
+  el.style.color = done ? 'var(--accent)' : 'var(--text)';
+}
+function openCardioDrawer() {
+  cardioDrawerOrigZone2 = state.zone2;
+  syncCardioDrawerStepper();
+  document.getElementById('cardioBg').classList.add('open');
+  document.getElementById('cardioDrawer').classList.add('open');
+}
+function closeCardioDrawer() {
+  document.getElementById('cardioBg').classList.remove('open');
+  document.getElementById('cardioDrawer').classList.remove('open');
 }
 
 // ── Remote work ──────────────────────────────────────────────
@@ -2360,8 +2579,9 @@ render();
 // ── Event listeners ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Activity cards
+  // Activity cards (Tennis handled separately via drawer)
   ACTIVITY_HABITS.forEach(name => {
+    if (name === 'Tennis') return;
     const card = document.getElementById('card' + name.charAt(0).toUpperCase() + name.slice(1));
     card.addEventListener('click', e => {
       const wasDone = !!state.weekly[name];
@@ -2376,8 +2596,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Cardio
-  document.getElementById('cardCardio').addEventListener('click', openCardioModal);
+  // Tennis — open drawer instead of direct toggle
+  document.getElementById('cardTennis').addEventListener('click', openTennisDrawer);
+  document.getElementById('tennisBg').addEventListener('click', closeTennisDrawer);
+  document.getElementById('tennisCancelBtn').addEventListener('click', closeTennisDrawer);
+  document.getElementById('tennisDoneBtn').addEventListener('click', e => {
+    const wasDone = !!state.weekly['Tennis'];
+    state.weekly['Tennis'] = !wasDone;
+    saveState();
+    syncActivityCards();
+    updateProgress();
+    if (!wasDone) burst(e);
+    closeTennisDrawer();
+  });
+  // Tennis in-drawer tabs
+  document.querySelectorAll('#tennisDrawer .drawer-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      document.querySelectorAll('#tennisDrawer .drawer-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('#tennisDrawer .drawer-tab-panel').forEach(p => p.classList.toggle('active', p.id === target));
+    });
+  });
+
+  // Cardio — open drawer instead of modal
+  document.getElementById('cardCardio').addEventListener('click', openCardioDrawer);
+  document.getElementById('cardioBg').addEventListener('click', () => {
+    // backdrop tap = cancel (revert)
+    state.zone2 = cardioDrawerOrigZone2;
+    syncCardioCard(); updateProgress();
+    closeCardioDrawer();
+  });
+  document.getElementById('cardioDrawerMinus').addEventListener('click', () => {
+    state.zone2 = Math.max(0, state.zone2 - 15);
+    syncCardioDrawerStepper(); syncCardioCard(); updateProgress();
+  });
+  document.getElementById('cardioDrawerPlus').addEventListener('click', e => {
+    const wasDone = state.zone2 >= ZONE2_GOAL;
+    state.zone2 += 15;
+    syncCardioDrawerStepper(); syncCardioCard(); updateProgress();
+    if (!wasDone && state.zone2 >= ZONE2_GOAL) burst(e);
+  });
+  document.getElementById('cardioDrawerCancelBtn').addEventListener('click', () => {
+    state.zone2 = cardioDrawerOrigZone2;
+    syncCardioCard(); updateProgress();
+    closeCardioDrawer();
+  });
+  document.getElementById('cardioDrawerSaveBtn').addEventListener('click', () => {
+    saveState();
+    closeCardioDrawer();
+  });
+  // Cardio in-drawer tabs
+  document.querySelectorAll('#cardioDrawer .drawer-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      document.querySelectorAll('#cardioDrawer .drawer-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('#cardioDrawer .drawer-tab-panel').forEach(p => p.classList.toggle('active', p.id === target));
+    });
+  });
   document.getElementById('cardioModalBg').addEventListener('click', closeCardioModal);
   document.getElementById('cardioMinus').addEventListener('click', e => {
     state = ensureFreshKeys(state);
