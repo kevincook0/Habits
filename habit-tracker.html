@@ -1168,6 +1168,7 @@
         <span class="cafe-pill" style="cursor:default">Concert</span>
         <span class="cafe-pill" style="cursor:default">Café &amp; chill</span>
         <span class="cafe-pill" style="cursor:default">Sunday pro tour</span>
+        <span class="cafe-pill" style="cursor:default">All Trails Hike</span>
       </div>
     </div>
     <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
@@ -1702,24 +1703,24 @@ function renderSymptoms() {
           `<button class="scale-btn${current === n ? ' selected' : ''}" data-val="${n}">${n}</button>`
         ).join('')}
       </div>
-      ${isNeck ? `<input class="sym-culprit-input" placeholder="Suspected culprit (optional)" value="${culprit}" ${historyMode ? 'disabled' : ''}>` : ''}
+      ${isNeck ? `<input class="sym-culprit-input" placeholder="Suspected culprit (optional)" value="${culprit}">` : ''}
     `;
-    if (!historyMode) {
-      row.querySelectorAll('.scale-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const val = Number(btn.dataset.val);
-          state.daily[key] = (state.daily[key] === val) ? null : val;
-          saveState();
-          renderSymptoms();
-          syncSymDot();
-        });
+    row.querySelectorAll('.scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = Number(btn.dataset.val);
+        state.daily[key] = (state.daily[key] === val) ? null : val;
+        saveSymptoms();
+        renderSymptoms();
+        syncSymDot();
+        renderSymptomChart();
       });
-      if (isNeck) {
-        row.querySelector('.sym-culprit-input').addEventListener('change', e => {
-          state.daily['sym_neck_culprit'] = e.target.value.trim() || null;
-          saveState();
-        });
-      }
+    });
+    if (isNeck) {
+      row.querySelector('.sym-culprit-input').addEventListener('change', e => {
+        state.daily['sym_neck_culprit'] = e.target.value.trim() || null;
+        saveSymptoms();
+        renderSymptomChart();
+      });
     }
     container.appendChild(row);
   });
@@ -1733,17 +1734,32 @@ function renderSymptoms() {
     row.className = 'sym-input-row';
     row.innerHTML = `
       <span class="sym-input-label">${label}</span>
-      <input class="sym-input" id="${id}" type="number" min="${min}" max="${max}" placeholder="—" ${historyMode ? 'disabled' : ''} value="${state.daily[key] ?? ''}">
+      <input class="sym-input" id="${id}" type="number" min="${min}" max="${max}" placeholder="—" value="${state.daily[key] ?? ''}">
       <span class="sym-input-unit">${unit}</span>
     `;
-    if (!historyMode) {
-      row.querySelector('input').addEventListener('change', e => {
-        state.daily[key] = e.target.value === '' ? null : Number(e.target.value);
-        saveState();
-      });
-    }
+    row.querySelector('input').addEventListener('change', e => {
+      state.daily[key] = e.target.value === '' ? null : Number(e.target.value);
+      saveSymptoms();
+    });
     container.appendChild(row);
   });
+}
+
+function saveSymptoms() {
+  // Symptoms can always be edited, even for past days
+  if (!historyMode) {
+    saveState();
+    return;
+  }
+  // In history mode: write directly to API using the viewed day's keys
+  apiWrite({
+    dayKey:      state.dayKey,
+    weekKey:     state.weekKey,
+    daily:       state.daily,
+    weekly:      state.weekly,
+    zone2:       state.zone2,
+    socialPlans: state.socialPlans,
+  }).catch(err => console.warn('symptom save failed', err));
 }
 
 function syncSymDot() {
