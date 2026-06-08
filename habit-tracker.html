@@ -66,10 +66,8 @@
     z-index: 50;
     background: var(--bg);
     padding: calc(var(--safe-top) + 16px) 16px 14px;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
+    /* daily-progress-bar sits absolutely at bottom — no separate border needed */
   }
-  .sticky-bar.scrolled { border-bottom-color: var(--border); }
 
   .bar-top {
     display: flex;
@@ -115,22 +113,44 @@
   .nav-btn:not(:disabled):active { background: var(--border); }
   .nav-btn:disabled { opacity: 0.25; cursor: default; }
 
-  /* ── Weekly progress track ── */
-  .progress-track {
-    width: 100%;
-    height: 4px;
+  /* ── Daily progress bar — sits flush at bottom of sticky header ── */
+  .daily-progress-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
     background: var(--border);
-    border-radius: 99px;
-    position: relative;
-    margin-bottom: 14px;
     overflow: hidden;
   }
   .progress-fill {
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    background: var(--green);
-    border-radius: 99px;
+    background: var(--accent);
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Weekly block — unified card ── */
+  .weekly-block {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .weekly-block .activity-row {
+    padding: 10px 10px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .weekly-block .act-card {
+    border: none;
+    box-shadow: none;
+  }
+  .weekly-block .list-row {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 0;
+    border-top: 1px solid var(--border);
   }
 
   /* ── Activity cards ── */
@@ -1018,6 +1038,50 @@
     padding: 10px 0; display: block; width: 100%;
     text-align: left; border-top: 1px solid var(--border);
   }
+
+  /* ── Affirmations tab ── */
+  .affirmation-section {
+    margin: 12px 16px 0;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    background: var(--white);
+  }
+  .affirmation-heading {
+    padding: 11px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--grey);
+    border-bottom: 1px solid var(--border);
+  }
+  .affirmation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .affirmation-item:last-child { border-bottom: none; }
+  .affirmation-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--dim);
+    min-width: 14px;
+    text-align: right;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .affirmation-text {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.45;
+    flex: 1;
+  }
 </style>
 </head>
 <body>
@@ -1032,11 +1096,8 @@
       </div>
     </div>
 
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill" style="width:0%"></div>
-    </div>
-
-    <!-- Activity cards -->
+    <!-- Unified weekly block -->
+    <div class="weekly-block">
     <div class="activity-row">
 
       <div class="act-card" id="cardPush" data-habit="Push">
@@ -1118,6 +1179,12 @@
         <div class="list-sub" id="socialSub">What's the plan this weekend?</div>
       </div>
     </div>
+    </div><!-- /weekly-block -->
+
+    <!-- Daily progress bar — full-width separator -->
+    <div class="daily-progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
 
   </div><!-- /sticky-bar -->
 
@@ -1125,6 +1192,7 @@
   <div class="section-tabs">
     <button class="section-tab active" id="tabHabits">Habits</button>
     <button class="section-tab" id="tabSymptoms">Symptoms<span class="tab-dot" id="symDot"></span></button>
+    <button class="section-tab" id="tabAffirmations">Affirmations</button>
   </div>
 
   <!-- Tab: Habits -->
@@ -1133,6 +1201,54 @@
       <div class="habit-list" id="dailyList"></div>
     </div>
     <div class="reset-info" id="resetInfo"></div>
+  </div>
+
+  <!-- Tab: Affirmations -->
+  <div class="tab-panel" id="panelAffirmations">
+
+    <div class="affirmation-section">
+      <div class="affirmation-heading">Mindset</div>
+      <div class="affirmation-item"><span class="affirmation-num">1</span><span class="affirmation-text">I will be kind to myself and to others.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">2</span><span class="affirmation-text">I make decisions with an abundance mindset.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">3</span><span class="affirmation-text">I will have the courage to grow up and fulfill my potential.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">4</span><span class="affirmation-text">I choose short-term discomfort over regret.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">5</span><span class="affirmation-text">I don't wait to feel ready. I just do it.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">6</span><span class="affirmation-text">I take the shot even if I'm likely to miss.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">7</span><span class="affirmation-text">I punch above my weight class.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">8</span><span class="affirmation-text">I will be brave for 5 minutes longer than everyone else.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">9</span><span class="affirmation-text">I prioritize living the life I want to live over the fear of public failure (~1% of people).</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">10</span><span class="affirmation-text">I do what I want without fear of judgement — I dance like no one's watching.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">11</span><span class="affirmation-text">The hard days aren't setbacks, they're the forge.</span></div>
+    </div>
+
+    <div class="affirmation-section">
+      <div class="affirmation-heading">Charisma</div>
+      <div class="affirmation-item"><span class="affirmation-num">1</span><span class="affirmation-text">I will prepare to be noticed — believe you belong.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">2</span><span class="affirmation-text">I will treat strangers like old friends — assume familiarity.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">3</span><span class="affirmation-text">I will have good energy — being enthusiastic is worth 25 IQ points.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">4</span><span class="affirmation-text">I will engage in playful banter and find levity in every situation.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">5</span><span class="affirmation-text">I will be positive, protective, and light hearted.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">6</span><span class="affirmation-text">I will use touch to build trust and camaraderie.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">7</span><span class="affirmation-text">I will speak with a smile to make others smile.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">8</span><span class="affirmation-text">I will use modulation to appear energetic.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">9</span><span class="affirmation-text">I will act confident so that others can also feel confident.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">10</span><span class="affirmation-text">I will earn respect by speaking confidently and conducting myself well.</span></div>
+    </div>
+
+    <div class="affirmation-section">
+      <div class="affirmation-heading">Sport</div>
+      <div class="affirmation-item"><span class="affirmation-num">1</span><span class="affirmation-text">I visualize myself as worthy and successful and give myself permission to win.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">2</span><span class="affirmation-text">I see competition as a challenge to rise to, not a threat to back down from.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">3</span><span class="affirmation-text">I will concentrate on what I can control and focus on having quality "at-bats."</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">4</span><span class="affirmation-text">I play to win, not to avoid losing.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">5</span><span class="affirmation-text">I am prepared. My body knows what to do.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">6</span><span class="affirmation-text">I will get myself to the right emotional state and stress/arousal level.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">7</span><span class="affirmation-text">I breathe in energy, I breathe out stress and negativity.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">8</span><span class="affirmation-text">If I start to think negative thoughts, I try to think less.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">9</span><span class="affirmation-text">I am a champion. I move on fast.</span></div>
+      <div class="affirmation-item"><span class="affirmation-num">10</span><span class="affirmation-text">I am brave until the last point.</span></div>
+    </div>
+
   </div>
 
   <!-- Tab: Symptoms -->
@@ -1680,14 +1796,16 @@ function render() {
     : `daily resets in ${timeUntilReset()} · weekly resets monday 3am`;
 }
 
-// ── Weekly progress ──────────────────────────────────────────
+// ── Daily progress ────────────────────────────────────────────
 function updateProgress() {
-  const actDone   = ACTIVITY_HABITS.filter(h => !!state.weekly[h]).length;
-  const cardioDone = state.zone2 >= ZONE2_GOAL ? 1 : 0;
-  const remoteDone = state.weekly['Work remote']?.done ? 1 : 0;
-  const weekendDone = (state.socialPlans?.sat?.trim() && state.socialPlans?.sun?.trim()) ? 1 : 0;
-  const total = actDone + cardioDone + remoteDone + weekendDone;
-  document.getElementById('progressFill').style.width = (total / WEEKLY_TOTAL * 100) + '%';
+  const habitsDone  = DAILY_HABITS.filter(h => !!state.daily[h]).length;
+  const curveDone   = (typeof state.daily['Curve correction'] === 'number'
+                       && state.daily['Curve correction'] >= HALO_GOAL) ? 1 : 0;
+  const journalDone = (state.daily['daily_grateful'] ? 1 : 0)
+                    + (state.daily['daily_excited']  ? 1 : 0);
+  const total = DAILY_HABITS.length + 1 + 2; // 14 habits + curve correction + 2 journals = 17
+  const done  = habitsDone + curveDone + journalDone;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
 }
 
 // ── Activity cards ───────────────────────────────────────────
@@ -2366,17 +2484,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('navFwd').addEventListener('click',  () => navigateTo(viewOffset - 1));
 
   // ── Section tabs ─────────────────────────────────────────────
-  document.getElementById('tabHabits').addEventListener('click', () => {
-    document.getElementById('tabHabits').classList.add('active');
-    document.getElementById('tabSymptoms').classList.remove('active');
-    document.getElementById('panelHabits').classList.add('active');
-    document.getElementById('panelSymptoms').classList.remove('active');
-  });
-  document.getElementById('tabSymptoms').addEventListener('click', () => {
-    document.getElementById('tabSymptoms').classList.add('active');
-    document.getElementById('tabHabits').classList.remove('active');
-    document.getElementById('panelSymptoms').classList.add('active');
-    document.getElementById('panelHabits').classList.remove('active');
+  const TABS = [
+    { tab: 'tabHabits',       panel: 'panelHabits'       },
+    { tab: 'tabSymptoms',     panel: 'panelSymptoms'     },
+    { tab: 'tabAffirmations', panel: 'panelAffirmations' },
+  ];
+  TABS.forEach(({ tab, panel }) => {
+    document.getElementById(tab).addEventListener('click', () => {
+      TABS.forEach(t => {
+        document.getElementById(t.tab).classList.toggle('active',   t.tab   === tab);
+        document.getElementById(t.panel).classList.toggle('active', t.panel === panel);
+      });
+    });
   });
 
 
