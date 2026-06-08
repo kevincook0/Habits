@@ -970,36 +970,54 @@
   .sym-culprit-input::placeholder { color: var(--dim); }
   .sym-culprit-input:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
-  /* ── Text-input habit rows ── */
-  .habit-text-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .habit-text-row:last-child { border-bottom: none; }
-  .habit-text-label {
-    font-size: 15px;
-    font-weight: 400;
-    color: var(--muted);
-    white-space: nowrap;
+  /* ── Journal rows + drawer history ── */
+  .habit-journal-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
     flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
   }
-  .habit-text-input {
+  .habit-journal-icon svg {
+    width: 11px; height: 11px;
+    stroke: var(--muted); fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .habit-journal-preview {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.3;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 230px;
+  }
+  .journal-history { margin-top: 14px; }
+  .journal-history-heading {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .journal-entry {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 9px 0;
+    border-top: 1px solid var(--border);
+  }
+  .journal-entry-date {
+    font-size: 11px; color: var(--dim);
+    font-weight: 500; letter-spacing: 0.03em;
+  }
+  .journal-entry-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+  .journal-entry-empty { font-size: 14px; color: var(--border); }
+  .journal-show-more {
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    color: var(--text);
-    background: transparent;
-    border: none;
-    outline: none;
-    flex: 1;
-    min-width: 0;
-    text-align: right;
-    -webkit-font-smoothing: antialiased;
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    background: none; border: none; cursor: pointer;
+    padding: 10px 0; display: block; width: 100%;
+    text-align: left; border-top: 1px solid var(--border);
   }
-  .habit-text-input::placeholder { color: var(--border); }
 </style>
 </head>
 <body>
@@ -1220,6 +1238,36 @@
       <button class="btn btn-secondary" id="socialClearBtn">Clear all</button>
       <button class="btn btn-primary"   id="socialSaveBtn">Save</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Grateful for drawer ── -->
+<div class="drawer-bg" id="gratefulBg"></div>
+<div class="drawer" id="gratefulDrawer">
+  <div class="drawer-inner" style="overflow-y:auto;max-height:90dvh">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Grateful for</div>
+    <textarea class="drawer-textarea" id="gratefulTa" placeholder="What are you grateful for today?" style="height:80px;margin-bottom:10px"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="gratefulCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="gratefulSaveBtn">Save</button>
+    </div>
+    <div class="journal-history" id="gratefulHistory"></div>
+  </div>
+</div>
+
+<!-- ── Excited about drawer ── -->
+<div class="drawer-bg" id="excitedBg"></div>
+<div class="drawer" id="excitedDrawer">
+  <div class="drawer-inner" style="overflow-y:auto;max-height:90dvh">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading">Excited about</div>
+    <textarea class="drawer-textarea" id="excitedTa" placeholder="What are you excited about?" style="height:80px;margin-bottom:10px"></textarea>
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="excitedCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="excitedSaveBtn">Save</button>
+    </div>
+    <div class="journal-history" id="excitedHistory"></div>
   </div>
 </div>
 
@@ -1886,8 +1934,8 @@ function renderDaily() {
     }));
     if (name === 'Minoxidil (AM)') list.appendChild(makeHaloItem());
   });
-  list.appendChild(makeTextInputItem('Grateful for', 'daily_grateful'));
-  list.appendChild(makeTextInputItem('Excited about', 'daily_excited'));
+  list.appendChild(makeTextInputItem('Grateful for',  'daily_grateful', 'gratefulDrawer', 'gratefulBg'));
+  list.appendChild(makeTextInputItem('Excited about', 'daily_excited',  'excitedDrawer',  'excitedBg'));
 }
 
 function makeCheckItem(name, checked, onClick) {
@@ -2008,22 +2056,100 @@ function makeHaloItem() {
   return div;
 }
 
-// ── Text-input habit rows ─────────────────────────────────────
-function makeTextInputItem(label, key) {
+// ── Journal rows (Grateful / Excited) ────────────────────────
+const JOURNAL_SHORT_DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const JOURNAL_SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function makeTextInputItem(label, key, drawerId, bgId) {
   const div = document.createElement('div');
-  div.className = 'habit-text-row';
-  const val = state.daily[key] || '';
+  div.className = 'habit-item';
+  div.style.cursor = 'pointer';
+  const val = state.daily[key] || null;
   div.innerHTML = `
-    <span class="habit-text-label">${label}</span>
-    <input class="habit-text-input" type="text" placeholder="…" value="${val.replace(/"/g, '&quot;')}">
+    <div class="habit-journal-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+    </div>
+    <div class="habit-name-wrap" style="flex-direction:column;align-items:flex-start;gap:0">
+      <span class="habit-name">${label}</span>
+      ${val ? `<span class="habit-journal-preview">${val}</span>` : ''}
+    </div>
+    <svg width="6" height="11" viewBox="0 0 6 11" fill="none" style="flex-shrink:0;margin-left:4px">
+      <polyline points="1,1 5,5.5 1,10" stroke="var(--dim)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   `;
-  const input = div.querySelector('input');
-  input.addEventListener('change', e => {
-    state.daily[key] = e.target.value.trim() || null;
-    if (!historyMode) saveState();
-    else saveSymptoms(); // writes directly via apiWrite even in history mode
-  });
+  div.addEventListener('click', () => openJournalDrawer(key, drawerId, bgId));
   return div;
+}
+
+function renderJournalHistory(historyId, key, showAll) {
+  const container = document.getElementById(historyId);
+  container.innerHTML = '';
+  const limit = showAll ? 14 : 5;
+  const entries = [];
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  for (let i = 0; i < 14; i++) {
+    const dayKey = localDateStr(d);
+    entries.push({ date: new Date(d), val: habitHistory[dayKey]?.[key] || null });
+    d.setDate(d.getDate() - 1);
+  }
+  const toShow = entries.slice(0, limit);
+
+  const heading = document.createElement('div');
+  heading.className = 'journal-history-heading';
+  heading.textContent = 'Previous entries';
+  container.appendChild(heading);
+
+  toShow.forEach(({ date, val }) => {
+    const entry = document.createElement('div');
+    entry.className = 'journal-entry';
+    const dateStr = `${JOURNAL_SHORT_DAYS[date.getDay()]}, ${JOURNAL_SHORT_MONTHS[date.getMonth()]} ${date.getDate()}`;
+    entry.innerHTML = `
+      <span class="journal-entry-date">${dateStr}</span>
+      ${val
+        ? `<span class="journal-entry-text">${val}</span>`
+        : `<span class="journal-entry-empty">—</span>`}
+    `;
+    container.appendChild(entry);
+  });
+
+  if (!showAll) {
+    const btn = document.createElement('button');
+    btn.className = 'journal-show-more';
+    btn.textContent = 'Show more';
+    btn.addEventListener('click', () => renderJournalHistory(historyId, key, true));
+    container.appendChild(btn);
+  }
+}
+
+function openJournalDrawer(key, drawerId, bgId) {
+  const taId   = drawerId.replace('Drawer', 'Ta');
+  const histId = drawerId.replace('Drawer', 'History');
+  document.getElementById(taId).value = state.daily[key] || '';
+  renderJournalHistory(histId, key, false);
+  document.getElementById(bgId).classList.add('open');
+  document.getElementById(drawerId).classList.add('open');
+  attachKeyboard(drawerId);
+  setTimeout(() => document.getElementById(taId).focus(), 280);
+}
+
+function closeJournalDrawer(drawerId, bgId) {
+  detachKeyboard(drawerId);
+  document.getElementById(drawerId).classList.remove('open');
+  document.getElementById(bgId).classList.remove('open');
+}
+
+function saveJournalEntry(key, drawerId, bgId) {
+  const taId = drawerId.replace('Drawer', 'Ta');
+  const val  = document.getElementById(taId).value.trim();
+  state.daily[key] = val || null;
+  if (!historyMode) saveState();
+  else saveSymptoms();
+  render();
+  closeJournalDrawer(drawerId, bgId);
 }
 
 // ── Confetti burst ───────────────────────────────────────────
@@ -2196,7 +2322,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProgress();
   });
 
-  // History nav
+  // Journal drawers
+  document.getElementById('gratefulBg').addEventListener('click',      () => closeJournalDrawer('gratefulDrawer', 'gratefulBg'));
+  document.getElementById('gratefulCancelBtn').addEventListener('click', () => closeJournalDrawer('gratefulDrawer', 'gratefulBg'));
+  document.getElementById('gratefulSaveBtn').addEventListener('click',   () => saveJournalEntry('daily_grateful', 'gratefulDrawer', 'gratefulBg'));
+  document.getElementById('excitedBg').addEventListener('click',       () => closeJournalDrawer('excitedDrawer', 'excitedBg'));
+  document.getElementById('excitedCancelBtn').addEventListener('click',  () => closeJournalDrawer('excitedDrawer', 'excitedBg'));
+  document.getElementById('excitedSaveBtn').addEventListener('click',    () => saveJournalEntry('daily_excited', 'excitedDrawer', 'excitedBg'));
+
   // ── Flush pending save on page unload ────────────────────────
   window.addEventListener('beforeunload', () => {
     if (!saveTimer) return;
