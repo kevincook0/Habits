@@ -969,6 +969,37 @@
   }
   .sym-culprit-input::placeholder { color: var(--dim); }
   .sym-culprit-input:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+  /* ── Text-input habit rows ── */
+  .habit-text-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .habit-text-row:last-child { border-bottom: none; }
+  .habit-text-label {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .habit-text-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+    text-align: right;
+    -webkit-font-smoothing: antialiased;
+  }
+  .habit-text-input::placeholder { color: var(--border); }
 </style>
 </head>
 <body>
@@ -1855,6 +1886,8 @@ function renderDaily() {
     }));
     if (name === 'Minoxidil (AM)') list.appendChild(makeHaloItem());
   });
+  list.appendChild(makeTextInputItem('Grateful for', 'daily_grateful'));
+  list.appendChild(makeTextInputItem('Excited about', 'daily_excited'));
 }
 
 function makeCheckItem(name, checked, onClick) {
@@ -1972,6 +2005,24 @@ function makeHaloItem() {
       render();
     });
   }
+  return div;
+}
+
+// ── Text-input habit rows ─────────────────────────────────────
+function makeTextInputItem(label, key) {
+  const div = document.createElement('div');
+  div.className = 'habit-text-row';
+  const val = state.daily[key] || '';
+  div.innerHTML = `
+    <span class="habit-text-label">${label}</span>
+    <input class="habit-text-input" type="text" placeholder="…" value="${val.replace(/"/g, '&quot;')}">
+  `;
+  const input = div.querySelector('input');
+  input.addEventListener('change', e => {
+    state.daily[key] = e.target.value.trim() || null;
+    if (!historyMode) saveState();
+    else saveSymptoms(); // writes directly via apiWrite even in history mode
+  });
   return div;
 }
 
