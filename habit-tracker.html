@@ -1324,32 +1324,46 @@
     <div class="drawer-pip"></div>
     <div class="drawer-heading">Social plans</div>
     <div class="cafe-pills-wrap">
-      <div class="cafe-pills">
-        <span class="cafe-pill" style="cursor:default">Mellow Monday</span>
-        <span class="cafe-pill" style="cursor:default">Padel lessons</span>
-        <span class="cafe-pill" style="cursor:default">Tennis</span>
-        <span class="cafe-pill" style="cursor:default">Clay shooting</span>
-        <span class="cafe-pill" style="cursor:default">Watch sports at bar</span>
-        <span class="cafe-pill" style="cursor:default">Concert</span>
-        <span class="cafe-pill" style="cursor:default">Café &amp; chill</span>
-        <span class="cafe-pill" style="cursor:default">Sunday pro tour</span>
-        <span class="cafe-pill" style="cursor:default">All Trails Hike</span>
+      <div class="cafe-pills" id="socialPills">
+        <button class="cafe-pill">Mellow Monday</button>
+        <button class="cafe-pill">Padel lessons</button>
+        <button class="cafe-pill">Tennis</button>
+        <button class="cafe-pill">Clay shooting</button>
+        <button class="cafe-pill">Watch sports at bar</button>
+        <button class="cafe-pill">Concert</button>
+        <button class="cafe-pill">Café &amp; chill</button>
+        <button class="cafe-pill">Sunday pro tour</button>
+        <button class="cafe-pill">All Trails Hike</button>
       </div>
     </div>
-    <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
-    <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Tuesday</div>
-    <textarea class="drawer-textarea" id="planTue" placeholder="Plans for Tuesday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Wednesday</div>
-    <textarea class="drawer-textarea" id="planWed" placeholder="Plans for Wednesday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Thursday</div>
-    <textarea class="drawer-textarea" id="planThu" placeholder="Plans for Thursday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Friday</div>
-    <textarea class="drawer-textarea" id="planFri" placeholder="Plans for Friday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Saturday</div>
-    <textarea class="drawer-textarea" id="planSat" placeholder="Plans for Saturday…" style="height:52px;margin-bottom:10px"></textarea>
-    <div class="drawer-heading" style="margin-bottom:6px">Sunday</div>
-    <textarea class="drawer-textarea" id="planSun" placeholder="Plans for Sunday…" style="height:52px;margin-bottom:10px"></textarea>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
+      <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Tuesday</div>
+      <textarea class="drawer-textarea" id="planTue" placeholder="Plans for Tuesday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Wednesday</div>
+      <textarea class="drawer-textarea" id="planWed" placeholder="Plans for Wednesday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Thursday</div>
+      <textarea class="drawer-textarea" id="planThu" placeholder="Plans for Thursday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Friday</div>
+      <textarea class="drawer-textarea" id="planFri" placeholder="Plans for Friday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Saturday</div>
+      <textarea class="drawer-textarea" id="planSat" placeholder="Plans for Saturday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
+    <div class="social-day-row">
+      <div class="drawer-heading" style="margin-bottom:6px">Sunday</div>
+      <textarea class="drawer-textarea" id="planSun" placeholder="Plans for Sunday…" style="height:52px;margin-bottom:10px"></textarea>
+    </div>
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="socialClearBtn">Clear all</button>
       <button class="btn btn-primary"   id="socialSaveBtn">Save</button>
@@ -2013,12 +2027,15 @@ function openSocialDrawer() {
   document.getElementById('planFri').value = sp?.fri || '';
   document.getElementById('planSat').value = sp?.sat || '';
   document.getElementById('planSun').value = sp?.sun || '';
+  // Ensure all rows are visible on open
+  document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   document.getElementById('socialBg').classList.add('open');
   document.getElementById('socialDrawer').classList.add('open');
   attachKeyboard('socialDrawer');
-  setTimeout(() => document.getElementById('planSat').focus(), 280);
 }
 function closeSocialDrawer() {
+  // Reset collapsed state before closing
+  document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   detachKeyboard('socialDrawer');
   document.getElementById('socialBg').classList.remove('open');
   document.getElementById('socialDrawer').classList.remove('open');
@@ -2407,10 +2424,47 @@ document.addEventListener('DOMContentLoaded', () => {
     closeRemoteDrawer();
   });
 
-  // Cafe pill → populate Where field
-  document.querySelectorAll('.cafe-pill').forEach(pill => {
+  // Remote work cafe pills → populate Where field
+  document.querySelectorAll('#remoteDrawer .cafe-pill').forEach(pill => {
     pill.addEventListener('click', () => {
-      document.getElementById('whereTa').value = pill.textContent;
+      document.getElementById('whereTa').value = pill.textContent.trim();
+    });
+  });
+
+  // Social plan pills → fill whichever day is focused
+  // Use mousedown/touchstart so blur hasn't fired yet when the pill is tapped
+  let focusedSocialTa = null;
+  document.querySelectorAll('#socialDrawer .cafe-pill').forEach(pill => {
+    const fill = e => {
+      e.preventDefault(); // keep focus on the textarea
+      if (focusedSocialTa) {
+        focusedSocialTa.value = pill.textContent.trim();
+        focusedSocialTa.focus();
+      }
+    };
+    pill.addEventListener('mousedown',  fill);
+    pill.addEventListener('touchstart', fill, { passive: false });
+  });
+
+  // Social textareas → collapse other days on focus, expand on blur
+  document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => {
+    ta.addEventListener('focus', () => {
+      focusedSocialTa = ta;
+      document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
+        row.style.display = row.querySelector('textarea') === ta ? '' : 'none';
+      });
+    });
+    ta.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (!document.getElementById('socialDrawer').classList.contains('open')) return;
+        // Don't expand if focus moved to another social textarea
+        const active = document.activeElement;
+        if (active && active.tagName === 'TEXTAREA' && active.closest('#socialDrawer')) return;
+        focusedSocialTa = null;
+        document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
+          row.style.display = '';
+        });
+      }, 50);
     });
   });
 
