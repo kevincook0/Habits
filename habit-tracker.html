@@ -778,8 +778,10 @@
   }
   .cafe-pills-wrap::-webkit-scrollbar { display: none; }
   .cafe-pills {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: nowrap;
     gap: 7px;
+    width: max-content; /* intrinsic width — wider than the wrap → triggers scroll */
     padding-bottom: 2px;
   }
   .cafe-pill {
@@ -793,6 +795,7 @@
     padding: 6px 14px;
     cursor: pointer;
     white-space: nowrap;
+    flex-shrink: 0; /* don't let pills compress — they must overflow the wrap */
     -webkit-tap-highlight-color: transparent;
     transition: background 0.12s, border-color 0.12s;
   }
@@ -1064,6 +1067,7 @@
     top: 0;
     border-radius: 0;
     max-height: none; /* override routine-drawer's 92dvh cap — fills via top:0 + bottom:0 */
+    overflow: visible; /* override overflow:hidden — iOS Safari blocks child scroll containers inside flex overflow:hidden */
   }
   #socialDrawer .routine-drawer-header {
     padding-top: calc(var(--safe-top) + 12px);
