@@ -1062,18 +1062,56 @@
     background: var(--white);
   }
 
-  /* ── Tennis + Cardio — full-screen variant ── */
-  #tennisDrawer,
-  #cardioDrawer {
+  /* ── Full-screen routine drawers (Tennis, Cardio, Push, Pull, Core) ── */
+  .routine-drawer--fullscreen {
     top: 0;
     border-radius: 0;
     max-height: none;
   }
-  #tennisDrawer .routine-drawer-header,
-  #cardioDrawer .routine-drawer-header {
+  .routine-drawer--fullscreen .routine-drawer-header {
     padding-top: calc(var(--safe-top) + 12px);
     border-bottom: 1px solid var(--border);
     padding-bottom: 12px;
+  }
+
+  /* ── Workout log inputs (weight + reps per exercise) ── */
+  .workout-log-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .workout-log-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    flex: 1;
+  }
+  .workout-log-input {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    text-align: right;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+  .workout-log-input::-webkit-outer-spin-button,
+  .workout-log-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .workout-log-input::placeholder { color: var(--dim); }
+  .workout-log-unit {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    flex-shrink: 0;
   }
 
   /* ── Social plans — full-screen variant ── */
@@ -1519,7 +1557,7 @@
 
 <!-- ── Tennis drawer ── -->
 <div class="drawer-bg" id="tennisBg"></div>
-<div class="drawer routine-drawer" id="tennisDrawer">
+<div class="drawer routine-drawer routine-drawer--fullscreen" id="tennisDrawer">
   <div class="routine-drawer-header">
     <div class="drawer-pip"></div>
     <div class="drawer-heading" style="margin-bottom:0">Tennis</div>
@@ -1586,7 +1624,7 @@
 
 <!-- ── Cardio drawer ── -->
 <div class="drawer-bg" id="cardioBg"></div>
-<div class="drawer routine-drawer" id="cardioDrawer">
+<div class="drawer routine-drawer routine-drawer--fullscreen" id="cardioDrawer">
   <div class="routine-drawer-header">
     <div class="drawer-pip"></div>
     <div class="drawer-heading" style="margin-bottom:0">Cycling</div>
@@ -1630,6 +1668,306 @@
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="cardioDrawerCancelBtn">Cancel</button>
       <button class="btn btn-primary"   id="cardioDrawerSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Push drawer ── -->
+<div class="drawer-bg" id="pushBg"></div>
+<div class="drawer routine-drawer routine-drawer--fullscreen" id="pushDrawer">
+  <div class="routine-drawer-header">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading" style="margin-bottom:0">Push</div>
+  </div>
+  <div class="routine-drawer-body">
+    <div class="routine-list">
+
+      <div class="routine-item">
+        <span class="routine-num">1</span>
+        <div class="routine-info">
+          <div class="routine-name">Bench press</div>
+          <div class="routine-detail">3 × 5–8</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">2</span>
+        <div class="routine-info">
+          <div class="routine-name">Overhead press</div>
+          <div class="routine-detail">3 × 8–10</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">3</span>
+        <div class="routine-info">
+          <div class="routine-name">Incline DB press</div>
+          <div class="routine-detail">3 × 10–12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">4</span>
+        <div class="routine-info">
+          <div class="routine-name">Lateral raise</div>
+          <div class="routine-detail">3 × 15</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">5</span>
+        <div class="routine-info">
+          <div class="routine-name">Tricep pushdown</div>
+          <div class="routine-detail">3 × 12–15</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item" style="border-bottom:none">
+        <span class="routine-num">6</span>
+        <div class="routine-info">
+          <div class="routine-name">Overhead tricep extension</div>
+          <div class="routine-detail">3 × 12–15</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="routine-drawer-footer">
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="pushCancelBtn">Cancel</button>
+      <button class="btn btn-primary"   id="pushDoneBtn">Mark as done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Pull drawer ── -->
+<div class="drawer-bg" id="pullBg"></div>
+<div class="drawer routine-drawer routine-drawer--fullscreen" id="pullDrawer">
+  <div class="routine-drawer-header">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading" style="margin-bottom:0">Pull</div>
+  </div>
+  <div class="routine-drawer-body">
+    <div class="routine-list">
+
+      <div class="routine-item">
+        <span class="routine-num">1</span>
+        <div class="routine-info">
+          <div class="routine-name">Dead hang</div>
+          <div class="routine-detail">2 × 30 sec</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">sec</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">2</span>
+        <div class="routine-info">
+          <div class="routine-name">Glute bridge</div>
+          <div class="routine-detail">2 × 12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">3</span>
+        <div class="routine-info">
+          <div class="routine-name">Pull-up</div>
+          <div class="routine-detail">3 × 4–8</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">4</span>
+        <div class="routine-info">
+          <div class="routine-name">Seated row</div>
+          <div class="routine-detail">3 × 8–12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">5</span>
+        <div class="routine-info">
+          <div class="routine-name">DB curl</div>
+          <div class="routine-detail">3 × 10–12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">6</span>
+        <div class="routine-info">
+          <div class="routine-name">Incline DB curl</div>
+          <div class="routine-detail">3 × 10–12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">7</span>
+        <div class="routine-info">
+          <div class="routine-name">Romanian deadlift</div>
+          <div class="routine-detail">3 × 8–10</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">8</span>
+        <div class="routine-info">
+          <div class="routine-name">Elevated reverse lunge</div>
+          <div class="routine-detail">3 × 10, each side</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item" style="border-bottom:none">
+        <span class="routine-num">9</span>
+        <div class="routine-info">
+          <div class="routine-name">Sumo dumbbell deadlift</div>
+          <div class="routine-detail">3 × 10–12</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="routine-drawer-footer">
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="pullCancelBtn">Cancel</button>
+      <button class="btn btn-primary"   id="pullDoneBtn">Mark as done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Core drawer ── -->
+<div class="drawer-bg" id="coreBg"></div>
+<div class="drawer routine-drawer routine-drawer--fullscreen" id="coreDrawer">
+  <div class="routine-drawer-header">
+    <div class="drawer-pip"></div>
+    <div class="drawer-heading" style="margin-bottom:0">Core</div>
+  </div>
+  <div class="routine-drawer-body">
+    <div class="routine-list">
+
+      <div class="routine-item">
+        <span class="routine-num">1</span>
+        <div class="routine-info">
+          <div class="routine-name">Dead bug</div>
+          <div class="routine-detail">3 × 10, each side</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">2</span>
+        <div class="routine-info">
+          <div class="routine-name">Bird dog</div>
+          <div class="routine-detail">3 × 10, each side</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">3</span>
+        <div class="routine-info">
+          <div class="routine-name">Pallof press</div>
+          <div class="routine-detail">3 × 10, each side</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item">
+        <span class="routine-num">4</span>
+        <div class="routine-info">
+          <div class="routine-name">Side plank</div>
+          <div class="routine-detail">2 × 30 sec, each side</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">sec</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-item" style="border-bottom:none">
+        <span class="routine-num">5</span>
+        <div class="routine-info">
+          <div class="routine-name">Ab wheel rollout</div>
+          <div class="routine-detail">3 × 8–10</div>
+          <div class="workout-log-row">
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
+            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="routine-drawer-footer">
+    <div class="drawer-actions">
+      <button class="btn btn-secondary" id="coreCancelBtn">Cancel</button>
+      <button class="btn btn-primary"   id="coreDoneBtn">Mark as done</button>
     </div>
   </div>
 </div>
@@ -2205,6 +2543,23 @@ function syncSymDot() {
   document.getElementById('symDot').classList.toggle('visible', allSet);
 }
 
+// ── Push / Pull / Core drawers ───────────────────────────────
+function openWorkoutDrawer(name, drawerId, bgId, doneBtnId) {
+  const log = state.weekly[name + '_log'] || [];
+  document.querySelectorAll(`#${drawerId} .routine-item`).forEach((item, i) => {
+    item.querySelector('[data-field="weight"]').value = log[i]?.weight || '';
+    item.querySelector('[data-field="reps"]').value   = log[i]?.reps   || '';
+  });
+  document.getElementById(doneBtnId).textContent =
+    state.weekly[name] ? 'Mark as undone' : 'Mark as done';
+  document.getElementById(bgId).classList.add('open');
+  document.getElementById(drawerId).classList.add('open');
+}
+function closeWorkoutDrawer(drawerId, bgId) {
+  document.getElementById(bgId).classList.remove('open');
+  document.getElementById(drawerId).classList.remove('open');
+}
+
 // ── Tennis drawer ────────────────────────────────────────
 function openTennisDrawer() {
   const done = !!state.weekly['Tennis'];
@@ -2622,9 +2977,9 @@ render();
 // ── Event listeners ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Activity cards (Tennis handled separately via drawer)
+  // Activity cards (Tennis, Push, Pull, Core handled via drawers)
   ACTIVITY_HABITS.forEach(name => {
-    if (name === 'Tennis') return;
+    if (['Tennis','Push','Pull','Core'].includes(name)) return;
     const card = document.getElementById('card' + name.charAt(0).toUpperCase() + name.slice(1));
     card.addEventListener('click', e => {
       const wasDone = !!state.weekly[name];
@@ -2658,6 +3013,38 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = btn.dataset.target;
       document.querySelectorAll('#tennisDrawer .drawer-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
       document.querySelectorAll('#tennisDrawer .drawer-tab-panel').forEach(p => p.classList.toggle('active', p.id === target));
+    });
+  });
+
+  // Push / Pull / Core — open drawers with workout logs
+  [
+    { name: 'Push', cardId: 'cardPush', drawerId: 'pushDrawer', bgId: 'pushBg', cancelId: 'pushCancelBtn', doneId: 'pushDoneBtn' },
+    { name: 'Pull', cardId: 'cardPull', drawerId: 'pullDrawer', bgId: 'pullBg', cancelId: 'pullCancelBtn', doneId: 'pullDoneBtn' },
+    { name: 'Core', cardId: 'cardCore', drawerId: 'coreDrawer', bgId: 'coreBg', cancelId: 'coreCancelBtn', doneId: 'coreDoneBtn' },
+  ].forEach(({ name, cardId, drawerId, bgId, cancelId, doneId }) => {
+    document.getElementById(cardId).addEventListener('click', () =>
+      openWorkoutDrawer(name, drawerId, bgId, doneId));
+    document.getElementById(bgId).addEventListener('click', () =>
+      closeWorkoutDrawer(drawerId, bgId));
+    document.getElementById(cancelId).addEventListener('click', () =>
+      closeWorkoutDrawer(drawerId, bgId));
+    document.getElementById(doneId).addEventListener('click', e => {
+      // Save workout log
+      const log = [];
+      document.querySelectorAll(`#${drawerId} .routine-item`).forEach(item => {
+        log.push({
+          weight: item.querySelector('[data-field="weight"]').value.trim(),
+          reps:   item.querySelector('[data-field="reps"]').value.trim(),
+        });
+      });
+      state = ensureFreshKeys(state);
+      state.weekly[name + '_log'] = log;
+      const wasDone = !!state.weekly[name];
+      state.weekly[name] = !wasDone;
+      if (!wasDone) burst(e);
+      syncActivityCards();
+      saveState();
+      closeWorkoutDrawer(drawerId, bgId);
     });
   });
 
