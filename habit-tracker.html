@@ -705,8 +705,8 @@
     box-shadow: var(--shadow-sm);
   }
   .routine-item {
-    display: flex; align-items: baseline; gap: 14px;
-    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
   }
   .routine-item:last-child { border-bottom: none; }
   .routine-num {
@@ -1074,45 +1074,45 @@
     padding-bottom: 12px;
   }
 
-  /* ── Workout log inputs (weight + reps per exercise) ── */
-  .workout-log-row {
+  /* ── Workout stepper counters (weight + reps per exercise) ── */
+  .workout-counters {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 16px;
+    margin-top: 6px;
+    align-items: center;
   }
-  .workout-log-field {
+  .workout-stepper {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+  }
+  .workout-stepper-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
     background: var(--grey);
     border: 1.5px solid var(--border);
-    border-radius: 8px;
-    padding: 5px 10px;
-    flex: 1;
-  }
-  .workout-log-input {
-    flex: 1;
-    min-width: 0;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 18px;
+    line-height: 1;
     color: var(--text);
-    background: transparent;
-    border: none;
-    outline: none;
-    text-align: right;
-    width: 100%;
-    -moz-appearance: textfield;
-  }
-  .workout-log-input::-webkit-outer-spin-button,
-  .workout-log-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .workout-log-input::placeholder { color: var(--dim); }
-  .workout-log-unit {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
+  .workout-stepper-btn:active { background: var(--border); }
+  .workout-stepper-val {
+    min-width: 60px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .workout-stepper-val.unset { color: var(--dim); font-weight: 400; }
 
   /* ── Social plans — full-screen variant ── */
   #socialDrawer {
@@ -1687,9 +1687,9 @@
         <div class="routine-info">
           <div class="routine-name">Bench press</div>
           <div class="routine-detail">3 × 5–8</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1699,9 +1699,9 @@
         <div class="routine-info">
           <div class="routine-name">Overhead press</div>
           <div class="routine-detail">3 × 8–10</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1711,9 +1711,9 @@
         <div class="routine-info">
           <div class="routine-name">Incline DB press</div>
           <div class="routine-detail">3 × 10–12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1723,9 +1723,9 @@
         <div class="routine-info">
           <div class="routine-name">Lateral raise</div>
           <div class="routine-detail">3 × 15</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1735,9 +1735,9 @@
         <div class="routine-info">
           <div class="routine-name">Tricep pushdown</div>
           <div class="routine-detail">3 × 12–15</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1747,9 +1747,9 @@
         <div class="routine-info">
           <div class="routine-name">Overhead tricep extension</div>
           <div class="routine-detail">3 × 12–15</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1758,8 +1758,8 @@
   </div>
   <div class="routine-drawer-footer">
     <div class="drawer-actions">
-      <button class="btn btn-secondary" id="pushCancelBtn">Cancel</button>
-      <button class="btn btn-primary"   id="pushDoneBtn">Mark as done</button>
+      <button class="btn btn-complete" id="pushDoneBtn">Mark as done</button>
+      <button class="btn btn-primary"   id="pushSaveBtn">Save</button>
     </div>
   </div>
 </div>
@@ -1779,9 +1779,9 @@
         <div class="routine-info">
           <div class="routine-name">Dead hang</div>
           <div class="routine-detail">2 × 30 sec</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">sec</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="sec" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1791,9 +1791,9 @@
         <div class="routine-info">
           <div class="routine-name">Glute bridge</div>
           <div class="routine-detail">2 × 12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1803,9 +1803,9 @@
         <div class="routine-info">
           <div class="routine-name">Pull-up</div>
           <div class="routine-detail">3 × 4–8</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1815,9 +1815,9 @@
         <div class="routine-info">
           <div class="routine-name">Seated row</div>
           <div class="routine-detail">3 × 8–12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1827,9 +1827,9 @@
         <div class="routine-info">
           <div class="routine-name">DB curl</div>
           <div class="routine-detail">3 × 10–12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1839,9 +1839,9 @@
         <div class="routine-info">
           <div class="routine-name">Incline DB curl</div>
           <div class="routine-detail">3 × 10–12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1851,9 +1851,9 @@
         <div class="routine-info">
           <div class="routine-name">Romanian deadlift</div>
           <div class="routine-detail">3 × 8–10</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1863,9 +1863,9 @@
         <div class="routine-info">
           <div class="routine-name">Elevated reverse lunge</div>
           <div class="routine-detail">3 × 10, each side</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1875,9 +1875,9 @@
         <div class="routine-info">
           <div class="routine-name">Sumo dumbbell deadlift</div>
           <div class="routine-detail">3 × 10–12</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1886,8 +1886,8 @@
   </div>
   <div class="routine-drawer-footer">
     <div class="drawer-actions">
-      <button class="btn btn-secondary" id="pullCancelBtn">Cancel</button>
-      <button class="btn btn-primary"   id="pullDoneBtn">Mark as done</button>
+      <button class="btn btn-complete" id="pullDoneBtn">Mark as done</button>
+      <button class="btn btn-primary"   id="pullSaveBtn">Save</button>
     </div>
   </div>
 </div>
@@ -1907,9 +1907,9 @@
         <div class="routine-info">
           <div class="routine-name">Dead bug</div>
           <div class="routine-detail">3 × 10, each side</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1919,9 +1919,9 @@
         <div class="routine-info">
           <div class="routine-name">Bird dog</div>
           <div class="routine-detail">3 × 10, each side</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1931,9 +1931,9 @@
         <div class="routine-info">
           <div class="routine-name">Pallof press</div>
           <div class="routine-detail">3 × 10, each side</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1943,9 +1943,9 @@
         <div class="routine-info">
           <div class="routine-name">Side plank</div>
           <div class="routine-detail">2 × 30 sec, each side</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">sec</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="sec" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1955,9 +1955,9 @@
         <div class="routine-info">
           <div class="routine-name">Ab wheel rollout</div>
           <div class="routine-detail">3 × 8–10</div>
-          <div class="workout-log-row">
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="decimal" placeholder="—" data-field="weight"><span class="workout-log-unit">kg</span></div>
-            <div class="workout-log-field"><input class="workout-log-input" type="number" inputmode="numeric" placeholder="—" data-field="reps"><span class="workout-log-unit">reps</span></div>
+          <div class="workout-counters">
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="weight" data-step="5">−</button><span class="workout-stepper-val unset" data-display="weight" data-unit="lbs" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="weight" data-step="5">+</button></div>
+            <div class="workout-stepper"><button class="workout-stepper-btn" data-action="dec" data-field="reps" data-step="1">−</button><span class="workout-stepper-val unset" data-display="reps" data-unit="reps" data-value="">—</span><button class="workout-stepper-btn" data-action="inc" data-field="reps" data-step="1">+</button></div>
           </div>
         </div>
       </div>
@@ -1966,8 +1966,8 @@
   </div>
   <div class="routine-drawer-footer">
     <div class="drawer-actions">
-      <button class="btn btn-secondary" id="coreCancelBtn">Cancel</button>
-      <button class="btn btn-primary"   id="coreDoneBtn">Mark as done</button>
+      <button class="btn btn-complete" id="coreDoneBtn">Mark as done</button>
+      <button class="btn btn-primary"   id="coreSaveBtn">Save</button>
     </div>
   </div>
 </div>
@@ -2547,11 +2547,28 @@ function syncSymDot() {
 function openWorkoutDrawer(name, drawerId, bgId, doneBtnId) {
   const log = state.weekly[name + '_log'] || [];
   document.querySelectorAll(`#${drawerId} .routine-item`).forEach((item, i) => {
-    item.querySelector('[data-field="weight"]').value = log[i]?.weight || '';
-    item.querySelector('[data-field="reps"]').value   = log[i]?.reps   || '';
+    const entry = log[i] || {};
+    ['weight', 'reps'].forEach(field => {
+      const display = item.querySelector(`[data-display="${field}"]`);
+      if (!display) return;
+      const unit = display.dataset.unit;
+      const val  = entry[field] != null ? entry[field] : null;
+      if (val === null) {
+        display.dataset.value = '';
+        display.textContent   = '—';
+        display.classList.add('unset');
+      } else {
+        display.dataset.value = val;
+        display.textContent   = `${val} ${unit}`;
+        display.classList.remove('unset');
+      }
+    });
   });
-  document.getElementById(doneBtnId).textContent =
-    state.weekly[name] ? 'Mark as undone' : 'Mark as done';
+  // sync footer done button (remote work pattern)
+  const done    = !!state.weekly[name];
+  const doneBtn = document.getElementById(doneBtnId);
+  doneBtn.textContent = done ? 'Mark as incomplete' : 'Mark as done';
+  doneBtn.className   = done ? 'btn btn-secondary' : 'btn btn-complete';
   document.getElementById(bgId).classList.add('open');
   document.getElementById(drawerId).classList.add('open');
 }
@@ -3018,31 +3035,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Push / Pull / Core — open drawers with workout logs
   [
-    { name: 'Push', cardId: 'cardPush', drawerId: 'pushDrawer', bgId: 'pushBg', cancelId: 'pushCancelBtn', doneId: 'pushDoneBtn' },
-    { name: 'Pull', cardId: 'cardPull', drawerId: 'pullDrawer', bgId: 'pullBg', cancelId: 'pullCancelBtn', doneId: 'pullDoneBtn' },
-    { name: 'Core', cardId: 'cardCore', drawerId: 'coreDrawer', bgId: 'coreBg', cancelId: 'coreCancelBtn', doneId: 'coreDoneBtn' },
-  ].forEach(({ name, cardId, drawerId, bgId, cancelId, doneId }) => {
+    { name: 'Push', cardId: 'cardPush', drawerId: 'pushDrawer', bgId: 'pushBg', doneId: 'pushDoneBtn', saveId: 'pushSaveBtn' },
+    { name: 'Pull', cardId: 'cardPull', drawerId: 'pullDrawer', bgId: 'pullBg', doneId: 'pullDoneBtn', saveId: 'pullSaveBtn' },
+    { name: 'Core', cardId: 'cardCore', drawerId: 'coreDrawer', bgId: 'coreBg', doneId: 'coreDoneBtn', saveId: 'coreSaveBtn' },
+  ].forEach(({ name, cardId, drawerId, bgId, doneId, saveId }) => {
     document.getElementById(cardId).addEventListener('click', () =>
       openWorkoutDrawer(name, drawerId, bgId, doneId));
+    // backdrop tap closes without saving
     document.getElementById(bgId).addEventListener('click', () =>
       closeWorkoutDrawer(drawerId, bgId));
-    document.getElementById(cancelId).addEventListener('click', () =>
-      closeWorkoutDrawer(drawerId, bgId));
-    document.getElementById(doneId).addEventListener('click', e => {
-      // Save workout log
+
+    // Stepper +/− event delegation
+    document.getElementById(drawerId).addEventListener('click', e => {
+      const btn = e.target.closest('.workout-stepper-btn');
+      if (!btn) return;
+      const item    = btn.closest('.routine-item');
+      const field   = btn.dataset.field;
+      const step    = parseFloat(btn.dataset.step);
+      const display = item.querySelector(`[data-display="${field}"]`);
+      const unit    = display.dataset.unit;
+      let val = display.dataset.value !== '' ? parseFloat(display.dataset.value) : null;
+
+      if (btn.dataset.action === 'inc') {
+        val = (val === null) ? step : val + step;
+      } else {
+        if (val === null) return;
+        val = val - step;
+        if (val < 0) val = null; // back to unset below zero
+      }
+
+      if (val === null) {
+        display.dataset.value = '';
+        display.textContent   = '—';
+        display.classList.add('unset');
+      } else {
+        display.dataset.value = val;
+        display.textContent   = `${val} ${unit}`;
+        display.classList.remove('unset');
+      }
+    });
+
+    // Helper: collect log from stepper displays
+    function collectLog() {
       const log = [];
       document.querySelectorAll(`#${drawerId} .routine-item`).forEach(item => {
+        const wDisp = item.querySelector('[data-display="weight"]');
+        const rDisp = item.querySelector('[data-display="reps"]');
         log.push({
-          weight: item.querySelector('[data-field="weight"]').value.trim(),
-          reps:   item.querySelector('[data-field="reps"]').value.trim(),
+          weight: wDisp && wDisp.dataset.value !== '' ? parseFloat(wDisp.dataset.value) : null,
+          reps:   rDisp && rDisp.dataset.value !== '' ? parseFloat(rDisp.dataset.value) : null,
         });
       });
+      return log;
+    }
+
+    // Done toggle (footer) — saves log + toggles done state + closes
+    document.getElementById(doneId).addEventListener('click', e => {
       state = ensureFreshKeys(state);
-      state.weekly[name + '_log'] = log;
+      state.weekly[name + '_log'] = collectLog();
       const wasDone = !!state.weekly[name];
       state.weekly[name] = !wasDone;
       if (!wasDone) burst(e);
       syncActivityCards();
+      saveState();
+      closeWorkoutDrawer(drawerId, bgId);
+    });
+
+    // Save (footer) — persists log entries only, closes drawer
+    document.getElementById(saveId).addEventListener('click', () => {
+      state = ensureFreshKeys(state);
+      state.weekly[name + '_log'] = collectLog();
       saveState();
       closeWorkoutDrawer(drawerId, bgId);
     });
