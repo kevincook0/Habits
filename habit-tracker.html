@@ -1062,6 +1062,20 @@
     background: var(--white);
   }
 
+  /* ── Tennis + Cardio — full-screen variant ── */
+  #tennisDrawer,
+  #cardioDrawer {
+    top: 0;
+    border-radius: 0;
+    max-height: none;
+  }
+  #tennisDrawer .routine-drawer-header,
+  #cardioDrawer .routine-drawer-header {
+    padding-top: calc(var(--safe-top) + 12px);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+
   /* ── Social plans — full-screen variant ── */
   #socialDrawer {
     top: 0;
@@ -1210,6 +1224,7 @@
 
     <!-- Weekly block — scrollable within Habits tab -->
     <div class="weekly-block">
+    <div class="affirmation-heading">This week</div>
     <div class="activity-row">
 
       <div class="act-card" id="cardPush" data-habit="Push">
@@ -1294,6 +1309,7 @@
     </div><!-- /weekly-block -->
 
     <div class="habit-section daily">
+      <div class="affirmation-heading">Today</div>
       <div class="habit-list" id="dailyList"></div>
     </div>
     <div class="reset-info" id="resetInfo"></div>
