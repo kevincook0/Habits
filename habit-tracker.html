@@ -1060,6 +1060,23 @@
     background: var(--white);
   }
 
+  /* ── Social plans — full-screen variant ── */
+  #socialDrawer {
+    top: 0;
+    border-radius: 0;
+    max-height: none; /* override routine-drawer's 92dvh cap — fills via top:0 + bottom:0 */
+  }
+  #socialDrawer .routine-drawer-header {
+    padding-top: calc(var(--safe-top) + 12px);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  #socialDrawer .routine-drawer-body {
+    padding: 16px 20px 8px;
+  }
+  /* Pill strip lives in the fixed header — give it breathing room */
+  #socialDrawer .cafe-pills-wrap { margin-bottom: 0; margin-top: 10px; }
+
   /* ── In-drawer tab bar ── */
   .drawer-tabs {
     display: flex;
@@ -1395,10 +1412,10 @@
 
 <!-- ── Social plans drawer ── -->
 <div class="drawer-bg" id="socialBg"></div>
-<div class="drawer" id="socialDrawer">
-  <div class="drawer-inner" style="overflow-y:auto;max-height:90dvh">
+<div class="drawer routine-drawer" id="socialDrawer">
+  <div class="routine-drawer-header">
     <div class="drawer-pip"></div>
-    <div class="drawer-heading">Social plans</div>
+    <div class="drawer-heading" style="margin-bottom:0">Social plans</div>
     <div class="cafe-pills-wrap">
       <div class="cafe-pills" id="socialPills">
         <button class="cafe-pill">Mellow Monday</button>
@@ -1412,6 +1429,8 @@
         <button class="cafe-pill">All Trails Hike</button>
       </div>
     </div>
+  </div>
+  <div class="routine-drawer-body">
     <div class="social-day-row">
       <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
       <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
@@ -1440,8 +1459,10 @@
       <div class="drawer-heading" style="margin-bottom:6px">Sunday</div>
       <textarea class="drawer-textarea" id="planSun" placeholder="Plans for Sunday…" style="height:52px;margin-bottom:10px"></textarea>
     </div>
+  </div>
+  <div class="routine-drawer-footer">
     <div class="drawer-actions">
-      <button class="btn btn-secondary" id="socialClearBtn">Clear all</button>
+      <button class="btn btn-secondary" id="socialCancelBtn">Cancel</button>
       <button class="btn btn-primary"   id="socialSaveBtn">Save</button>
     </div>
   </div>
@@ -2237,6 +2258,7 @@ function syncRemoteRow() {
 }
 
 // ── Social plans ──────────────────────────────────────────────
+let focusedSocialTa = null; // tracks which day textarea has focus inside the drawer
 function openSocialDrawer() {
   const sp = state.socialPlans;
   document.getElementById('planMon').value = sp?.mon || '';
@@ -2246,7 +2268,8 @@ function openSocialDrawer() {
   document.getElementById('planFri').value = sp?.fri || '';
   document.getElementById('planSat').value = sp?.sat || '';
   document.getElementById('planSun').value = sp?.sun || '';
-  // Ensure all rows are visible on open
+  // Ensure all rows visible and focused state cleared on open
+  focusedSocialTa = null;
   document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   document.getElementById('socialBg').classList.add('open');
   document.getElementById('socialDrawer').classList.add('open');
@@ -2708,7 +2731,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Social plan pills → fill whichever day is focused
   // Use mousedown/touchstart so blur hasn't fired yet when the pill is tapped
-  let focusedSocialTa = null;
   document.querySelectorAll('#socialDrawer .cafe-pill').forEach(pill => {
     const fill = e => {
       e.preventDefault(); // keep focus on the textarea
@@ -2761,12 +2783,16 @@ document.addEventListener('DOMContentLoaded', () => {
     closeSocialDrawer();
     updateProgress();
   });
-  document.getElementById('socialClearBtn').addEventListener('click', () => {
-    state.socialPlans = { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' };
-    saveState();
-    syncSocialPlansRow();
-    closeSocialDrawer();
-    updateProgress();
+  document.getElementById('socialCancelBtn').addEventListener('click', () => {
+    // If any day row is hidden we're in focused mode — go back to all days
+    const anyHidden = [...document.querySelectorAll('#socialDrawer .social-day-row')]
+      .some(r => r.style.display === 'none');
+    if (anyHidden) {
+      focusedSocialTa = null;
+      document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => { r.style.display = ''; });
+    } else {
+      closeSocialDrawer();
+    }
   });
 
   // Journal drawers
