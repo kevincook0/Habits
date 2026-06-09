@@ -778,9 +778,8 @@
   }
   .cafe-pills-wrap::-webkit-scrollbar { display: none; }
   .cafe-pills {
-    display: flex;
+    display: inline-flex;
     gap: 7px;
-    width: max-content;
     padding-bottom: 2px;
   }
   .cafe-pill {
@@ -2258,7 +2257,8 @@ function syncRemoteRow() {
 }
 
 // ── Social plans ──────────────────────────────────────────────
-let focusedSocialTa = null; // tracks which day textarea has focus inside the drawer
+let focusedSocialTa = null;       // tracks which day textarea has focus inside the drawer
+let focusedSocialOrigVal = '';    // snapshot of that textarea's value on focus — restored by Cancel
 function openSocialDrawer() {
   const sp = state.socialPlans;
   document.getElementById('planMon').value = sp?.mon || '';
@@ -2747,6 +2747,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => {
     ta.addEventListener('focus', () => {
       focusedSocialTa = ta;
+      focusedSocialOrigVal = ta.value; // snapshot before any edits
       document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
         row.style.display = row.querySelector('textarea') === ta ? '' : 'none';
       });
@@ -2784,11 +2785,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProgress();
   });
   document.getElementById('socialCancelBtn').addEventListener('click', () => {
-    // If any day row is hidden we're in focused mode — go back to all days
+    // If any day row is hidden we're in focused mode — revert and go back to all days
     const anyHidden = [...document.querySelectorAll('#socialDrawer .social-day-row')]
       .some(r => r.style.display === 'none');
     if (anyHidden) {
+      if (focusedSocialTa) focusedSocialTa.value = focusedSocialOrigVal; // revert unsaved edit
       focusedSocialTa = null;
+      focusedSocialOrigVal = '';
       document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => { r.style.display = ''; });
     } else {
       closeSocialDrawer();
