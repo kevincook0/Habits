@@ -1000,12 +1000,19 @@
     border: 1.5px solid var(--border);
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
+    transition: background 0.14s, border-color 0.14s;
   }
   .habit-journal-icon svg {
     width: 11px; height: 11px;
     stroke: var(--muted); fill: none;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 0.14s;
   }
+  .habit-item.done .habit-journal-icon {
+    background: var(--done-check);
+    border-color: var(--done-check);
+  }
+  .habit-item.done .habit-journal-icon svg { stroke: #fff; }
   .habit-journal-preview {
     font-size: 12px;
     color: var(--muted);
@@ -2867,9 +2874,9 @@ const JOURNAL_SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','S
 
 function makeTextInputItem(label, key, drawerId, bgId) {
   const div = document.createElement('div');
-  div.className = 'habit-item';
-  div.style.cursor = 'pointer';
   const val = state.daily[key] || null;
+  div.className = 'habit-item' + (val ? ' done' : '');
+  div.style.cursor = 'pointer';
   div.innerHTML = `
     <div class="habit-journal-icon">
       <svg viewBox="0 0 24 24">
@@ -3235,17 +3242,35 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Social plan pills → fill whichever day is focused
-  // Use mousedown/touchstart so blur hasn't fired yet when the pill is tapped
   document.querySelectorAll('#socialDrawer .cafe-pill').forEach(pill => {
-    const fill = e => {
-      e.preventDefault(); // keep focus on the textarea
+    let tsX = 0, tsY = 0;
+
+    // Desktop: mousedown fires before blur, so we can keep focus
+    pill.addEventListener('mousedown', e => {
+      e.preventDefault();
       if (focusedSocialTa) {
         focusedSocialTa.value = pill.textContent.trim();
         focusedSocialTa.focus();
       }
-    };
-    pill.addEventListener('mousedown',  fill);
-    pill.addEventListener('touchstart', fill, { passive: false });
+    });
+
+    // Mobile: passive touchstart just records where the finger landed —
+    // MUST be passive so the browser can still initiate a horizontal scroll
+    pill.addEventListener('touchstart', e => {
+      tsX = e.touches[0].clientX;
+      tsY = e.touches[0].clientY;
+    }, { passive: true });
+
+    // On touchend, only fill if the finger barely moved (tap, not a scroll drag)
+    pill.addEventListener('touchend', e => {
+      const dx = Math.abs(e.changedTouches[0].clientX - tsX);
+      const dy = Math.abs(e.changedTouches[0].clientY - tsY);
+      if (dx < 10 && dy < 10 && focusedSocialTa) {
+        e.preventDefault();
+        focusedSocialTa.value = pill.textContent.trim();
+        focusedSocialTa.focus();
+      }
+    }, { passive: false });
   });
 
   // Social textareas → collapse other days on focus, expand on blur
