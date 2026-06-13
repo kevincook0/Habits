@@ -2024,7 +2024,7 @@
       </svg>
       Back
     </button>
-    <span class="detail-title">10-min morning mobility</span>
+    <span class="detail-title">Morning mobility</span>
   </div>
   <div class="detail-body">
     <div class="routine-list">
@@ -2076,7 +2076,7 @@
       </svg>
       Back
     </button>
-    <span class="detail-title">10-min evening mobility</span>
+    <span class="detail-title">Evening mobility</span>
   </div>
   <div class="detail-body">
     <div class="routine-list">
@@ -2088,6 +2088,72 @@
       <div class="routine-item"><span class="routine-num">6</span><div class="routine-info"><div class="routine-name">Figure 4s</div><div class="routine-detail">1 min</div></div></div>
       <div class="routine-item"><span class="routine-num">7</span><div class="routine-info"><div class="routine-name">Wall ankle stretch</div><div class="routine-detail">1 min</div></div></div>
       <div class="routine-item" id="breathingRow"><span class="routine-num">8</span><div class="routine-info"><div class="routine-name">4/6 breathing</div><div class="routine-detail">2 min</div></div><button class="info-btn" id="breathingInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Morning skincare detail panel ── -->
+<div class="detail-panel" id="mornSkincarePanel">
+  <div class="detail-header">
+    <button class="back-btn" id="mornSkincareBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Morning skincare</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Cleanser</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Vitamin C serum</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Hyaluronic acid eye serum</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Moisturizer</div></div></div>
+      <div class="routine-item" style="border-bottom:none"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">SPF 50</div><div class="routine-detail">If going outside</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Evening skincare detail panel ── -->
+<div class="detail-panel" id="eveSkincarePanel">
+  <div class="detail-header">
+    <button class="back-btn" id="eveSkincareBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Evening skincare</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Cleanser</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Hyaluronic acid eye serum</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Retinol / Azelaic acid</div><div class="routine-detail">Alternating</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Moisturizer</div></div></div>
+      <div class="routine-item" style="border-bottom:none"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Lip exfoliant</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Supplements detail panel ── -->
+<div class="detail-panel" id="supplementsPanel">
+  <div class="detail-header">
+    <button class="back-btn" id="supplementsBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Supplements</span>
+  </div>
+  <div class="detail-body">
+    <div class="routine-list">
+      <div class="routine-item"><span class="routine-num">1</span><div class="routine-info"><div class="routine-name">Omega-3</div><div class="routine-detail">Fish oil</div></div></div>
+      <div class="routine-item"><span class="routine-num">2</span><div class="routine-info"><div class="routine-name">Creatine</div><div class="routine-detail">5g</div></div></div>
+      <div class="routine-item"><span class="routine-num">3</span><div class="routine-info"><div class="routine-name">Vitamin D</div></div></div>
+      <div class="routine-item"><span class="routine-num">4</span><div class="routine-info"><div class="routine-name">Vitamin C</div></div></div>
+      <div class="routine-item" style="border-bottom:none"><span class="routine-num">5</span><div class="routine-info"><div class="routine-name">Collagen</div></div></div>
     </div>
   </div>
 </div>
@@ -2146,16 +2212,17 @@
 const DAILY_HABITS = [
   "Out of bed by 7:30am",
   "Make bed + open window",
-  "Omega-3, VitD, Creatine",
-  "VitC, Collagen",
-  "10-min morning mobility",
+  "Supplements",
+  "Morning skincare",
+  "Morning mobility",
   "Minoxidil (AM)",
   "Salad",
   "Minoxidil (PM)",
   "Tennis elbow rehab",
   "1 French moment",
-  "10-min evening mobility",
+  "Evening mobility",
   "Neuropod",
+  "Evening skincare",
   "Statin, Magnesium, CoQ10",
   "In bed by 11:00pm",
 ];
@@ -2753,10 +2820,13 @@ function renderDaily() {
 function makeCheckItem(name, checked, onClick) {
   const div = document.createElement('div');
   div.className = 'habit-item' + (checked ? ' done' : '');
-  const isMobility = name === '10-min morning mobility';
-  const isElbow    = name === 'Tennis elbow rehab';
-  const isEvening  = name === '10-min evening mobility';
-  const isFrench   = name === '1 French moment';
+  const isMobility         = name === 'Morning mobility';
+  const isElbow            = name === 'Tennis elbow rehab';
+  const isEvening          = name === 'Evening mobility';
+  const isFrench           = name === '1 French moment';
+  const isSupplements      = name === 'Supplements';
+  const isMorningSkincare  = name === 'Morning skincare';
+  const isEveningSkincare  = name === 'Evening skincare';
   div.innerHTML = `
     <div class="checkbox">
       <svg class="checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -2770,7 +2840,10 @@ function makeCheckItem(name, checked, onClick) {
     ${isMobility ? `<button class="info-btn" id="mobilityInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
     ${isElbow    ? `<button class="info-btn" id="elbowInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
     ${isEvening  ? `<button class="info-btn" id="eveningInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
-    ${isFrench   ? `<button class="info-btn" id="frenchInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isFrench      ? `<button class="info-btn" id="frenchInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isSupplements     ? `<button class="info-btn" id="supplementsInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isMorningSkincare ? `<button class="info-btn" id="mornSkincareInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
+    ${isEveningSkincare ? `<button class="info-btn" id="eveSkincareInfoBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
   `;
 
   // Populate streak + completion rate badges (live mode only)
@@ -2816,6 +2889,24 @@ function makeCheckItem(name, checked, onClick) {
       if (!iframe.src || iframe.src === 'about:blank') iframe.src = iframe.dataset.src;
       document.getElementById('sheetBackdrop').classList.add('open');
       document.getElementById('frenchSheet').classList.add('open');
+    });
+  }
+  if (isSupplements) {
+    div.querySelector('#supplementsInfoBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('supplementsPanel').classList.add('open');
+    });
+  }
+  if (isMorningSkincare) {
+    div.querySelector('#mornSkincareInfoBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('mornSkincarePanel').classList.add('open');
+    });
+  }
+  if (isEveningSkincare) {
+    div.querySelector('#eveSkincareInfoBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('eveSkincarePanel').classList.add('open');
     });
   }
   div.addEventListener('click', e => {
@@ -3417,6 +3508,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('elbowBackBtn').addEventListener('click', () => {
     document.getElementById('elbowPanel').classList.remove('open');
+  });
+  document.getElementById('supplementsBackBtn').addEventListener('click', () => {
+    document.getElementById('supplementsPanel').classList.remove('open');
+  });
+  document.getElementById('mornSkincareBackBtn').addEventListener('click', () => {
+    document.getElementById('mornSkincarePanel').classList.remove('open');
+  });
+  document.getElementById('eveSkincareBackBtn').addEventListener('click', () => {
+    document.getElementById('eveSkincarePanel').classList.remove('open');
   });
   document.getElementById('eveningBackBtn').addEventListener('click', () => {
     document.getElementById('eveningPanel').classList.remove('open');
