@@ -2291,9 +2291,41 @@ async function apiHistory(fromDay, toDay) {
   return res.json();
 }
 
+// ── Workout log defaults (carry last week's weights/reps into the new week) ──
+const WORKOUT_NAMES = ['Push', 'Pull', 'Core'];
+
+function saveWorkoutDefaults(weekly) {
+  if (!weekly) return;
+  const defaults = {};
+  WORKOUT_NAMES.forEach(name => {
+    const log = weekly[name + '_log'];
+    if (log && log.some(e => e && (e.weight != null || e.reps != null)))
+      defaults[name + '_log'] = log;
+  });
+  if (Object.keys(defaults).length > 0)
+    try { localStorage.setItem('workoutDefaults', JSON.stringify(defaults)); } catch {}
+}
+
+function readWorkoutDefaults() {
+  try { return JSON.parse(localStorage.getItem('workoutDefaults') || 'null'); }
+  catch { return null; }
+}
+
+// Seed weekly with last week's logs — only for workouts that have no data yet this week
+function seedWorkoutDefaults(weekly) {
+  const defaults = readWorkoutDefaults();
+  if (!defaults) return;
+  WORKOUT_NAMES.forEach(name => {
+    const key     = name + '_log';
+    const hasData = weekly[key] && weekly[key].some(e => e && (e.weight != null || e.reps != null));
+    if (!hasData && defaults[key]) weekly[key] = defaults[key];
+  });
+}
+
 let saveTimer = null;
 function saveState() {
   if (historyMode) return; // never overwrite live state while browsing history
+  saveWorkoutDefaults(state.weekly); // keep defaults current for the upcoming week rollover
   cacheLocal(state);
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -2350,10 +2382,12 @@ function ensureFreshKeys(s) {
   const weekKey = getWeekKey();
   if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
   if (s.weekKey !== weekKey) {
+    saveWorkoutDefaults(s.weekly); // capture last week's logs before clearing
     s.weekKey     = weekKey;
     s.weekly      = {};
     s.zone2       = 0;
     s.socialPlans = { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' };
+    seedWorkoutDefaults(s.weekly); // seed new week with last week's anchor values
   }
   s.daily  = s.daily  || {};
   s.weekly = s.weekly || {};
@@ -2437,6 +2471,7 @@ async function navigateTo(offset) {
         daily: remote.daily,   weekly: remote.weekly,
         zone2: remote.zone2,   socialPlans: remote.socialPlans || EMPTY_SOCIAL(),
       });
+      seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
       cacheLocal(state);
       render();
     } catch(e) { console.warn('re-hydrate failed', e); }
@@ -3105,6 +3140,7 @@ render();
         zone2:       remote.zone2,
         socialPlans: remote.socialPlans || { mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' },
       });
+      seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
       cacheLocal(state);
     }
 
