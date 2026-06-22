@@ -3789,7 +3789,7 @@ function renderSymptomChart() {
             const lines = [];
             if (hrvData[i] !== null)   lines.push(`HRV  ${hrvData[i]} ms`);
             if (sleepData[i] !== null) lines.push(`Sleep  ${sleepData[i]}/100`);
-            if (culpritList[i]) lines.push(`\nCulprit  ${culpritList[i]}`);
+            if (culpritList[i]) { lines.push(''); lines.push(`⚑ Culprit: ${culpritList[i]}`); }
             return lines;
           }
         }
@@ -3813,6 +3813,7 @@ function renderSymptomChart() {
         ds.pointBorderWidth = neckPointBorderW;
       }
     });
+    symChart.options.plugins.tooltip.callbacks.afterBody = chartOpts.plugins.tooltip.callbacks.afterBody;
     symChart.update('none');
   }
 }
