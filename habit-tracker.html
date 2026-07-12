@@ -389,6 +389,28 @@
     letter-spacing: 0.01em;
   }
 
+  /* ── Posture panel ── */
+  .posture-week-select {
+    display: block; width: 100%; margin-bottom: 18px;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+    color: var(--text); background: var(--grey);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 9px 32px 9px 12px; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpolyline points='1,1 6,7 11,1' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .posture-section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--muted);
+    margin: 20px 0 6px; padding-left: 2px;
+  }
+  .posture-section-label:first-child { margin-top: 0; }
+  .posture-setup {
+    font-size: 13px; color: var(--dim); line-height: 1.55;
+    margin: 0 0 10px 2px; font-style: italic;
+  }
+
   /* ── Reset info ── */
   .reset-info {
     text-align: center;
@@ -2154,6 +2176,23 @@
   </div>
 </div>
 
+<!-- ── Posture program detail panel ── -->
+<div class="detail-panel" id="posturePanel">
+  <div class="detail-header">
+    <button class="back-btn" id="postureBackBtn">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+        <polyline points="6,1 1,6 6,11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="detail-title">Posture program</span>
+  </div>
+  <div class="detail-body">
+    <select class="posture-week-select" id="postureWeekSelect"></select>
+    <div id="postureContent"></div>
+  </div>
+</div>
+
 <!-- ── French app bottom sheet ── -->
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="bottom-sheet" id="frenchSheet">
@@ -2224,10 +2263,91 @@ const DAILY_HABITS = [
 ];
 
 const ACTIVITY_HABITS = ['Push', 'Pull', 'Core', 'Tennis'];
-const ZONE2_GOAL  = 180;
-const HALO_GOAL   = 3;
-const WEEKLY_TOTAL = 7; // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
-const RESET_HOUR  = 3;
+const ZONE2_GOAL   = 180;
+const POSTURE_GOAL = 2;   // sessions per day (AM + PM)
+const WEEKLY_TOTAL = 7;   // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
+const RESET_HOUR   = 3;
+
+// ── Posture program exercise data ─────────────────────────────
+// Add new weeks by pushing to this array — the panel always defaults to the last entry.
+const POSTURE_PROGRAM = [
+  {
+    week: 'Week 1',
+    sections: [
+      {
+        title: 'Warm up',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Chest lifts and head nods', note: null },
+        ]
+      },
+      {
+        title: 'Floor exercises',
+        setup: 'Stretch out back of neck with foam roller. Lie flat on the ground. Roll pelvis back. Arms lie flat on the ground at 30°. Knees bent. Feet pointing up.',
+        exercises: [
+          { reps: '4×', name: 'Pelvic curls',              note: null },
+          { reps: '4×', name: 'Heel taps',                 note: null },
+          { reps: '4×', name: 'Overhead foam roller lifts', note: 'First into the chest, then above the shoulders.' },
+        ]
+      },
+      {
+        title: 'Wall exercises',
+        setup: 'Chest lift, head nod, pelvis curled, arms pushing against wall at chest height',
+        exercises: [
+          { reps: '4×', name: 'Wall pushups', note: null },
+          { reps: '4×', name: 'Walk outs',    note: null },
+        ]
+      },
+      {
+        title: 'Finisher',
+        setup: 'Chest lift, head nod, pelvis curled',
+        exercises: [
+          { reps: null, name: 'Functional squat off the chair', note: null },
+        ]
+      },
+    ]
+  },
+  {
+    week: 'Week 2',
+    sections: [
+      {
+        title: 'Warm up',
+        setup: null,
+        exercises: [
+          { reps: null, name: 'T-spine rotations', note: 'Chest lift, head nod, rotate side to side.' },
+        ]
+      },
+      {
+        title: 'Floor exercises',
+        setup: 'Lie on ground, head in ARC, arms flat on floor at 30° to side, bent knees, feet dorsiflexed at 90°.',
+        exercises: [
+          { reps: '4×', name: 'Pelvic curls',         note: 'Start in neutral, go into flat back posture.' },
+          { reps: '4×', name: 'Heel floats',           note: 'Each side.' },
+          { reps: '4×', name: 'One legged curls',      note: 'Cross ankle over knee, each side.' },
+          { reps: '4×', name: 'Heel taps',             note: 'Each side.' },
+        ]
+      },
+      {
+        title: 'Wall exercises',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Walking series',       note: 'Chest lift, fists against wall, pelvic curl into neutral, march in place.' },
+          { reps: null, name: 'Alternating step ups', note: 'Same position, step up knees.' },
+          { reps: null, name: 'Fall into wall',       note: 'Chest lift, fists against wall, pelvic curl into neutral, push up from wall.' },
+        ]
+      },
+      {
+        title: 'Finisher',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Squats',    note: 'Feet out 45°, foam roller as support in front, stay in upright T-spine.' },
+          { reps: '4×', name: 'Arm raises', note: 'Get into chest lift, head nod, raise one arm at 30° bent, then extend up.' },
+        ]
+      },
+    ]
+  },
+  // { week: 'Week 3', sections: [ ... ] },  ← add future weeks here
+];
 const STATE_VERSION = 2; // bumped to flush UTC-key bug data
 
 // ── Supabase ─────────────────────────────────────────────────
@@ -3015,10 +3135,49 @@ function makeCheckItem(name, checked, onClick) {
   return div;
 }
 
-// ── Curve correction counter ────────────────────────────────────────
+// ── Posture program panel ────────────────────────────────────
+function renderPosturePanel(weekIdx) {
+  const week = POSTURE_PROGRAM[weekIdx];
+  if (!week) return;
+  let html = '';
+  week.sections.forEach(section => {
+    html += `<div class="posture-section-label">${section.title}</div>`;
+    if (section.setup) html += `<p class="posture-setup">${section.setup}</p>`;
+    html += `<div class="routine-list">`;
+    section.exercises.forEach((ex, i) => {
+      const last   = i === section.exercises.length - 1;
+      const label  = ex.reps ? `${ex.reps} ${ex.name}` : ex.name;
+      html += `<div class="routine-item"${last ? ' style="border-bottom:none"' : ''}>
+        <span class="routine-num">${i + 1}</span>
+        <div class="routine-info">
+          <div class="routine-name">${label}</div>
+          ${ex.note ? `<div class="routine-detail">${ex.note}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('postureContent').innerHTML = html;
+}
+function openPosturePanel() {
+  const sel = document.getElementById('postureWeekSelect');
+  sel.innerHTML = '';
+  POSTURE_PROGRAM.forEach((w, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = w.week;
+    sel.appendChild(opt);
+  });
+  const latestIdx = POSTURE_PROGRAM.length - 1;
+  sel.value = latestIdx;
+  renderPosturePanel(latestIdx);
+  document.getElementById('posturePanel').classList.add('open');
+}
+
+// ── Posture program counter ──────────────────────────────────
 function makeHaloItem() {
-  const count = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
-  const done  = count >= HALO_GOAL;
+  const count = typeof state.daily['Posture program'] === 'number' ? state.daily['Posture program'] : 0;
+  const done  = count >= POSTURE_GOAL;
   const div   = document.createElement('div');
   div.className = 'habit-item' + (done ? ' done' : '');
   div.innerHTML = `
@@ -3028,29 +3187,39 @@ function makeHaloItem() {
       </svg>
     </div>
     <div class="habit-name-wrap">
-      <span class="habit-name">Curve correction</span>
+      <span class="habit-name">Posture program</span>
     </div>
+    <button class="info-btn" id="postureInfoBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+    </button>
     <div class="halo-counter">
       <button class="halo-btn halo-minus" ${historyMode ? 'disabled' : ''}>−</button>
-      <span class="halo-count">${count}</span>
+      <span class="halo-count">${count}/${POSTURE_GOAL}</span>
       <button class="halo-btn halo-plus"  ${historyMode ? 'disabled' : ''}>+</button>
     </div>
   `;
   if (!historyMode) {
+    div.querySelector('#postureInfoBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      openPosturePanel();
+    });
     div.querySelector('.halo-minus').addEventListener('click', e => {
       e.stopPropagation();
-      const cur = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
-      state.daily['Curve correction'] = Math.max(0, cur - 1);
+      const cur = typeof state.daily['Posture program'] === 'number' ? state.daily['Posture program'] : 0;
+      state.daily['Posture program'] = Math.max(0, cur - 1);
       saveState();
       render();
     });
     div.querySelector('.halo-plus').addEventListener('click', e => {
       e.stopPropagation();
-      const cur  = typeof state.daily['Curve correction'] === 'number' ? state.daily['Curve correction'] : 0;
+      const cur  = typeof state.daily['Posture program'] === 'number' ? state.daily['Posture program'] : 0;
       const next = cur + 1;
-      state.daily['Curve correction'] = next;
+      state.daily['Posture program'] = next;
       saveState();
-      if (next === HALO_GOAL) burst(e); // confetti on hitting goal
+      if (next === POSTURE_GOAL) burst(e);
       render();
     });
   }
@@ -3643,6 +3812,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('eveningBackBtn').addEventListener('click', () => {
     document.getElementById('eveningPanel').classList.remove('open');
+  });
+  document.getElementById('postureBackBtn').addEventListener('click', () => {
+    document.getElementById('posturePanel').classList.remove('open');
+  });
+  document.getElementById('postureWeekSelect').addEventListener('change', e => {
+    renderPosturePanel(parseInt(e.target.value, 10));
   });
 
   // French sheet
