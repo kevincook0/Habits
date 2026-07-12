@@ -1175,8 +1175,8 @@
     flex: 1; text-align: center; font-size: 13px;
     font-weight: 500; color: var(--text); letter-spacing: -0.01em;
   }
-  /* Pills live in the body, only during day-focus */
-  #socialFocusPills { display: none; margin-bottom: 10px; }
+  /* Pills live in the header, only during day-focus (swaps with week nav) */
+  #socialFocusPills { display: none; }
 
   /* ── In-drawer tab bar ── */
   .drawer-tabs {
@@ -1516,15 +1516,14 @@
   <div class="routine-drawer-header">
     <div class="drawer-pip"></div>
     <div class="drawer-heading" style="margin-bottom:0">Social plans</div>
-    <div class="social-week-nav">
+    <!-- Week nav: visible in overview mode -->
+    <div class="social-week-nav" id="socialWeekNav">
       <button class="social-week-btn" id="socialWeekPrev">‹</button>
       <span class="social-week-label" id="socialWeekLabel">This week</span>
       <button class="social-week-btn" id="socialWeekNext">›</button>
     </div>
-  </div>
-  <div class="routine-drawer-body">
-    <!-- Pills: hidden in overview, shown only in day-focus mode -->
-    <div class="cafe-pills-wrap" id="socialFocusPills">
+    <!-- Pills: visible in day-focus mode, replaces the week nav -->
+    <div class="cafe-pills-wrap" id="socialFocusPills" style="display:none;margin-bottom:0;margin-top:10px">
       <div class="cafe-pills" id="socialPills">
         <button class="cafe-pill">Mellow Monday</button>
         <button class="cafe-pill">Padel lessons</button>
@@ -1537,6 +1536,8 @@
         <button class="cafe-pill">All Trails Hike</button>
       </div>
     </div>
+  </div>
+  <div class="routine-drawer-body">
     <div class="social-day-row">
       <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
       <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
@@ -2976,6 +2977,7 @@ function openSocialDrawer() {
   socialFullCache[currentWK] = null; // will use state path on save
   // Reset focus state
   focusedSocialTa = null;
+  document.getElementById('socialWeekNav').style.display = '';
   document.getElementById('socialFocusPills').style.display = 'none';
   document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   showSocialWeek(currentWK);
@@ -2985,6 +2987,7 @@ function openSocialDrawer() {
 }
 function closeSocialDrawer() {
   focusedSocialTa = null;
+  document.getElementById('socialWeekNav').style.display = '';
   document.getElementById('socialFocusPills').style.display = 'none';
   document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   detachKeyboard('socialDrawer');
@@ -3630,12 +3633,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
       row.style.display = row.querySelector('textarea') === ta ? '' : 'none';
     });
+    // Swap: hide week nav, show pills in header
+    document.getElementById('socialWeekNav').style.display = 'none';
     document.getElementById('socialFocusPills').style.display = '';
   }
   function exitSocialDayFocus() {
     focusedSocialTa = null;
     focusedSocialOrigVal = '';
     document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => { r.style.display = ''; });
+    // Swap back: show week nav, hide pills
+    document.getElementById('socialWeekNav').style.display = '';
     document.getElementById('socialFocusPills').style.display = 'none';
   }
   document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => {
