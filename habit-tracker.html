@@ -1175,8 +1175,7 @@
     flex: 1; text-align: center; font-size: 13px;
     font-weight: 500; color: var(--text); letter-spacing: -0.01em;
   }
-  /* Pills live in the header, only during day-focus (swaps with week nav) */
-  #socialFocusPills { display: none; }
+  /* Pills live in the header, only during day-focus (swaps with week nav) — initial hidden state set via inline style */
 
   /* ── In-drawer tab bar ── */
   .drawer-tabs {
@@ -3635,7 +3634,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Swap: hide week nav, show pills in header
     document.getElementById('socialWeekNav').style.display = 'none';
-    document.getElementById('socialFocusPills').style.display = '';
+    document.getElementById('socialFocusPills').style.display = 'block';
   }
   function exitSocialDayFocus() {
     focusedSocialTa = null;
