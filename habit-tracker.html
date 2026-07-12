@@ -1136,8 +1136,25 @@
   #socialDrawer .routine-drawer-body {
     padding: 16px 20px 8px;
   }
-  /* Pill strip lives in the fixed header — give it breathing room */
-  #socialDrawer .cafe-pills-wrap { margin-bottom: 0; margin-top: 10px; }
+  /* Week navigator in social drawer header */
+  .social-week-nav {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px; padding: 0 2px;
+  }
+  .social-week-btn {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--grey); border: 1.5px solid var(--border);
+    font-size: 16px; color: var(--text); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .social-week-btn:disabled { opacity: 0.3; pointer-events: none; }
+  .social-week-label {
+    flex: 1; text-align: center; font-size: 13px;
+    font-weight: 500; color: var(--text); letter-spacing: -0.01em;
+  }
+  /* Pills live in the body, only during day-focus */
+  #socialFocusPills { display: none; margin-bottom: 10px; }
 
   /* ── In-drawer tab bar ── */
   .drawer-tabs {
@@ -1477,7 +1494,15 @@
   <div class="routine-drawer-header">
     <div class="drawer-pip"></div>
     <div class="drawer-heading" style="margin-bottom:0">Social plans</div>
-    <div class="cafe-pills-wrap">
+    <div class="social-week-nav">
+      <button class="social-week-btn" id="socialWeekPrev">‹</button>
+      <span class="social-week-label" id="socialWeekLabel">This week</span>
+      <button class="social-week-btn" id="socialWeekNext">›</button>
+    </div>
+  </div>
+  <div class="routine-drawer-body">
+    <!-- Pills: hidden in overview, shown only in day-focus mode -->
+    <div class="cafe-pills-wrap" id="socialFocusPills">
       <div class="cafe-pills" id="socialPills">
         <button class="cafe-pill">Mellow Monday</button>
         <button class="cafe-pill">Padel lessons</button>
@@ -1490,8 +1515,6 @@
         <button class="cafe-pill">All Trails Hike</button>
       </div>
     </div>
-  </div>
-  <div class="routine-drawer-body">
     <div class="social-day-row">
       <div class="drawer-heading" style="margin-bottom:6px">Monday</div>
       <textarea class="drawer-textarea" id="planMon" placeholder="Plans for Monday…" style="height:52px;margin-bottom:10px"></textarea>
@@ -2767,30 +2790,97 @@ function syncRemoteRow() {
 }
 
 // ── Social plans ──────────────────────────────────────────────
-let focusedSocialTa = null;       // tracks which day textarea has focus inside the drawer
-let focusedSocialOrigVal = '';    // snapshot of that textarea's value on focus — restored by Cancel
+let focusedSocialTa     = null;   // textarea currently focused inside the drawer
+let focusedSocialOrigVal = '';    // its value on focus (restored by Cancel)
+let socialBrowseWeek    = null;   // weekKey currently shown in the drawer
+let socialWeekCache     = {};     // weekKey → { mon, tue, wed, thu, fri, sat, sun }
+let socialFullCache     = {};     // weekKey → full apiRead remote (preserve past workout data on write)
+
+// ── Week key helpers ──
+function addWeeks(weekKey, delta) {
+  const d = new Date(weekKey + 'T12:00:00');
+  d.setDate(d.getDate() + delta * 7);
+  return localDateStr(d);
+}
+function formatSocialWeekLabel(weekKey) {
+  const currentWK = getWeekKey();
+  if (weekKey === currentWK) return 'This week';
+  const mon = new Date(weekKey + 'T12:00:00');
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const mo = (d) => d.toLocaleString('default', { month: 'short' });
+  const dy = (d) => d.getDate();
+  const yr = (d) => d.getFullYear();
+  const yearSuffix = yr(sun) !== new Date().getFullYear() ? `, ${yr(sun)}` : '';
+  if (mon.getMonth() === sun.getMonth())
+    return `${mo(mon)} ${dy(mon)}–${dy(sun)}${yearSuffix}`;
+  return `${mo(mon)} ${dy(mon)} – ${mo(sun)} ${dy(sun)}${yearSuffix}`;
+}
+function updateSocialWeekNav() {
+  const currentWK  = getWeekKey();
+  const maxFuture  = addWeeks(currentWK, 12);
+  document.getElementById('socialWeekLabel').textContent = formatSocialWeekLabel(socialBrowseWeek);
+  document.getElementById('socialWeekPrev').disabled = false;
+  document.getElementById('socialWeekNext').disabled = socialBrowseWeek >= maxFuture;
+}
+function fillSocialTextareas(sp) {
+  const days7 = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+  Object.keys(days7).forEach(k => {
+    document.getElementById('plan' + days7[k]).value = sp?.[k] || '';
+  });
+}
+function showSocialWeek(weekKey) {
+  socialBrowseWeek = weekKey;
+  fillSocialTextareas(socialWeekCache[weekKey] || {});
+  updateSocialWeekNav();
+}
+async function fetchAndShowSocialWeek(weekKey) {
+  if (socialWeekCache[weekKey] !== undefined) { showSocialWeek(weekKey); return; }
+  // Optimistically show blank, then fill in when fetch completes
+  showSocialWeek(weekKey);
+  document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => ta.disabled = true);
+  try {
+    const remote = await apiRead(weekKey, weekKey);
+    socialWeekCache[weekKey] = remote.socialPlans || EMPTY_SOCIAL();
+    socialFullCache[weekKey] = remote;
+    if (socialBrowseWeek === weekKey) fillSocialTextareas(socialWeekCache[weekKey]);
+  } catch(e) {
+    socialWeekCache[weekKey] = EMPTY_SOCIAL();
+  }
+  document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => ta.disabled = false);
+}
+
 function openSocialDrawer() {
-  const sp = state.socialPlans;
-  document.getElementById('planMon').value = sp?.mon || '';
-  document.getElementById('planTue').value = sp?.tue || '';
-  document.getElementById('planWed').value = sp?.wed || '';
-  document.getElementById('planThu').value = sp?.thu || '';
-  document.getElementById('planFri').value = sp?.fri || '';
-  document.getElementById('planSat').value = sp?.sat || '';
-  document.getElementById('planSun').value = sp?.sun || '';
-  // Ensure all rows visible and focused state cleared on open
+  const currentWK = getWeekKey();
+  // Sync current week's plans from live state into cache
+  socialWeekCache[currentWK] = state.socialPlans || EMPTY_SOCIAL();
+  socialFullCache[currentWK] = null; // will use state path on save
+  // Reset focus state
   focusedSocialTa = null;
+  document.getElementById('socialFocusPills').style.display = 'none';
   document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
+  showSocialWeek(currentWK);
   document.getElementById('socialBg').classList.add('open');
   document.getElementById('socialDrawer').classList.add('open');
   attachKeyboard('socialDrawer');
 }
 function closeSocialDrawer() {
-  // Reset collapsed state before closing
+  focusedSocialTa = null;
+  document.getElementById('socialFocusPills').style.display = 'none';
   document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => r.style.display = '');
   detachKeyboard('socialDrawer');
   document.getElementById('socialBg').classList.remove('open');
   document.getElementById('socialDrawer').classList.remove('open');
+}
+function collectSocialPlans() {
+  return {
+    mon: document.getElementById('planMon').value.trim(),
+    tue: document.getElementById('planTue').value.trim(),
+    wed: document.getElementById('planWed').value.trim(),
+    thu: document.getElementById('planThu').value.trim(),
+    fri: document.getElementById('planFri').value.trim(),
+    sat: document.getElementById('planSat').value.trim(),
+    sun: document.getElementById('planSun').value.trim(),
+  };
 }
 function syncSocialPlansRow() {
   const sp  = state.socialPlans;
@@ -3337,88 +3427,112 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Social plan pills → fill whichever day is focused
+  // ── Social plan pills → append to focused day (comma-separated) ──
+  function applyPillToSocialTa(text) {
+    if (!focusedSocialTa) return;
+    const existing = focusedSocialTa.value.trim();
+    focusedSocialTa.value = existing ? existing + ', ' + text : text;
+    focusedSocialTa.focus();
+  }
   document.querySelectorAll('#socialDrawer .cafe-pill').forEach(pill => {
     let tsX = 0, tsY = 0;
-
-    // Desktop: mousedown fires before blur, so we can keep focus
     pill.addEventListener('mousedown', e => {
       e.preventDefault();
-      if (focusedSocialTa) {
-        focusedSocialTa.value = pill.textContent.trim();
-        focusedSocialTa.focus();
-      }
+      applyPillToSocialTa(pill.textContent.trim());
     });
-
-    // Mobile: passive touchstart just records where the finger landed —
-    // MUST be passive so the browser can still initiate a horizontal scroll
     pill.addEventListener('touchstart', e => {
       tsX = e.touches[0].clientX;
       tsY = e.touches[0].clientY;
     }, { passive: true });
-
-    // On touchend, only fill if the finger barely moved (tap, not a scroll drag)
     pill.addEventListener('touchend', e => {
       const dx = Math.abs(e.changedTouches[0].clientX - tsX);
       const dy = Math.abs(e.changedTouches[0].clientY - tsY);
-      if (dx < 10 && dy < 10 && focusedSocialTa) {
+      if (dx < 10 && dy < 10) {
         e.preventDefault();
-        focusedSocialTa.value = pill.textContent.trim();
-        focusedSocialTa.focus();
+        applyPillToSocialTa(pill.textContent.trim());
       }
     }, { passive: false });
   });
 
-  // Social textareas → collapse other days on focus, expand on blur
-  document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => {
-    ta.addEventListener('focus', () => {
-      focusedSocialTa = ta;
-      focusedSocialOrigVal = ta.value; // snapshot before any edits
-      document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
-        row.style.display = row.querySelector('textarea') === ta ? '' : 'none';
-      });
+  // ── Social textareas → day-focus mode ──
+  function enterSocialDayFocus(ta) {
+    focusedSocialTa = ta;
+    focusedSocialOrigVal = ta.value;
+    document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
+      row.style.display = row.querySelector('textarea') === ta ? '' : 'none';
     });
+    document.getElementById('socialFocusPills').style.display = '';
+  }
+  function exitSocialDayFocus() {
+    focusedSocialTa = null;
+    focusedSocialOrigVal = '';
+    document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => { r.style.display = ''; });
+    document.getElementById('socialFocusPills').style.display = 'none';
+  }
+  document.querySelectorAll('#socialDrawer .social-day-row textarea').forEach(ta => {
+    ta.addEventListener('focus', () => { enterSocialDayFocus(ta); });
     ta.addEventListener('blur', () => {
       setTimeout(() => {
         if (!document.getElementById('socialDrawer').classList.contains('open')) return;
-        // Don't expand if focus moved to another social textarea
         const active = document.activeElement;
+        // Stay in focus mode if another social textarea got focus
         if (active && active.tagName === 'TEXTAREA' && active.closest('#socialDrawer')) return;
-        focusedSocialTa = null;
-        document.querySelectorAll('#socialDrawer .social-day-row').forEach(row => {
-          row.style.display = '';
-        });
+        exitSocialDayFocus();
       }, 50);
     });
   });
 
-  // Social plans
+  // ── Week navigator ──
+  document.getElementById('socialWeekPrev').addEventListener('click', () => {
+    exitSocialDayFocus();
+    fetchAndShowSocialWeek(addWeeks(socialBrowseWeek, -1));
+  });
+  document.getElementById('socialWeekNext').addEventListener('click', () => {
+    exitSocialDayFocus();
+    fetchAndShowSocialWeek(addWeeks(socialBrowseWeek, 1));
+  });
+
+  // ── Social plans open / close / save / cancel ──
   document.getElementById('socialRow').addEventListener('click', openSocialDrawer);
   document.getElementById('socialBg').addEventListener('click', closeSocialDrawer);
+
   document.getElementById('socialSaveBtn').addEventListener('click', () => {
-    state.socialPlans = {
-      mon: document.getElementById('planMon').value.trim(),
-      tue: document.getElementById('planTue').value.trim(),
-      wed: document.getElementById('planWed').value.trim(),
-      thu: document.getElementById('planThu').value.trim(),
-      fri: document.getElementById('planFri').value.trim(),
-      sat: document.getElementById('planSat').value.trim(),
-      sun: document.getElementById('planSun').value.trim(),
-    };
-    saveState();
-    syncSocialPlansRow();
+    const plans = collectSocialPlans();
+    socialWeekCache[socialBrowseWeek] = plans;
+    const currentWK = getWeekKey();
+    if (socialBrowseWeek === currentWK) {
+      // Current week: update live state and use normal save path
+      state.socialPlans = plans;
+      saveState();
+      syncSocialPlansRow();
+      updateProgress();
+    } else if (socialBrowseWeek > currentWK) {
+      // Future week: no existing workout data to worry about — write safely with empty weekly
+      apiWrite({
+        dayKey: socialBrowseWeek, weekKey: socialBrowseWeek,
+        daily: {}, weekly: {}, zone2: 0, socialPlans: plans,
+      }).catch(e => console.warn('social plans save failed', e));
+    } else {
+      // Past week: merge with cached full remote state to preserve workout data
+      const cached = socialFullCache[socialBrowseWeek] || {};
+      apiWrite({
+        dayKey:      cached.dayKey  || socialBrowseWeek,
+        weekKey:     socialBrowseWeek,
+        daily:       cached.daily   || {},
+        weekly:      cached.weekly  || {},
+        zone2:       cached.zone2   || 0,
+        socialPlans: plans,
+      }).catch(e => console.warn('social plans save failed', e));
+    }
     closeSocialDrawer();
-    updateProgress();
   });
+
   document.getElementById('socialCancelBtn').addEventListener('click', () => {
-    // If any day row is hidden we're in focused mode — revert and go back to all days
     const anyHidden = [...document.querySelectorAll('#socialDrawer .social-day-row')]
       .some(r => r.style.display === 'none');
     if (anyHidden) {
-      if (focusedSocialTa) focusedSocialTa.value = focusedSocialOrigVal; // revert unsaved edit
-      focusedSocialTa = null;
-      focusedSocialOrigVal = '';
-      document.querySelectorAll('#socialDrawer .social-day-row').forEach(r => { r.style.display = ''; });
+      if (focusedSocialTa) focusedSocialTa.value = focusedSocialOrigVal;
+      exitSocialDayFocus();
     } else {
       closeSocialDrawer();
     }
