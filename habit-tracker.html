@@ -2346,7 +2346,51 @@ const POSTURE_PROGRAM = [
       },
     ]
   },
-  // { week: 'Week 3', sections: [ ... ] },  ← add future weeks here
+  {
+    week: 'Week 3',
+    sections: [
+      {
+        title: 'Warm up',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Seated chest lifts',     note: null },
+          { reps: '4×', name: 'T-spine rotations',      note: 'Chest lift, head nod, rotate side to side.' },
+          { reps: '4×', name: 'Lateral rib cage shifts', note: null },
+        ]
+      },
+      {
+        title: 'Floor exercises',
+        setup: 'Lie on ground, head in ARC, arms flat on floor at 30° to side, bent knees, feet dorsiflexed at 90°.',
+        exercises: [
+          { reps: '4×', name: 'Pelvic curls',           note: 'Start in neutral, go into flat back posture.' },
+          { reps: '4×', name: 'Heel floats',             note: 'Each side.' },
+          { reps: '4×', name: 'One legged curls',        note: 'Cross ankle over knee, each side.' },
+          { reps: '4×', name: 'Crossed leg heel taps',   note: 'Each side.' },
+        ]
+      },
+      {
+        title: 'Wall exercises',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Wall pushes',            note: null },
+          { reps: '4×', name: '1 arm wall pushes',      note: 'Arm behind the back.' },
+          { reps: '4×', name: 'March in place',         note: null },
+          { reps: '4×', name: 'Alternating step ups',   note: null },
+          { reps: '4×', name: 'Calf raises',            note: null },
+        ]
+      },
+      {
+        title: 'Finisher',
+        setup: null,
+        exercises: [
+          { reps: '4×', name: 'Standing sumo squats',               note: null },
+          { reps: '4×', name: 'Lunges',                             note: 'Each side. Rib cage in line with back leg.' },
+          { reps: '4×', name: '2-part overhead lifts with foam roller', note: null },
+        ]
+      },
+    ]
+  },
+  // { week: 'Week 4', sections: [ ... ] },  ← add future weeks here
 ];
 const STATE_VERSION = 2; // bumped to flush UTC-key bug data
 
