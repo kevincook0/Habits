@@ -2262,7 +2262,7 @@ const DAILY_HABITS = [
   "In bed by 11:00pm",
 ];
 
-const ACTIVITY_HABITS = ['Push', 'Pull', 'Core', 'Tennis'];
+const ACTIVITY_HABITS = ['Push', 'Pull', 'Legs', 'Tennis'];
 const ZONE2_GOAL   = 180;
 const POSTURE_GOAL = 2;   // sessions per day (AM + PM)
 const WEEKLY_TOTAL = 7;   // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
@@ -2695,8 +2695,7 @@ function updateProgress() {
 // ── Activity cards ───────────────────────────────────────────
 function syncActivityCards() {
   ACTIVITY_HABITS.forEach(name => {
-    const id   = 'card' + name.charAt(0).toUpperCase() + name.slice(1);
-    const card = document.getElementById(id);
+    const card = document.querySelector(`.act-card[data-habit="${name}"]`);
     if (card) card.classList.toggle('done', !!state.weekly[name]);
   });
 }
@@ -3444,7 +3443,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Activity cards (Tennis, Push, Pull, Core handled via drawers)
   ACTIVITY_HABITS.forEach(name => {
-    if (['Tennis','Push','Pull','Core'].includes(name)) return;
+    if (['Tennis','Push','Pull','Legs'].includes(name)) return;
     const card = document.getElementById('card' + name.charAt(0).toUpperCase() + name.slice(1));
     card.addEventListener('click', e => {
       const wasDone = !!state.weekly[name];
