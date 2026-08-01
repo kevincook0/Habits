@@ -1352,11 +1352,17 @@
             stroke-linecap="round"
             transform="rotate(-90 17 17)"
             id="cardioRingFill"
-            style="transition: stroke-dashoffset 0.4s ease;"/>
+            style="transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;"/>
           <g transform="translate(17,17) scale(0.56) translate(-12,-12)">
             <path id="cardioHeart"
               d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
               fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="transition: stroke 0.14s;"/>
+          </g>
+          <g id="cardioHeartInnerG" transform="translate(17,17) scale(0.32) translate(-12,-12)" style="display:none">
+            <path id="cardioHeartInner"
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
               style="transition: stroke 0.14s;"/>
           </g>
         </svg>
@@ -1664,6 +1670,10 @@
 
   </div>
   <div class="routine-drawer-footer">
+    <div class="drawer-actions" style="margin-bottom:8px">
+      <button class="btn btn-secondary" id="tennisServeBtn" style="flex:1">Serve practice</button>
+      <button class="btn btn-secondary" id="tennisMachineBtn" style="flex:1">Ball machine</button>
+    </div>
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="tennisCancelBtn">Cancel</button>
       <button class="btn btn-primary"   id="tennisDoneBtn">Mark as done</button>
@@ -1711,8 +1721,11 @@
     <div class="cardio-stepper">
       <span class="cardio-stepper-label">Zone 2 this week</span>
       <button class="cardio-stepper-btn" id="cardioDrawerMinus">−</button>
-      <span class="cardio-stepper-val" id="cardioDrawerVal">0 / 180 min</span>
+      <span class="cardio-stepper-val" id="cardioDrawerVal">0 / 240 min</span>
       <button class="cardio-stepper-btn" id="cardioDrawerPlus">+</button>
+    </div>
+    <div class="drawer-actions" style="margin-bottom:8px">
+      <button class="btn btn-secondary" id="cardioIntervalsBtn" style="flex:1">Intervals</button>
     </div>
     <div class="drawer-actions">
       <button class="btn btn-secondary" id="cardioDrawerCancelBtn">Cancel</button>
@@ -2263,7 +2276,8 @@ const DAILY_HABITS = [
 ];
 
 const ACTIVITY_HABITS = ['Push', 'Pull', 'Legs', 'Tennis'];
-const ZONE2_GOAL   = 180;
+const ZONE2_GOAL    = 240;
+const ZONE2_STRETCH = 300;
 const POSTURE_GOAL = 2;   // sessions per day (AM + PM)
 const WEEKLY_TOTAL = 7;   // Push + Pull + Core + Tennis + Cardio + Remote + Weekend
 const RESET_HOUR   = 3;
@@ -2724,6 +2738,7 @@ function render() {
   document.getElementById('navFwd').disabled = (viewOffset === 0);
   renderDaily();
   syncActivityCards();
+  syncTennisCard();
   syncCardioCard();
   syncRemoteRow();
   syncSocialPlansRow();
@@ -2750,17 +2765,46 @@ function syncActivityCards() {
   });
 }
 
+function syncTennisCard() {
+  const serve   = !!state.weekly['Tennis_serve'];
+  const machine = !!state.weekly['Tennis_machine'];
+  const count   = (serve ? 1 : 0) + (machine ? 1 : 0);
+  const icon    = document.querySelector('#cardTennis .act-icon');
+  if (!icon) return;
+  if (count === 0) {
+    icon.style.boxShadow = '';
+  } else if (count === 1) {
+    icon.style.boxShadow = 'inset 0 0 0 2.5px #22c55e';
+  } else {
+    icon.style.boxShadow = 'inset 0 0 0 2.5px #22c55e, inset 0 0 0 5.5px #ec4899';
+  }
+  // Sync toggle buttons if drawer is open
+  const serveBtn   = document.getElementById('tennisServeBtn');
+  const machineBtn = document.getElementById('tennisMachineBtn');
+  if (serveBtn)   { serveBtn.className   = serve   ? 'btn btn-complete' : 'btn btn-secondary'; serveBtn.textContent   = serve   ? 'Serve ✓' : 'Serve practice'; }
+  if (machineBtn) { machineBtn.className = machine ? 'btn btn-complete' : 'btn btn-secondary'; machineBtn.textContent = machine ? 'Ball machine ✓' : 'Ball machine'; }
+}
+
 // ── Cardio card + modal ──────────────────────────────────────
 function syncCardioCard() {
   const pct    = Math.min(state.zone2 / ZONE2_GOAL, 1);
   const circ   = 2 * Math.PI * 15; // r=15 → 94.25
   const offset = circ - pct * circ;
-  document.getElementById('cardioRingFill').style.strokeDashoffset = offset;
+  const ring   = document.getElementById('cardioRingFill');
+  ring.style.strokeDashoffset = offset;
+  const atStretch = state.zone2 >= ZONE2_STRETCH;
+  ring.style.stroke = atStretch ? '#22c55e' : 'var(--green)';
   document.getElementById('cardioLabel').textContent = state.zone2 > 0 ? `${state.zone2}m` : 'Cardio';
   const isDone = state.zone2 >= ZONE2_GOAL;
   document.getElementById('cardCardio').classList.toggle('done', isDone);
   document.getElementById('cardioBg').setAttribute('fill', isDone ? 'var(--done-check)' : 'var(--grey)');
-  document.getElementById('cardioHeart').style.stroke = isDone ? '#fff' : 'var(--muted)';
+  const heartStroke = isDone ? '#fff' : 'var(--muted)';
+  document.getElementById('cardioHeart').style.stroke = heartStroke;
+  // Intervals double-heart
+  const hasIntervals = !!state.weekly['Intervals'];
+  const innerG = document.getElementById('cardioHeartInnerG');
+  innerG.style.display = hasIntervals ? '' : 'none';
+  document.getElementById('cardioHeartInner').style.stroke = heartStroke;
 }
 
 function syncModal() {
@@ -2935,6 +2979,7 @@ function closeWorkoutDrawer(drawerId, bgId) {
 function openTennisDrawer() {
   const done = !!state.weekly['Tennis'];
   document.getElementById('tennisDoneBtn').textContent = done ? 'Mark as undone' : 'Mark as done';
+  syncTennisCard();
   document.getElementById('tennisBg').classList.add('open');
   document.getElementById('tennisDrawer').classList.add('open');
 }
@@ -2946,11 +2991,23 @@ function closeTennisDrawer() {
 // ── Cardio drawer ─────────────────────────────────────────
 let cardioDrawerOrigZone2 = 0;
 function syncCardioDrawerStepper() {
-  const val  = state.zone2;
-  const done = val >= ZONE2_GOAL;
-  const el   = document.getElementById('cardioDrawerVal');
-  el.textContent = `${val} / ${ZONE2_GOAL} min`;
-  el.style.color = done ? 'var(--accent)' : 'var(--text)';
+  const val       = state.zone2;
+  const atGoal    = val >= ZONE2_GOAL;
+  const atStretch = val >= ZONE2_STRETCH;
+  const el        = document.getElementById('cardioDrawerVal');
+  if (atStretch) {
+    el.textContent = `${val} / ${ZONE2_STRETCH} min ✓`;
+    el.style.color = '#22c55e';
+  } else {
+    el.textContent = `${val} / ${ZONE2_GOAL} min`;
+    el.style.color = atGoal ? 'var(--accent)' : 'var(--text)';
+  }
+  const intBtn = document.getElementById('cardioIntervalsBtn');
+  if (intBtn) {
+    const hasInt = !!state.weekly['Intervals'];
+    intBtn.className = hasInt ? 'btn btn-complete' : 'btn btn-secondary';
+    intBtn.textContent = hasInt ? 'Intervals ✓' : 'Intervals';
+  }
 }
 function openCardioDrawer() {
   cardioDrawerOrigZone2 = state.zone2;
@@ -3519,7 +3576,18 @@ document.addEventListener('DOMContentLoaded', () => {
     syncActivityCards();
     updateProgress();
     if (!wasDone) burst(e);
+    syncTennisCard();
     closeTennisDrawer();
+  });
+  document.getElementById('tennisServeBtn').addEventListener('click', () => {
+    state = ensureFreshKeys(state);
+    state.weekly['Tennis_serve'] = !state.weekly['Tennis_serve'];
+    saveState(); syncTennisCard();
+  });
+  document.getElementById('tennisMachineBtn').addEventListener('click', () => {
+    state = ensureFreshKeys(state);
+    state.weekly['Tennis_machine'] = !state.weekly['Tennis_machine'];
+    saveState(); syncTennisCard();
   });
   // Tennis in-drawer tabs
   document.querySelectorAll('#tennisDrawer .drawer-tab-btn').forEach(btn => {
@@ -3619,11 +3687,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('cardioDrawerPlus').addEventListener('click', e => {
     state = ensureFreshKeys(state);
-    const wasDone = state.zone2 >= ZONE2_GOAL;
+    const wasDone    = state.zone2 >= ZONE2_GOAL;
+    const wasStretch = state.zone2 >= ZONE2_STRETCH;
     state.zone2 += 15;
     saveState();
     syncCardioDrawerStepper(); syncCardioCard(); updateProgress();
     if (!wasDone && state.zone2 >= ZONE2_GOAL) burst(e);
+    if (!wasStretch && state.zone2 >= ZONE2_STRETCH) burst(e);
+  });
+  document.getElementById('cardioIntervalsBtn').addEventListener('click', e => {
+    state = ensureFreshKeys(state);
+    state.weekly['Intervals'] = !state.weekly['Intervals'];
+    saveState();
+    syncCardioDrawerStepper(); syncCardioCard();
   });
   document.getElementById('cardioDrawerCancelBtn').addEventListener('click', closeCardioDrawer);
   document.getElementById('cardioDrawerSaveBtn').addEventListener('click', () => {
