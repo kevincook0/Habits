@@ -99,7 +99,7 @@
   .app {
     max-width: 430px;
     margin: 0 auto;
-    padding: 0 0 calc(var(--safe-bottom) + 108px);
+    padding: 0 0 calc(var(--safe-bottom) + 24px);
     position: relative; z-index: 1;
   }
 
@@ -4238,20 +4238,31 @@ document.addEventListener('DOMContentLoaded', () => {
     drawerOpenObserver.observe(drawer, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
   });
 
-  // ── Bottom nav: hide on scroll-down, reveal on scroll-up ─────
+  // ── Bottom nav: hide on scroll-down, reveal after genuine scroll-up ──
   {
     const tabNav = document.querySelector('.tab-nav');
     let lastY = window.scrollY;
+    let upAccum = 0;          // accumulated upward px (resets on any downward tick)
+    const REVEAL_THRESHOLD = 32; // must scroll up this many px before nav reappears
     let ticking = false;
     window.addEventListener('scroll', () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const y = window.scrollY;
-        if (y > lastY && y > 60) {
-          tabNav.classList.add('nav-hidden');
+        const y = Math.max(0, window.scrollY);
+        const maxY = document.documentElement.scrollHeight - window.innerHeight;
+        const atBottom = y >= maxY - 2;  // near page bottom — ignore momentum bounce
+
+        if (y > lastY) {
+          // scrolling down
+          upAccum = 0;
+          if (y > 60) tabNav.classList.add('nav-hidden');
         } else {
-          tabNav.classList.remove('nav-hidden');
+          // scrolling up
+          upAccum += lastY - y;
+          if (!atBottom && (upAccum >= REVEAL_THRESHOLD || y <= 60)) {
+            tabNav.classList.remove('nav-hidden');
+          }
         }
         lastY = y;
         ticking = false;
