@@ -46,7 +46,9 @@ const fileEnv = IN_ACTIONS ? {} : (readEnvFile(ENV_PATH) || {});
 const cfg     = Object.fromEntries(KEYS.map(k => [k, process.env[k] || fileEnv[k] || '']));
 KEYS.forEach(k => mask(cfg[k]));
 const missing = KEYS.filter(k => !cfg[k]);
-if (missing.length) fail(`Missing ${missing.join(', ')} (set them as environment variables${IN_ACTIONS ? '' : ' or in .env'}).`);
+if (missing.length) fail(IN_ACTIONS
+  ? `Missing ${missing.join(', ')}. Add them as *repository* secrets: Settings → Secrets and variables → Actions → Secrets tab → Repository secrets (not Variables, Environment, Codespaces or Dependabot secrets).`
+  : `Missing ${missing.join(', ')} (set them as environment variables or in .env).`);
 
 // ── Time zone helpers ─────────────────────────────────────────
 // Offset (ms) of TIME_ZONE from UTC at a given instant.
