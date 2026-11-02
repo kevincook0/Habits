@@ -3,6 +3,7 @@
 // data/strava/<weekStart>.json plus data/strava/index.json (served by GitHub Pages).
 //
 //   node scripts/fetch-strava.mjs
+//   node scripts/fetch-strava.mjs --since 2026-09-01   (one-off backfill: every week from that date)
 //
 // Weeks run Monday 00:00 → next Monday 00:00 in America/Toronto. Reads
 // STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET / STRAVA_REFRESH_TOKEN from the
@@ -209,9 +210,18 @@ function writeIfChanged(file, data) {
 
 // ── Main ──────────────────────────────────────────────────────
 async function main() {
-  // Weeks to refresh, newest first.
+  // Weeks to refresh, newest first: WEEKS_BACK by default, or back to --since.
   const thisMonday = mondayOf(todayKey());
-  const weeks = Array.from({ length: WEEKS_BACK + 1 }, (_, i) => {
+  let weekCount = WEEKS_BACK + 1;
+  const sinceArg = process.argv.indexOf('--since');
+  if (sinceArg > -1) {
+    const since = process.argv[sinceArg + 1] || '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(since) || since > todayKey()) fail('--since needs a past date like 2026-09-01.');
+    weekCount = Math.max(weekCount, Math.round((Date.parse(thisMonday) - Date.parse(mondayOf(since))) / (7 * 864e5)) + 1);
+    if (weekCount > 104) fail('--since can go back at most 2 years.');
+    console.log(`Backfilling ${weekCount} weeks from ${mondayOf(since)}.`);
+  }
+  const weeks = Array.from({ length: weekCount }, (_, i) => {
     const key = addDaysKey(thisMonday, -7 * i);
     return { key, startMs: zonedMidnight(key), endMs: zonedMidnight(addDaysKey(key, 7)) };
   });

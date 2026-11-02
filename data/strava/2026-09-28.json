@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-11-02T03:33:37.322Z",
+  "weekStart": "2026-09-28T00:00:00-04:00",
+  "weekEnd": "2026-10-05T00:00:00-04:00",
+  "totals": {
+    "movingTimeSec": 17335,
+    "distanceKm": 105.99,
+    "elevationM": 1603,
+    "rideCount": 3
+  },
+  "goal": {
+    "goalMin": 240,
+    "doneMin": 288,
+    "complete": true
+  },
+  "rides": [
+    {
+      "id": 20428393061,
+      "name": "Palma to Valldemossa",
+      "startDate": "2026-10-02T11:07:16Z",
+      "movingTimeSec": 7079,
+      "distanceKm": 43.66,
+      "elevationM": 628
+    },
+    {
+      "id": 20433067815,
+      "name": "Pollença warm up",
+      "startDate": "2026-10-03T12:13:29Z",
+      "movingTimeSec": 2963,
+      "distanceKm": 22.89,
+      "elevationM": 122
+    },
+    {
+      "id": 20446541752,
+      "name": "Cap Formentor",
+      "startDate": "2026-10-04T08:48:37Z",
+      "movingTimeSec": 7293,
+      "distanceKm": 39.44,
+      "elevationM": 853
+    }
+  ]
+}

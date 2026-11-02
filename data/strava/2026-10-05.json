@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-11-02T03:33:37.322Z",
+  "weekStart": "2026-10-05T00:00:00-04:00",
+  "weekEnd": "2026-10-12T00:00:00-04:00",
+  "totals": {
+    "movingTimeSec": 40488,
+    "distanceKm": 220.87,
+    "elevationM": 3705,
+    "rideCount": 3
+  },
+  "goal": {
+    "goalMin": 240,
+    "doneMin": 674,
+    "complete": true
+  },
+  "rides": [
+    {
+      "id": 20463563277,
+      "name": "Sa Calobra",
+      "startDate": "2026-10-05T08:03:59Z",
+      "movingTimeSec": 21005,
+      "distanceKm": 105.76,
+      "elevationM": 2058
+    },
+    {
+      "id": 20475905009,
+      "name": "Col de Femena",
+      "startDate": "2026-10-06T10:22:52Z",
+      "movingTimeSec": 11896,
+      "distanceKm": 70.68,
+      "elevationM": 860
+    },
+    {
+      "id": 20531781925,
+      "name": "Rice lake coffee ride",
+      "startDate": "2026-10-10T15:00:28Z",
+      "movingTimeSec": 7587,
+      "distanceKm": 44.43,
+      "elevationM": 787
+    }
+  ]
+}
