@@ -9,6 +9,7 @@ const DAILY_HABITS = [
   { key: 'Posture 1',                label: 'Posture 1'    },
   { key: 'Skincare',                 label: 'Skincare'     },
   { key: 'Minoxidil (AM)',           label: 'Minoxidil 1'  },
+  { key: 'Salad',                    label: 'Salad'        },
   { key: 'Posture 2',                label: 'Posture 2'    },
   { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
   { key: 'Neuropod',                 label: 'Neuropod'     },
