@@ -130,11 +130,23 @@ Habits/
 ├── js/
 │   └── app.js             ← constants, state, Supabase sync, rendering, events
 ├── supabase/functions/    ← Edge Functions: state-read, state-write, state-history
+├── scripts/
+│   └── strava-auth.mjs    ← one-time local Strava OAuth; writes STRAVA_REFRESH_TOKEN to .env
+├── .env.example           ← Strava credential names (real values go in gitignored .env)
 ├── habit-button/          ← ESP8266 physical habit buttons (Arduino sketches + build guide)
 ├── weekly-prototype.html  ← older standalone weekly-view prototype
 ├── CLAUDE.md              ← this file
 └── Check.png              ← apple-touch-icon for home screen
 ```
+
+---
+
+## Strava integration (in progress)
+
+Plan: a scheduled GitHub Action fetches Strava data and commits a JSON file that the page reads. There is no server.
+
+- GitHub Pages serves the **root of `main`**, so every committed file is public. Strava secrets live only in `.env` locally (gitignored) and in GitHub Actions secrets. Never commit them and never print them.
+- `node scripts/strava-auth.mjs` runs the one-time OAuth flow (scope `activity:read_all`) and writes the refresh token into `.env`. The Strava app's Authorization Callback Domain must be `localhost`.
 
 ---
 

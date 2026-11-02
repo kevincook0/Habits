@@ -1,0 +1,10 @@
+# Local secrets — never commit (GitHub Pages serves every committed file publicly)
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Supabase CLI scratch files
+supabase/.temp/
