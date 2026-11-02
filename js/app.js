@@ -16,9 +16,12 @@ const DAILY_HABITS = [
   { key: 'In bed by 11:00pm',        label: 'Bed by 23:00' },
 ];
 
-const ZONE2_GOAL = 240;   // minutes/week — Bike tab bar fills at this
-const ZONE2_STEP = 15;
+const ZONE2_GOAL = 240;   // minutes/week — fallback if a Strava file has no goal (GOAL_MIN in scripts/fetch-strava.mjs)
 const RESET_HOUR = 3;
+
+// Strava week files written by scripts/fetch-strava.mjs. Relative, so it works on
+// GitHub Pages (/Habits/) and on a local server alike.
+const STRAVA_DIR = 'data/strava/';
 
 const TABS = ['Habits', 'Push', 'Pull', 'Legs', 'Skills', 'Bike'];
 
@@ -326,7 +329,6 @@ let page          = 'Habits';  // a TABS entry, or 'History'
 let viewDay       = null;      // past day open on Habits: { dayKey, weekKey, daily, weekly, zone2, socialPlans, loaded }
 let skillsSection = 'warmup';
 let bikeSection   = 'warmup';
-let bikeDraft     = 0;         // Zone 2 minutes being edited; committed by Save progress
 let historyDays   = 14;        // rows shown on History
 let historyFrom   = null;      // earliest dayKey fetched into habitHistory
 
@@ -335,9 +337,82 @@ const $ = id => document.getElementById(id);
 const CHECK_SVG = `<svg class="check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12.5 9.5,18 20,6.5"/></svg>`;
 
 function go(p) {
-  if (p === 'Bike' && page !== 'Bike') bikeDraft = state.zone2;
+  if (p === 'Bike' && page !== 'Bike') refreshStrava(); // pick up anything the hourly workflow committed
   page = p;
   window.scrollTo(0, 0);
+  render();
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ── Strava week data ─────────────────────────────────────────
+let stravaWeeks   = null;        // week keys with a file, plus the current week — newest first
+let stravaIndexed = new Set();   // week keys index.json lists (i.e. a file exists)
+let stravaWeek    = null;        // week shown on the Bike page
+const stravaData  = {};          // weekKey → { status: 'loading' | 'ok' | 'error', data }
+
+// Monday of this week at 00:00 local — the boundary fetch-strava.mjs uses
+// (not the app's 3am RESET_HOUR).
+function currentStravaWeek() {
+  const d = new Date();
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return localDateStr(d);
+}
+
+function readStravaCache() {
+  try { return JSON.parse(localStorage.getItem('stravaWeek') || 'null'); }
+  catch { return null; }
+}
+
+async function loadStravaJson(file) {
+  const res = await fetch(STRAVA_DIR + file, { cache: 'no-cache' }); // revalidate; Pages caches ~10 min
+  if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
+  return res.json();
+}
+
+async function loadStravaWeek(key, force = false) {
+  const entry = stravaData[key];
+  if (entry && entry.status !== 'error' && !force) return;
+  if (!stravaIndexed.has(key)) {
+    stravaData[key] = { status: 'ok', data: null }; // no file yet (e.g. Monday before the first run) — empty week
+    render();
+    return;
+  }
+  if (!entry || entry.status === 'error') { stravaData[key] = { status: 'loading' }; render(); }
+  try {
+    const data = await loadStravaJson(`${key}.json`);
+    stravaData[key] = { status: 'ok', data };
+    if (key === currentStravaWeek())
+      try { localStorage.setItem('stravaWeek', JSON.stringify({ key, data })); } catch {}
+  } catch (e) {
+    console.warn('strava week load failed', e);
+    if (stravaData[key]?.status !== 'ok') stravaData[key] = { status: 'error' }; // keep stale data over an error
+  }
+  render();
+}
+
+async function refreshStrava() {
+  const current = currentStravaWeek();
+  if (!stravaWeek) stravaWeek = current;
+  try {
+    const index = await loadStravaJson('index.json');
+    stravaIndexed = new Set(index.weeks || []);
+    stravaWeeks = [...new Set([current, ...stravaIndexed])].filter(k => k <= current).sort().reverse();
+  } catch (e) {
+    console.warn('strava index load failed', e);
+    if (!stravaWeeks) {
+      [current, stravaWeek].forEach(k => { if (stravaData[k]?.status !== 'ok') stravaData[k] = { status: 'error' }; });
+      render();
+      return;
+    }
+  }
+  await Promise.all([...new Set([current, stravaWeek])].map(k => loadStravaWeek(k, true)));
+}
+
+function showStravaWeek(key) {
+  stravaWeek = key;
+  loadStravaWeek(key);
   render();
 }
 
@@ -360,7 +435,16 @@ function render() {
   renderFooter();
 }
 
-const progressBar = pct => `<span class="nav-bar"><span class="nav-bar-fill" style="width:${Math.round(pct * 100)}%"></span></span>`;
+const progressBar = (pct, cls = '') =>
+  `<span class="nav-bar ${cls}"><span class="nav-bar-fill" style="width:${Math.round(pct * 100)}%"></span></span>`;
+
+// Weekly Zone 2 progress from a Strava week file (null = no rides yet).
+// Capped at the goal: no over-goal display (the Time stat shows the real total).
+function stravaGoal(data) {
+  const goalMin = data?.goal?.goalMin || ZONE2_GOAL;
+  const doneMin = Math.min(Math.floor((data?.totals?.movingTimeSec || 0) / 60), goalMin);
+  return { goalMin, doneMin, pct: doneMin / goalMin, complete: doneMin >= goalMin };
+}
 
 function renderNav() {
   $('topNav').innerHTML = TABS.map(tab => {
@@ -369,7 +453,8 @@ function renderNav() {
     if (tab === 'Habits') {
       foot = progressBar(countDone(state.daily) / DAILY_HABITS.length);
     } else if (tab === 'Bike') {
-      foot = progressBar(Math.min(state.zone2 / ZONE2_GOAL, 1));
+      const g = stravaGoal(stravaData[currentStravaWeek()]?.data);
+      foot = progressBar(g.pct, `goal${g.complete ? ' complete' : ''}`);
     } else {
       const v = state.weekly[WEEKLY_KEY[tab]];
       done = !!v;
@@ -455,9 +540,82 @@ function renderSections(prefix, sections, activeId) {
   ).join('');
 }
 
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function weekRange(key) {
+  const start = parseDayKey(key);
+  const end   = parseDayKey(addDays(key, 6));
+  const fmt   = d => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+  const year  = end.getFullYear() !== new Date().getFullYear() ? `, ${end.getFullYear()}` : '';
+  return `${fmt(start)} – ${fmt(end)}${year}`;
+}
+
+function formatUpdated(iso) {
+  const d    = new Date(iso);
+  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+  return localDateStr(d) === localDateStr(new Date()) ? time : `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}, ${time}`;
+}
+
+const hmm  = sec => `${Math.floor(sec / 3600)}:${String(Math.floor(sec % 3600 / 60)).padStart(2, '0')}`;
+const km   = n => `${(n || 0).toFixed(1)} km`;
+const metres = n => `${Math.round(n || 0)} m`;
+
 function renderBike() {
-  $('bikeGoal').textContent = `${ZONE2_GOAL} min`;
-  $('bikeVal').textContent  = `${bikeDraft} minutes`;
+  const current = currentStravaWeek();
+  const key     = stravaWeek || current;
+  const weeks   = stravaWeeks || [current];
+  const i       = weeks.indexOf(key);
+  const entry   = stravaData[key] || { status: 'loading' };
+  const data    = entry.data;
+
+  $('weekTitle').textContent   = weekRange(key);
+  $('weekUpdated').textContent = data?.generatedAt ? `Updated ${formatUpdated(data.generatedAt)}` : '';
+  $('weekPrev').disabled = i < 0 || i >= weeks.length - 1;
+  $('weekNext').disabled = i <= 0;
+
+  const body = $('weekBody');
+  if (entry.status === 'loading') {
+    body.innerHTML = `<div class="list section-gap"><div class="row state-row"><span class="row-label">Loading rides…</span></div></div>`;
+  } else if (entry.status === 'error') {
+    body.innerHTML = `<div class="list section-gap"><div class="row state-row">
+      <span class="row-label">Couldn't load ride data</span>
+      <button class="text-btn" id="stravaRetry">Try again</button>
+    </div></div>`;
+  } else {
+    const totals = data?.totals || { movingTimeSec: 0, distanceKm: 0, elevationM: 0 };
+    const rides  = data?.rides  || [];
+    const g      = stravaGoal(data);
+    body.innerHTML = `
+      <div class="list gap-sm stats">
+        <div class="stat"><span class="row-label">Time</span><span class="stat-value">${hmm(totals.movingTimeSec)}</span></div>
+        <div class="stat"><span class="row-label">Distance</span><span class="stat-value">${km(totals.distanceKm)}</span></div>
+        <div class="stat"><span class="row-label">Elevation</span><span class="stat-value">${metres(totals.elevationM)}</span></div>
+      </div>
+      <div class="list section-gap">
+        <div class="ex">
+          <div class="ex-head"><span class="row-label">Zone 2</span><span class="row-meta">${g.doneMin} / ${g.goalMin} min</span></div>
+          <div class="goal-bar${g.complete ? ' complete' : ''}" role="progressbar" aria-valuemin="0" aria-valuemax="${g.goalMin}" aria-valuenow="${g.doneMin}">
+            <span class="goal-bar-fill" style="width:${Math.round(g.pct * 100)}%"></span>
+          </div>
+        </div>
+      </div>
+      <h2 class="section-title">Rides</h2>
+      <div class="list section-gap">
+        ${rides.length ? rides.map(r => `
+          <div class="ex">
+            <div class="ex-head">
+              <span class="row-label">${esc(r.name)}</span>
+              <span class="row-meta">${new Date(r.startDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            </div>
+            <div class="ride-foot">
+              <span class="ride-stats">${hmm(r.movingTimeSec)} · ${km(r.distanceKm)} · ${metres(r.elevationM)}</span>
+              <a class="strava-link" href="https://www.strava.com/activities/${Number(r.id)}" target="_blank" rel="noopener">View on Strava</a>
+            </div>
+          </div>`).join('')
+        : `<div class="row state-row"><span class="row-label">No rides this week</span></div>`}
+      </div>`;
+  }
+
   renderSections('bike', BIKE_SECTIONS, bikeSection);
 }
 
@@ -467,8 +625,6 @@ function renderFooter() {
   if (page in WORKOUTS || page === 'Skills') {
     danger = !!state.weekly[WEEKLY_KEY[page]];
     label  = danger ? 'Mark as incomplete' : 'Mark as done';
-  } else if (page === 'Bike') {
-    label = 'Save progress';
   }
   $('footer').hidden = label === null;
   document.body.classList.toggle('has-footer', label !== null);
@@ -571,7 +727,13 @@ function toggleWeeklyDone() {
 }
 
 // ── Boot ─────────────────────────────────────────────────────
+// Last-seen Strava week from cache so the Bike bar is right before the fetch lands.
+{
+  const cached = readStravaCache();
+  if (cached?.key === currentStravaWeek()) stravaData[cached.key] = { status: 'ok', data: cached.data };
+}
 render();
+refreshStrava();
 
 // Hydrate from API + load 60 days of history for the History page
 (async () => {
@@ -595,7 +757,6 @@ render();
     });
     seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
     cacheLocal(state);
-    if (page === 'Bike') bikeDraft = state.zone2;
   } else {
     console.warn('initial habit fetch failed', stateResult.reason);
   }
@@ -647,22 +808,20 @@ $('bikeSubnav').addEventListener('click', e => {
   if (id) { bikeSection = id; render(); }
 });
 
-document.querySelectorAll('[data-bike]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    bikeDraft = Math.max(0, bikeDraft + Number(btn.dataset.bike) * ZONE2_STEP);
-    render();
-  });
+// Previous = older week, next = newer (stravaWeeks is newest first)
+$('weekPrev').addEventListener('click', () => {
+  const i = stravaWeeks?.indexOf(stravaWeek) ?? -1;
+  if (i > -1 && i < stravaWeeks.length - 1) showStravaWeek(stravaWeeks[i + 1]);
+});
+$('weekNext').addEventListener('click', () => {
+  const i = stravaWeeks?.indexOf(stravaWeek) ?? -1;
+  if (i > 0) showStravaWeek(stravaWeeks[i - 1]);
+});
+$('weekBody').addEventListener('click', e => {
+  if (e.target.closest('#stravaRetry')) refreshStrava();
 });
 
-$('footerBtn').addEventListener('click', () => {
-  if (page === 'Bike') {
-    state.zone2 = bikeDraft;
-    saveState();
-    go('Habits');
-  } else {
-    toggleWeeklyDone();
-  }
-});
+$('footerBtn').addEventListener('click', toggleWeeklyDone);
 
 window.addEventListener('pagehide', flushSave);
 document.addEventListener('visibilitychange', () => {

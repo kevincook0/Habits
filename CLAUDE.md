@@ -70,11 +70,11 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 | Habits | Daily checklist (default) | Progress bar: done / total |
 | Push, Pull, Legs | Workout log + Mark as done/incomplete | Date done + dot (green when done); label struck through |
 | Skills | Warm up / Affirmations / Cool down + Mark as done/incomplete | Same as workouts |
-| Bike | Zone 2 stepper + Warm up / Cool down + Save progress | Progress bar: `zone2 / ZONE2_GOAL` |
+| Bike | Strava week (stats, Zone 2 bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
 - **History**: tapping the date chip on Habits opens History (a list of days with counts; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Habits" chip on History goes back. Tapping the Habits tab always returns to today.
 - **Past-day edits** (`viewDay`) write straight to the API with no debounce. They're blocked until `state-read` for that day has returned (`viewDay.loaded`), so a past day is never written from partial data. If that day is in the current week, the write sends the live `state.weekly` so it can't roll back this week's workouts.
-- **Bike** edits a draft (`bikeDraft`); only Save progress commits it to `state.zone2`. Leaving the tab discards the draft.
+- **Bike** shows Strava data read from `data/strava/` (relative path, so it works on Pages and a local server). Defaults to the current week (Monday 00:00 local, matching `fetch-strava.mjs`); ‹ › step through weeks in `index.json`. A week with no file yet shows as empty, not an error. The progress bar is capped at the goal (no over-goal display); the Time stat shows the real total. The current week is cached in `localStorage` (`stravaWeek`) so the nav bar renders before the fetch. `state.zone2` (the old manual counter) has no UI any more but is still passed through on writes.
 
 ---
 
@@ -148,7 +148,7 @@ Habits/
 
 ## Strava integration
 
-A scheduled GitHub Action fetches Strava rides and commits JSON files that the page can read. There is no server. (The page doesn't read them yet.)
+A scheduled GitHub Action fetches Strava rides and commits JSON files that the Bike tab reads. There is no server.
 
 - GitHub Pages serves the **root of `main`**, so every committed file is public — including ride names and times in `data/strava/`. Strava secrets live only in `.env` locally (gitignored) and in GitHub Actions secrets (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REFRESH_TOKEN`, `GH_PAT`). Never commit them and never print them.
 - `node scripts/strava-auth.mjs` — one-time OAuth flow (scope `activity:read_all`); writes the refresh token into `.env`. The Strava app's Authorization Callback Domain must be `localhost`.
@@ -162,6 +162,13 @@ A scheduled GitHub Action fetches Strava rides and commits JSON files that the p
 
 ## Local development
 
-No build step. Open `habit-tracker.html` directly in Safari or Chrome. The app reads/writes the same Supabase project regardless of where it's opened, so **edits in the browser immediately affect live data**.
+No build step, but serve it over HTTP — browsers block `fetch` of the Strava JSON from a `file://` page:
+
+```
+python3 -m http.server 8000      # from the repo root
+open http://localhost:8000/habit-tracker.html
+```
+
+The app reads/writes the same Supabase project regardless of where it's opened, so **edits in the browser immediately affect live data**.
 
 To preview without touching live data, load the page with `fetch` stubbed out (and block the Supabase host, e.g. Chrome's `--host-resolver-rules="MAP qbyuyoiiuoaeinvfiudv.supabase.co 127.0.0.1"`).

@@ -9,6 +9,7 @@
   --green:    #4cb85c;
   --ink:      #060d14;   /* primary button + chip */
   --red:      #9b2226;   /* "Mark as incomplete" */
+  --strava:   #fc5200;   /* "View on Strava" links (Strava brand orange) */
 
   --radius:   10px;
   --gutter:   20px;
@@ -106,6 +107,9 @@ button {
   background: var(--green);
 }
 .nav-bar-fill[style*="width:0%"] { min-width: 0; }
+/* Weekly goal bars (Bike): dark until the goal is hit, then green */
+.nav-bar.goal .nav-bar-fill { background: var(--ink); }
+.nav-bar.goal.complete .nav-bar-fill { background: var(--green); }
 
 /* ── Page ──────────────────────────────────────────────────── */
 .page {
@@ -230,7 +234,6 @@ body.has-footer .page {
   gap: 2px;
   height: 56px;
 }
-.stepper-wide { grid-template-columns: 56px 1fr 56px; }
 .stepper-btn, .stepper-val {
   display: flex;
   align-items: center;
@@ -258,6 +261,81 @@ body.has-footer .page {
   white-space: nowrap;
 }
 .subnav-btn.active { color: var(--text); }
+
+/* ── Strava week (Bike) ────────────────────────────────────── */
+.page-sub {
+  min-height: 16px;
+  margin-top: 4px;
+  font: 400 12px var(--mono);
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.week-nav { display: flex; gap: 2px; flex-shrink: 0; }
+.week-nav-btn { width: 44px; height: 40px; font-size: 24px; }
+.week-nav-btn:disabled { color: var(--faint); cursor: default; }
+.week-nav-btn:disabled:active { background: var(--surface); }
+
+.list.gap-sm { margin-bottom: 12px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--row-h);
+  padding: 12px 10px;
+  border-right: 1px solid var(--line);
+}
+.stat:last-child { border-right: 0; }
+.stat-value { font-size: 20px; white-space: nowrap; }
+
+.goal-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: #e2e2e2;
+  overflow: hidden;
+}
+.goal-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ink);
+}
+.goal-bar.complete .goal-bar-fill { background: var(--green); }
+
+.section-title {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.ride-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ride-stats { font-size: 15px; white-space: nowrap; }
+.strava-link {
+  flex-shrink: 0;
+  font: 500 12px var(--mono);
+  color: var(--strava);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.state-row { align-items: center; }
+.text-btn {
+  flex-shrink: 0;
+  font: 500 13px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: underline;
+}
 
 /* ── Footer action ─────────────────────────────────────────── */
 .footer {
