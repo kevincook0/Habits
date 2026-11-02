@@ -628,7 +628,7 @@ function renderWorkout(name) {
         <span class="row-label">${ex.name}</span>${CHECK_SVG}
       </div>`;
     }
-    const head = `<div class="row ex-row" role="button" data-ex-row="${i}">
+    const head = `<div class="row ex-row${i === active ? ' active' : ''}" role="button" data-ex-row="${i}">
       <span class="row-label">${ex.name}</span><span class="row-meta">${ex.target}</span>
     </div>`;
     if (i !== active) return head;

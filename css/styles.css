@@ -173,6 +173,9 @@ button {
 .habit-row, .ex-row { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .habit-row.done, .ex-row.done { background: var(--surface); }
 .habit-row.done .row-label, .ex-row.done .row-label { color: var(--text); text-decoration: line-through; }
+/* The open exercise (its sets are shown below it) */
+.ex-row.active { background: var(--surface); }
+.ex-row.active .row-label, .ex-row.active .row-meta { color: var(--text); }
 .check {
   align-self: center;   /* vertically centered in the row */
   margin-right: 10px;
