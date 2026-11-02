@@ -10,11 +10,11 @@
 // Never prints secret values.
 
 import { createServer } from 'node:http';
-import { readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { readEnvFile, writeEnvValue } from './lib/env.mjs';
 
 const ENV_PATH      = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env');
 const SCOPE         = 'activity:read_all';
@@ -28,34 +28,11 @@ function fail(msg) {
   process.exit(1);
 }
 
-// ── .env read/write (minimal KEY=VALUE parser) ────────────────
-function readEnv() {
-  if (!existsSync(ENV_PATH)) fail('No .env found. Run `cp .env.example .env` and fill in STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET.');
-  const env = {};
-  for (const line of readFileSync(ENV_PATH, 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-    if (m) env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
-  }
-  return env;
-}
-
-// Replace (or append) one key, leaving every other line untouched.
-function writeEnvValue(key, value) {
-  const lines = readFileSync(ENV_PATH, 'utf8').split(/\r?\n/);
-  const i = lines.findIndex(l => new RegExp(`^\\s*${key}\\s*=`).test(l));
-  if (i > -1) lines[i] = `${key}=${value}`;
-  else {
-    if (lines.at(-1) === '') lines.pop();
-    lines.push(`${key}=${value}`, '');
-  }
-  writeFileSync(ENV_PATH, lines.join('\n'));
-  chmodSync(ENV_PATH, 0o600); // owner-only; writeFileSync's mode only applies to new files
-}
-
 // ── Setup ─────────────────────────────────────────────────────
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) fail('--port must be a number between 1 and 65535.');
 
-const env = readEnv();
+const env = readEnvFile(ENV_PATH);
+if (!env) fail('No .env found. Run `cp .env.example .env` and fill in STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET.');
 const missing = ['STRAVA_CLIENT_ID', 'STRAVA_CLIENT_SECRET'].filter(k => !env[k]);
 if (missing.length) fail(`Missing in .env: ${missing.join(', ')}`);
 
@@ -137,7 +114,7 @@ async function handle(req, res) {
       return shutdown(1);
     }
 
-    writeEnvValue('STRAVA_REFRESH_TOKEN', data.refresh_token);
+    writeEnvValue(ENV_PATH, 'STRAVA_REFRESH_TOKEN', data.refresh_token);
     const who = data.athlete ? ` for ${data.athlete.firstname ?? 'athlete'} (id ${data.athlete.id})` : '';
     page(res, 200, 'Connected to Strava', `Refresh token saved to <code>.env</code>${who}.`);
     console.log(`\n✓ Authorized${who} with scope ${granted.join(',')}.`);

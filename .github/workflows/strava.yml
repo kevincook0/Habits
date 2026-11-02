@@ -1,0 +1,46 @@
+name: Strava
+
+on:
+  schedule:
+    - cron: '23 * * * *'   # hourly, off the hour (top-of-hour runs are often delayed)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Never run two at once — both would refresh the token and race to push.
+concurrency:
+  group: strava
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # room for up to 3 rate-limit waits of ~15 min
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch Strava data
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}   # only used to save a rotated refresh token
+        run: node scripts/fetch-strava.mjs
+
+      - name: Commit data if changed
+        run: |
+          git add data/strava
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update Strava data"
+          git pull --rebase origin main
+          git push origin HEAD:main

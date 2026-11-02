@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-11-02T02:50:51.936Z",
+  "weekStart": "2026-10-19T00:00:00-04:00",
+  "weekEnd": "2026-10-26T00:00:00-04:00",
+  "totals": {
+    "movingTimeSec": 0,
+    "distanceKm": 0,
+    "elevationM": 0,
+    "rideCount": 0
+  },
+  "goal": {
+    "goalMin": 240,
+    "doneMin": 0,
+    "complete": false
+  },
+  "rides": []
+}

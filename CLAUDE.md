@@ -131,7 +131,12 @@ Habits/
 │   └── app.js             ← constants, state, Supabase sync, rendering, events
 ├── supabase/functions/    ← Edge Functions: state-read, state-write, state-history
 ├── scripts/
-│   └── strava-auth.mjs    ← one-time local Strava OAuth; writes STRAVA_REFRESH_TOKEN to .env
+│   ├── strava-auth.mjs    ← one-time local Strava OAuth; writes STRAVA_REFRESH_TOKEN to .env
+│   ├── fetch-strava.mjs   ← fetches weekly rides → data/strava/*.json
+│   └── lib/env.mjs        ← shared .env read/write
+├── data/strava/           ← generated weekly JSON + index.json (committed by the workflow)
+├── .github/workflows/
+│   └── strava.yml         ← hourly fetch + commit
 ├── .env.example           ← Strava credential names (real values go in gitignored .env)
 ├── habit-button/          ← ESP8266 physical habit buttons (Arduino sketches + build guide)
 ├── weekly-prototype.html  ← older standalone weekly-view prototype
@@ -141,12 +146,17 @@ Habits/
 
 ---
 
-## Strava integration (in progress)
+## Strava integration
 
-Plan: a scheduled GitHub Action fetches Strava data and commits a JSON file that the page reads. There is no server.
+A scheduled GitHub Action fetches Strava rides and commits JSON files that the page can read. There is no server. (The page doesn't read them yet.)
 
-- GitHub Pages serves the **root of `main`**, so every committed file is public. Strava secrets live only in `.env` locally (gitignored) and in GitHub Actions secrets. Never commit them and never print them.
-- `node scripts/strava-auth.mjs` runs the one-time OAuth flow (scope `activity:read_all`) and writes the refresh token into `.env`. The Strava app's Authorization Callback Domain must be `localhost`.
+- GitHub Pages serves the **root of `main`**, so every committed file is public — including ride names and times in `data/strava/`. Strava secrets live only in `.env` locally (gitignored) and in GitHub Actions secrets (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REFRESH_TOKEN`, `GH_PAT`). Never commit them and never print them.
+- `node scripts/strava-auth.mjs` — one-time OAuth flow (scope `activity:read_all`); writes the refresh token into `.env`. The Strava app's Authorization Callback Domain must be `localhost`.
+- `node scripts/fetch-strava.mjs` — refreshes the access token, fetches the current + previous week (Mon 00:00 → Mon 00:00, America/Toronto), writes `data/strava/<weekStart>.json` and `data/strava/index.json`. Edit `RIDE_TYPES`, `GOAL_MIN`, `WEEKS_BACK` at the top.
+  - Files are only rewritten when something besides `generatedAt` changed, so `generatedAt` means "last changed", and no-op runs don't commit.
+  - If Strava rotates the refresh token: in Actions it updates the repo secret via `gh secret set` (needs `GH_PAT` with Secrets read/write); locally it updates `.env` and warns that the GitHub secret is now stale.
+- `.github/workflows/strava.yml` — hourly at :23 + manual trigger; commits as `github-actions[bot]` with "Update Strava data". Pull before pushing locally, since the bot commits to `main`.
+- Weeks here start Monday 00:00 Toronto time; the app's own week rolls over Monday 3:00 device time. Week keys (the Monday date) match.
 
 ---
 
