@@ -54,7 +54,7 @@ state = {
 - **Weekly done flags** (`weekly.Push/Pull/Legs`) hold the dayKey they were marked done, shown as `DD.MM` in the top nav. Weeks before the redesign stored `true` — treat any truthy value as done.
 - **Skills has no stored done flag.** It's done for a week when Strava has a racket session in it (see Strava integration). Old weeks may still carry `weekly.Tennis` / `Tennis_serve` / `Tennis_strava` from earlier designs; they're ignored.
 - **Workout logs** (`weekly['<name>_log']`) are arrays indexed by exercise position in `WORKOUTS`. Reordering exercises scrambles past logs. Each entry is `{ sets: [{ weight, reps }], done }`, with the set count parsed from the target ("3×12" → 3). Weeks before per-set logging stored one `{ weight, reps }` per exercise; `exerciseEntry()` reads both and fills every set from the old single value.
-- **Mobility + posture**: the morning habit uses the `'Morning mobility'` key and the evening one uses `'Posture 2'` (kept so history carries over). `'Posture 1'` is no longer shown. Days before the posture split only have `'Posture program'` (a 0–2 counter); `isHabitDone()` falls back to it.
+- **Posture 1 / Posture 2** are booleans. Days before the split only have `'Posture program'` (a 0–2 counter); `isHabitDone()` falls back to it.
 - Old keys (`sym_*`, `daily_grateful`, `Work remote`, `Intervals`, …) may still be in stored data from the previous design. They're carried along untouched.
 
 Day resets at **3:00 am local time** (`RESET_HOUR = 3`). Week rolls over on Monday at the same hour. `ensureFreshKeys()` runs on every render and clears stale keys.
@@ -107,7 +107,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 
 ## Key constants (top of `js/app.js`)
 
-- `DAILY_HABITS` — the 11 daily habits, in display order, as `{ key, label }`
+- `DAILY_HABITS` — the 12 daily habits, in display order, as `{ key, label }`
 - `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
 - `WEEKLY_KEY` — tab name → `state.weekly` key
 - `WORKOUTS` — Push/Pull/Legs titles and exercises (`{ name, target, unit? }`)
