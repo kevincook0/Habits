@@ -21,6 +21,7 @@ const DAILY_HABITS = [
 const POSTURE_STEPS = [   // current rehab — same for both sessions; update as it progresses
   ['Seated chest lifts',  '4 reps'],
   ['Seated spine twists', '4 reps'],
+  ['Laser clocks',        '12, 9, 3, 6'],
 ];
 const HABIT_STEPS = {
   'Morning mobility': [
