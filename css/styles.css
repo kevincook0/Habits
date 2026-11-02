@@ -87,6 +87,7 @@ button {
   flex-shrink: 0;
 }
 .nav-tab.done .nav-dot, .dot.on { background: var(--green); }
+.dots { display: flex; gap: 3px; }   /* Skills: one dot per session */
 
 .nav-bar {
   display: block;

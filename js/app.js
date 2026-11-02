@@ -531,10 +531,10 @@ function renderNav() {
       const g = stravaGoal(stravaData[currentStravaWeek()]?.data);
       foot = progressBar(g.pct, `goal${g.complete ? ' complete' : ''}`);
     } else if (tab === 'Skills') {
-      // Done = a racket session on Strava this week, dated to the first one
-      const first = racketSessions(stravaData[currentStravaWeek()]?.data)[0];
-      done = !!first;
-      foot = dateFoot(first ? localDateStr(new Date(first.startDate)) : null);
+      // Done = a racket session on Strava this week; one dot per session
+      const n = racketSessions(stravaData[currentStravaWeek()]?.data).length;
+      done = n > 0;
+      foot = `<span class="nav-date"></span>${sessionDots(n)}`;
     } else {
       const v = state.weekly[WEEKLY_KEY[tab]];
       done = !!v;
@@ -839,17 +839,22 @@ function renderStravaHistory(tab) {
       } else {
         const sessions = racketSessions(data);
         vals = [`${Math.floor(sessions.reduce((s, a) => s + a.movingTimeSec, 0) / 60)} min`];
-        on   = sessions.length > 0;
+        on   = sessions.length;
       }
     }
     return `<div class="row history-row" role="button" data-week="${key}">
       <span class="row-label">${weekRange(key)}</span>
       <span class="history-right">
         <span class="history-count week-vals">${vals.map(v => `<span>${v}</span>`).join('')}</span>
-        <span class="dot${on ? ' on' : ''}"></span>
+        ${tab === 'Skills' ? sessionDots(on) : `<span class="dot${on ? ' on' : ''}"></span>`}
       </span>
     </div>`;
   }).join('');
+}
+
+// One green dot per racket session, or a single gray dot for none.
+function sessionDots(n) {
+  return `<span class="dots">${n ? '<span class="dot on"></span>'.repeat(n) : '<span class="dot"></span>'}</span>`;
 }
 
 // ── Actions ──────────────────────────────────────────────────
