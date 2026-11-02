@@ -178,8 +178,7 @@ body.has-footer .page {
 .habit-row.done, .ex-row.done { background: var(--surface); }
 .habit-row.done .row-label, .ex-row.done .row-label { color: var(--text); text-decoration: line-through; }
 .check {
-  align-self: center;
-  margin-top: 8px;
+  align-self: center;   /* vertically centered in the row */
   margin-right: 10px;
   color: var(--green);
   flex-shrink: 0;
