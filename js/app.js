@@ -36,6 +36,7 @@ const HABIT_STEPS = {
     ['Side bridge',         '12 reps'],
     ['Banded SLS',          '12 reps'],
     ['Wall ankle mobility', '1 min'],
+    ['Dead hang',           '1 min'],
   ],
   'Posture 1': POSTURE_STEPS,
   'Posture 2': POSTURE_STEPS,
