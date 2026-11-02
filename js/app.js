@@ -5,11 +5,10 @@ const DAILY_HABITS = [
   { key: 'Out of bed by 7:30am',     label: 'Up by 7:30'   },
   { key: 'Make bed + open window',   label: 'Make bed'     },
   { key: 'Supplements',              label: 'Supplements'  },
-  { key: 'Morning mobility',         label: 'Mobility'     },
-  { key: 'Posture 1',                label: 'Posture 1'    },
+  { key: 'Morning mobility',         label: 'Morning mobility + posture' },
   { key: 'Skincare',                 label: 'Skincare'     },
   { key: 'Minoxidil (AM)',           label: 'Minoxidil 1'  },
-  { key: 'Posture 2',                label: 'Posture 2'    },
+  { key: 'Posture 2',                label: 'Evening mobility + posture' },   // key kept from the old Posture 2 habit
   { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
   { key: 'Neuropod',                 label: 'Neuropod'     },
   { key: 'Statin, Magnesium, CoQ10', label: 'Statin'       },
