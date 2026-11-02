@@ -25,10 +25,10 @@ const STRAVA_DIR = 'data/strava/';
 
 const TABS = ['Habits', 'Push', 'Pull', 'Legs', 'Skills', 'Bike'];
 
-// Weekly done flags live in state.weekly under these keys. The value is the
+// Workout done flags live in state.weekly under these keys. The value is the
 // dayKey it was marked done (weeks before the redesign stored `true`).
-// Skills keeps the old 'Tennis' key so past weeks still read correctly.
-const WEEKLY_KEY = { Push: 'Push', Pull: 'Pull', Legs: 'Legs', Skills: 'Tennis' };
+// Skills isn't here: it's done when Strava has a racket session that week.
+const WEEKLY_KEY = { Push: 'Push', Pull: 'Pull', Legs: 'Legs' };
 
 // ── Workouts ─────────────────────────────────────────────────
 // Order matters: each exercise is stored by index in weekly['<name>_log'] as
@@ -354,9 +354,9 @@ function go(p) {
     state.weekly[page] = state.dayKey;
     saveState();
   }
-  // Entering the Bike section: pick up anything the hourly workflow committed
-  if ((p === 'Bike' || p === 'BikeHistory') && page !== 'Bike' && page !== 'BikeHistory') refreshStrava();
-  if (p === 'BikeHistory') loadBikeHistory();
+  // Entering Bike or Skills: pick up anything the hourly workflow committed
+  if (stravaTabOf(p) && stravaTabOf(p) !== stravaTabOf(page)) refreshStrava();
+  if (stravaTabOf(p) && p.endsWith('History')) loadStravaHistory();
   page = p;
   window.scrollTo(0, 0);
   render();
@@ -366,11 +366,17 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ── Strava week data ─────────────────────────────────────────
+// Bike (rides) and Skills (racket sessions) both read the weekly files in
+// data/strava/. Each has its own selected week and shares one History page.
+const STRAVA_TABS    = ['Bike', 'Skills'];
 let stravaIndexState = 'loading';  // index.json: 'loading' | 'ok' | 'error'
 let stravaIndexed    = new Set();  // week keys index.json lists (i.e. a file exists)
-let stravaWeek       = null;       // week shown on the Bike page
-let bikeHistoryCount = 8;          // rows shown on Bike history
+const viewWeek       = { Bike: null, Skills: null };  // week shown on each tab (null = this week)
+let stravaHistoryCount = 8;        // rows shown on the Bike / Skills history pages
 const stravaData     = {};         // weekKey → { status: 'loading' | 'ok' | 'error', data }
+
+// 'Bike' for Bike / BikeHistory, 'Skills' for Skills / SkillsHistory, else null
+const stravaTabOf = p => STRAVA_TABS.find(t => p === t || p === t + 'History') || null;
 
 // Monday of this week at 00:00 local — the boundary fetch-strava.mjs uses
 // (not the app's 3am RESET_HOUR).
@@ -404,10 +410,8 @@ async function loadStravaWeek(key, force = false) {
   try {
     const data = await loadStravaJson(`${key}.json`);
     stravaData[key] = { status: 'ok', data };
-    if (key === currentStravaWeek()) {
+    if (key === currentStravaWeek())
       try { localStorage.setItem('stravaWeek', JSON.stringify({ key, data })); } catch {}
-      applyStravaSkills();
-    }
   } catch (e) {
     console.warn('strava week load failed', e);
     if (stravaData[key]?.status !== 'ok') stravaData[key] = { status: 'error' }; // keep stale data over an error
@@ -417,7 +421,7 @@ async function loadStravaWeek(key, force = false) {
 
 async function refreshStrava() {
   const current = currentStravaWeek();
-  if (!stravaWeek) stravaWeek = current;
+  const shown   = STRAVA_TABS.map(t => viewWeek[t] || current);
   try {
     const index = await loadStravaJson('index.json');
     stravaIndexed    = new Set(index.weeks || []);
@@ -426,19 +430,19 @@ async function refreshStrava() {
     console.warn('strava index load failed', e);
     if (stravaIndexState !== 'ok') { // never loaded — nothing to fall back on
       stravaIndexState = 'error';
-      [current, stravaWeek].forEach(k => { if (stravaData[k]?.status !== 'ok') stravaData[k] = { status: 'error' }; });
+      [current, ...shown].forEach(k => { if (stravaData[k]?.status !== 'ok') stravaData[k] = { status: 'error' }; });
       render();
       return;
     }
   }
   render();
-  await Promise.all([...new Set([current, stravaWeek])].map(k => loadStravaWeek(k, true)));
-  if (page === 'BikeHistory') loadBikeHistory();
+  await Promise.all([...new Set([current, ...shown])].map(k => loadStravaWeek(k, true)));
+  if (page.endsWith('History') && stravaTabOf(page)) loadStravaHistory();
 }
 
 // Every week from this one back to the oldest file, newest first. Weeks in
-// between with no file had no rides.
-function bikeHistoryWeeks() {
+// between with no file had no activities.
+function stravaHistoryWeeks() {
   const current = currentStravaWeek();
   const oldest  = [...stravaIndexed].sort()[0] || current;
   const weeks   = [];
@@ -446,38 +450,28 @@ function bikeHistoryWeeks() {
   return weeks;
 }
 
-function loadBikeHistory() {
-  bikeHistoryWeeks().slice(0, bikeHistoryCount).forEach(k => loadStravaWeek(k));
+function loadStravaHistory() {
+  stravaHistoryWeeks().slice(0, stravaHistoryCount).forEach(k => loadStravaWeek(k));
 }
 
-// A racket session (tennis/squash/padel) on Strava this week marks Skills done,
-// dated to that session. weekly.Tennis_strava remembers which session did it, so
-// "Mark as incomplete" sticks until a *new* session shows up. Waits until state
-// has been read from Supabase, so it never writes over data from a stale cache.
-let stateHydrated = false;
-function applyStravaSkills() {
-  const key = currentStravaWeek();
-  if (!stateHydrated || key !== state.weekKey) return; // Mon 0–3am the app's week hasn't rolled yet
-  const session = stravaData[key]?.data?.racket?.at(-1);
-  if (!session || state.weekly.Tennis || state.weekly.Tennis_strava === session.id) return;
-  state.weekly.Tennis        = getDayKey(new Date(session.startDate));
-  state.weekly.Tennis_strava = session.id;
-  saveState();
-  render();
-}
-
-function openStravaWeek(key) {
-  stravaWeek = key;
+function openStravaWeek(tab, key) {
+  viewWeek[tab] = key;
   loadStravaWeek(key);
-  go('Bike');
+  go(tab);
 }
+
+// Skills is done for a week when Strava has a racket session in it — there's
+// no manual override. Returns the sessions (oldest first), [] if none.
+const racketSessions = data => data?.racket || [];
 
 // ── Render ───────────────────────────────────────────────────
 function render() {
   state = ensureFreshKeys(state);
   if (viewDay && viewDay.dayKey === state.dayKey) viewDay = null;
 
+  const isStravaHistory = page.endsWith('History') && !!stravaTabOf(page);
   const pageId = page === 'History' ? 'pageHistory'
+               : isStravaHistory    ? 'pageStravaHistory'
                : page in WORKOUTS   ? 'pageWorkout'
                : 'page' + page;
   document.querySelectorAll('.page').forEach(el => { el.hidden = el.id !== pageId; });
@@ -486,10 +480,9 @@ function render() {
   if (page === 'Habits')       renderHabits();
   else if (page === 'History') renderHistory();
   else if (page in WORKOUTS)   renderWorkout(page);
-  else if (page === 'Skills')  renderSections('skills', SKILLS_SECTIONS, skillsSection);
+  else if (page === 'Skills')  renderSkills();
   else if (page === 'Bike')    renderBike();
-  else if (page === 'BikeHistory') renderBikeHistory();
-  renderFooter();
+  else if (isStravaHistory)    renderStravaHistory(stravaTabOf(page));
 }
 
 const progressBar = (pct, cls = '') =>
@@ -505,17 +498,23 @@ function stravaGoal(data) {
 
 function renderNav() {
   $('topNav').innerHTML = TABS.map(tab => {
-    const active = page === tab || (tab === 'Habits' && page === 'History') || (tab === 'Bike' && page === 'BikeHistory');
+    const active = page === tab || (tab === 'Habits' && page === 'History') || stravaTabOf(page) === tab;
     let foot, done = false;
+    const dateFoot = v => `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
     if (tab === 'Habits') {
       foot = progressBar(countDone(state.daily) / DAILY_HABITS.length);
     } else if (tab === 'Bike') {
       const g = stravaGoal(stravaData[currentStravaWeek()]?.data);
       foot = progressBar(g.pct, `goal${g.complete ? ' complete' : ''}`);
+    } else if (tab === 'Skills') {
+      // Done = a racket session on Strava this week, dated to the first one
+      const first = racketSessions(stravaData[currentStravaWeek()]?.data)[0];
+      done = !!first;
+      foot = dateFoot(first ? localDateStr(new Date(first.startDate)) : null);
     } else {
       const v = state.weekly[WEEKLY_KEY[tab]];
       done = !!v;
-      foot = `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
+      foot = dateFoot(v);
     }
     return `<button class="nav-tab${active ? ' active' : ''}${done ? ' done' : ''}" data-tab="${tab}">
       <span class="nav-label">${tab}</span><span class="nav-foot">${foot}</span>
@@ -701,8 +700,27 @@ const hmm  = sec =>`${Math.floor(sec / 3600)}:${String(Math.floor(sec % 3600 / 6
 const km   = n => `${(n || 0).toFixed(1)} km`;
 const metres = n => `${Math.round(n || 0).toLocaleString('en-US')} m`;
 
+// Loading / error rows shared by the Strava-backed pages
+const loadingRow = what => `<div class="row state-row"><span class="row-label">Loading ${what}…</span></div>`;
+const errorRow   = what => `<div class="row state-row">
+  <span class="row-label">Couldn't load ${what} data</span>
+  <button class="text-btn" data-strava-retry>Try again</button>
+</div>`;
+const updatedNote = data => `<div class="updated-note">${data?.generatedAt ? `Updated ${formatUpdated(data.generatedAt)}` : ''}</div>`;
+
+// One Strava activity row: "TUESDAY · PADEL" … "130 min". The whole row links to
+// the activity (Strava's guidelines ask for a link back).
+function activityRow(a, detail) {
+  const day = rideDay(a.startDate), min = `${Math.floor(a.movingTimeSec / 60)} min`;
+  return `<a class="row ride-row" href="https://www.strava.com/activities/${Number(a.id)}" target="_blank" rel="noopener"
+      aria-label="View on Strava: ${esc(day)}, ${esc(detail)}, ${min}">
+    <span class="row-label">${day} · ${esc(detail)}</span>
+    <span class="row-meta">${min}</span>
+  </a>`;
+}
+
 function renderBike() {
-  const key   = stravaWeek || currentStravaWeek();
+  const key   = viewWeek.Bike || currentStravaWeek();
   const entry = stravaData[key] || { status: 'loading' };
   const data  = entry.data;
 
@@ -710,12 +728,9 @@ function renderBike() {
 
   const body = $('weekBody');
   if (entry.status === 'loading') {
-    body.innerHTML = `<div class="list section-gap"><div class="row state-row"><span class="row-label">Loading rides…</span></div></div>`;
+    body.innerHTML = `<div class="list section-gap">${loadingRow('rides')}</div>`;
   } else if (entry.status === 'error') {
-    body.innerHTML = `<div class="list section-gap"><div class="row state-row">
-      <span class="row-label">Couldn't load ride data</span>
-      <button class="text-btn" id="stravaRetry">Try again</button>
-    </div></div>`;
+    body.innerHTML = `<div class="list section-gap">${errorRow('ride')}</div>`;
   } else {
     const totals = data?.totals || { movingTimeSec: 0, distanceKm: 0, elevationM: 0 };
     const rides  = data?.rides  || [];
@@ -736,71 +751,76 @@ function renderBike() {
       </div>
       <h2 class="section-title">Rides</h2>
       <div class="list">
-        ${rides.map(r => {
-          // Whole row links to the activity (Strava's guidelines ask for a link back)
-          const day = rideDay(r.startDate), dist = km(r.distanceKm), min = `${Math.floor(r.movingTimeSec / 60)} min`;
-          return `<a class="row ride-row" href="https://www.strava.com/activities/${Number(r.id)}" target="_blank" rel="noopener"
-              aria-label="View on Strava: ${esc(day)}, ${dist}, ${min}">
-            <span class="row-label">${day} · ${dist}</span>
-            <span class="row-meta">${min}</span>
-          </a>`;
-        }).join('') || `<div class="row state-row"><span class="row-label">No rides this week</span></div>`}
+        ${rides.map(r => activityRow(r, km(r.distanceKm))).join('') ||
+          `<div class="row state-row"><span class="row-label">No rides this week</span></div>`}
       </div>
-      <div class="updated-note">${data?.generatedAt ? `Updated ${formatUpdated(data.generatedAt)}` : ''}</div>`;
+      ${updatedNote(data)}`;
   }
 
   renderSections('bike', BIKE_SECTIONS, bikeSection);
 }
 
-function renderBikeHistory() {
-  const list  = $('bikeHistoryList');
-  const weeks = bikeHistoryWeeks();
-  $('bikeHistoryMore').hidden = stravaIndexState !== 'ok' || bikeHistoryCount >= weeks.length;
+// Skills: the week's racket sessions from Strava (which is what marks Skills
+// done), then Warm up / Affirmations / Cool down.
+function renderSkills() {
+  const key   = viewWeek.Skills || currentStravaWeek();
+  const entry = stravaData[key] || { status: 'loading' };
 
-  if (stravaIndexState === 'loading') {
-    list.innerHTML = `<div class="row state-row"><span class="row-label">Loading rides…</span></div>`;
-    return;
-  }
-  if (stravaIndexState === 'error') {
-    list.innerHTML = `<div class="row state-row">
-      <span class="row-label">Couldn't load ride data</span>
-      <button class="text-btn" id="bikeHistoryRetry">Try again</button>
-    </div>`;
-    return;
+  $('skillsWeekChip').textContent = weekRange(key);
+
+  const body = $('skillsWeekBody');
+  if (entry.status === 'loading') {
+    body.innerHTML = `<div class="list section-gap">${loadingRow('sessions')}</div>`;
+  } else if (entry.status === 'error') {
+    body.innerHTML = `<div class="list section-gap">${errorRow('session')}</div>`;
+  } else {
+    const sessions = racketSessions(entry.data);
+    body.innerHTML = `
+      <div class="list">
+        ${sessions.map(a => activityRow(a, a.sportType)).join('') ||
+          `<div class="row state-row"><span class="row-label">No sessions this week</span></div>`}
+      </div>
+      ${updatedNote(entry.data)}`;
   }
 
-  list.innerHTML = weeks.slice(0, bikeHistoryCount).map(key => {
+  renderSections('skills', SKILLS_SECTIONS, skillsSection);
+}
+
+// History for Bike or Skills: one row per week, newest first, tap to open that week.
+function renderStravaHistory(tab) {
+  const list  = $('stravaHistoryList');
+  const weeks = stravaHistoryWeeks();
+  $('stravaHistoryBackChip').textContent = tab === 'Bike' ? 'Cycling' : 'Skills';
+  $('stravaHistoryMore').hidden = stravaIndexState !== 'ok' || stravaHistoryCount >= weeks.length;
+
+  if (stravaIndexState === 'loading') { list.innerHTML = loadingRow('history'); return; }
+  if (stravaIndexState === 'error')   { list.innerHTML = errorRow(tab === 'Bike' ? 'ride' : 'session'); return; }
+
+  list.innerHTML = weeks.slice(0, stravaHistoryCount).map(key => {
     const entry = stravaData[key];
-    let vals = ['—', '—', '—'], complete = false;
+    let vals = tab === 'Bike' ? ['—', '—', '—'] : ['—'], on = false;
     if (entry?.status === 'ok') {
-      // Real minutes here, not capped like the progress bar
-      const min  = Math.floor((entry.data?.totals?.movingTimeSec || 0) / 60);
-      const goal = entry.data?.goal?.goalMin || ZONE2_GOAL;
-      vals = [metres(entry.data?.totals?.elevationM), km(entry.data?.totals?.distanceKm), `${min}/${goal}`];
-      complete = min >= goal;
+      const data = entry.data;
+      if (tab === 'Bike') {
+        // Real minutes here, not capped like the progress bar
+        const min  = Math.floor((data?.totals?.movingTimeSec || 0) / 60);
+        const goal = data?.goal?.goalMin || ZONE2_GOAL;
+        vals = [metres(data?.totals?.elevationM), km(data?.totals?.distanceKm), `${min}/${goal}`];
+        on   = min >= goal;
+      } else {
+        const sessions = racketSessions(data);
+        vals = [`${Math.floor(sessions.reduce((s, a) => s + a.movingTimeSec, 0) / 60)} min`];
+        on   = sessions.length > 0;
+      }
     }
     return `<div class="row history-row" role="button" data-week="${key}">
       <span class="row-label">${weekRange(key)}</span>
       <span class="history-right">
         <span class="history-count week-vals">${vals.map(v => `<span>${v}</span>`).join('')}</span>
-        <span class="dot${complete ? ' on' : ''}"></span>
+        <span class="dot${on ? ' on' : ''}"></span>
       </span>
     </div>`;
   }).join('');
-}
-
-function renderFooter() {
-  const btn = $('footerBtn');
-  let label = null, danger = false;
-  if (page === 'Skills') {   // workouts use the Done chip instead
-    danger = !!state.weekly[WEEKLY_KEY[page]];
-    label  = danger ? 'Mark as incomplete' : 'Mark as done';
-  }
-  $('footer').hidden = label === null;
-  document.body.classList.toggle('has-footer', label !== null);
-  if (label === null) return;
-  btn.textContent = label;
-  btn.classList.toggle('danger', danger);
 }
 
 // ── Actions ──────────────────────────────────────────────────
@@ -936,8 +956,6 @@ refreshStrava();
     });
     seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
     cacheLocal(state);
-    stateHydrated = true;
-    applyStravaSkills(); // Strava data may have loaded first
   } else {
     console.warn('initial habit fetch failed', stateResult.reason);
   }
@@ -959,7 +977,7 @@ $('topNav').addEventListener('click', e => {
   const tab = e.target.closest('[data-tab]')?.dataset.tab;
   if (!tab) return;
   if (tab === 'Habits') viewDay = null;                  // the Habits tab always means today…
-  if (tab === 'Bike') stravaWeek = currentStravaWeek();  // …and Bike always means this week
+  if (stravaTabOf(tab)) viewWeek[tab] = null;            // …and Bike / Skills always mean this week
   go(tab);
 });
 
@@ -1007,22 +1025,21 @@ $('bikeList').addEventListener('click', e => {
 });
 
 $('weekChip').addEventListener('click', () => go('BikeHistory'));
-$('bikeHistoryBackChip').addEventListener('click', () => go('Bike'));
-$('bikeHistoryMore').addEventListener('click', () => {
-  bikeHistoryCount += 8;
-  loadBikeHistory();
+$('skillsWeekChip').addEventListener('click', () => go('SkillsHistory'));
+$('stravaHistoryBackChip').addEventListener('click', () => go(stravaTabOf(page)));
+$('stravaHistoryMore').addEventListener('click', () => {
+  stravaHistoryCount += 8;
+  loadStravaHistory();
   render();
 });
-$('bikeHistoryList').addEventListener('click', e => {
-  if (e.target.closest('#bikeHistoryRetry')) { refreshStrava(); return; }
+$('stravaHistoryList').addEventListener('click', e => {
   const row = e.target.closest('[data-week]');
-  if (row) openStravaWeek(row.dataset.week);
+  if (row) openStravaWeek(stravaTabOf(page), row.dataset.week);
 });
-$('weekBody').addEventListener('click', e => {
-  if (e.target.closest('#stravaRetry')) refreshStrava();
+// "Try again" on any Strava loading error
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-strava-retry]')) refreshStrava();
 });
-
-$('footerBtn').addEventListener('click', toggleWeeklyDone);
 
 window.addEventListener('pagehide', flushSave);
 document.addEventListener('visibilitychange', () => {

@@ -45,14 +45,14 @@ state = {
   dayKey:      "2026-11-01",          // YYYY-MM-DD, local time, resets at 3am
   weekKey:     "2026-10-26",          // Monday of current week
   daily:       { [habitKey]: true|false, ... },
-  weekly:      { Push: "2026-11-01", Pull_log: [{ sets: [{ weight, reps }, ...], done }, ...], Tennis: "2026-11-03", ... },
+  weekly:      { Push: "2026-11-01", Pull_log: [{ sets: [{ weight, reps }, ...], done }, ...], ... },
   zone2:       45,                    // Zone 2 bike minutes this week
   socialPlans: { mon: '', ..., sun: '' }, // no UI any more, but must be passed through on writes
 }
 ```
 
-- **Weekly done flags** (`weekly.Push/Pull/Legs/Tennis`) hold the dayKey they were marked done, shown as `DD.MM` in the top nav. Weeks before the redesign stored `true` — treat any truthy value as done.
-- **Skills is stored as `Tennis`.** The tab was renamed; the key wasn't, so past weeks still read. It can also be set automatically from Strava (see below); `weekly.Tennis_strava` holds the id of the racket session that set it.
+- **Weekly done flags** (`weekly.Push/Pull/Legs`) hold the dayKey they were marked done, shown as `DD.MM` in the top nav. Weeks before the redesign stored `true` — treat any truthy value as done.
+- **Skills has no stored done flag.** It's done for a week when Strava has a racket session in it (see Strava integration). Old weeks may still carry `weekly.Tennis` / `Tennis_serve` / `Tennis_strava` from earlier designs; they're ignored.
 - **Workout logs** (`weekly['<name>_log']`) are arrays indexed by exercise position in `WORKOUTS`. Reordering exercises scrambles past logs. Each entry is `{ sets: [{ weight, reps }], done }`, with the set count parsed from the target ("3×12" → 3). Weeks before per-set logging stored one `{ weight, reps }` per exercise; `exerciseEntry()` reads both and fills every set from the old single value.
 - **Posture 1 / Posture 2** are booleans. Days before the split only have `'Posture program'` (a 0–2 counter); `isHabitDone()` falls back to it.
 - Old keys (`sym_*`, `daily_grateful`, `Work remote`, `Intervals`, …) may still be in stored data from the previous design. They're carried along untouched.
@@ -65,18 +65,19 @@ Day resets at **3:00 am local time** (`RESET_HOUR = 3`). Week rolls over on Mond
 
 Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 
-| Tab | Page | Nav tab footer |
+| Tab | Page | Nav tab bottom row |
 |---|---|---|
 | Habits | Daily checklist (default) | Progress bar: done / total |
 | Push, Pull, Legs | Exercise list with per-set weight/reps + Done chip | Date done + dot (green when done); label struck through |
-| Skills | Warm up / Affirmations / Cool down + Mark as done/incomplete | Same as workouts |
+| Skills | Strava racket sessions for the week + Warm up / Affirmations / Cool down | Done (struck through, date of first session, green dot) when Strava has a racket session this week — no manual override |
 | Bike | "Cycling": Strava week (stats, weekly volume bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
 - **History**: tapping the date chip on Habits opens History (a list of days with counts; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Habits" chip on History goes back. Tapping the Habits tab always returns to today.
 - **Past-day edits** (`viewDay`) write straight to the API with no debounce. They're blocked until `state-read` for that day has returned (`viewDay.loaded`), so a past day is never written from partial data. If that day is in the current week, the write sends the live `state.weekly` so it can't roll back this week's workouts.
 - **Workouts** (Push/Pull/Legs): one exercise is expanded at a time, showing a weight | reps cell per set. Cells are plain `<input>`s with `inputmode` so iOS shows the number pad; values save on every keystroke. Tapping the expanded exercise's row marks it done and opens the next undone one; tapping another row jumps to it; tapping a done row reopens it. The Done chip toggles the week (shows "Undo" when done). Leaving the page with every exercise ticked also marks the week done. `renderWorkout()` skips rebuilding the list while a set input has focus, so the minute timer / Strava fetches don't close the keyboard.
 - **Warm up / Cool down checkmarks** (Skills and Bike): tap a row to check it off. Stored in `state.daily` as `{ [itemName]: true }` under `skills_warmup`, `skills_cooldown`, `bike_warmup`, `bike_cooldown`, so they reset at 3am (each session starts fresh). Keyed by item name, so reordering is safe but renaming an item drops its check. Affirmations are read-only.
-- **Bike** shows Strava data read from `data/strava/` (relative path, so it works on Pages and a local server). Defaults to the current week (Monday 00:00 local, matching `fetch-strava.mjs`). The week chip opens **Bike history** (`page = 'BikeHistory'`): one row per week from this week back to the oldest file in `index.json` (weeks in between with no file = no rides), 8 at a time with Load more; tapping a row opens that week; the "Cycling" chip goes back. Tapping the Bike tab always returns to this week. "Weekly volume" is total moving time on the bike, not just Zone 2. The progress bar and its label are capped at the goal (no over-goal display); the Time stat and the history rows show the real total. Ride rows show day · km and minutes; the whole row links to the activity on Strava (their brand guidelines ask for a link back). The current week is cached in `localStorage` (`stravaWeek`) so the nav bar renders before the fetch. `state.zone2` (the old manual counter) has no UI any more but is still passed through on writes.
+- **Bike** shows Strava data read from `data/strava/` (relative path, so it works on Pages and a local server). Defaults to the current week (Monday 00:00 local, matching `fetch-strava.mjs`). The week chip opens **history** (`page = 'BikeHistory'`): one row per week from this week back to the oldest file in `index.json` (weeks in between with no file = no activity), 8 at a time with Load more; tapping a row opens that week; the "Cycling" chip goes back. Tapping the Bike tab always returns to this week. "Weekly volume" is total moving time on the bike, not just Zone 2. The progress bar and its label are capped at the goal (no over-goal display); the Time stat and the history rows show the real total. Ride rows show day · km and minutes; the whole row links to the activity on Strava (their brand guidelines ask for a link back). The current week is cached in `localStorage` (`stravaWeek`) so the nav bar renders before the fetch. `state.zone2` (the old manual counter) has no UI any more but is still passed through on writes.
+- **Skills** works the same way from the same files: the week's racket sessions (day · sport, minutes, each row linking to Strava), a week chip that opens `page = 'SkillsHistory'` (racket minutes per week, green dot if any session), and the Skills tab always returning to this week. Bike and Skills share `pageStravaHistory`, `viewWeek[tab]`, `stravaTabOf(page)` and the loading/error rows.
 
 ---
 
@@ -84,7 +85,7 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 
 Flat, white, bordered lists. Design tokens are CSS custom properties on `:root` at the top of `css/styles.css` — change those for design experiments.
 
-Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `--line` (borders), `--muted` (row labels), `--green` (checks, progress), `--ink` (primary button + chip), `--red` (Mark as incomplete).
+Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `--line` (borders), `--muted` (row labels), `--green` (checks, progress), `--ink` (chips).
 
 ---
 
@@ -157,7 +158,7 @@ A scheduled GitHub Action fetches Strava rides and commits JSON files that the B
 - `node scripts/fetch-strava.mjs` — refreshes the access token, fetches the current + previous week (Mon 00:00 → Mon 00:00, America/Toronto), writes `data/strava/<weekStart>.json` and `data/strava/index.json`. Edit `RIDE_TYPES`, `GOAL_MIN`, `WEEKS_BACK` at the top.
   - Files are only rewritten when something besides `generatedAt` changed, so `generatedAt` means "last changed", and no-op runs don't commit.
   - If Strava rotates the refresh token: in Actions it updates the repo secret via `gh secret set` (needs `GH_PAT` with Secrets read/write); locally it updates `.env` and warns that the GitHub secret is now stale.
-- **Racket sessions → Skills.** `fetch-strava.mjs` also writes `racket: [{ id, sportType, startDate, movingTimeSec }]` (no names) for activities in `RACKET_TYPES` (Tennis, Squash, Padel, Racquetball). When the current week's file has one and Skills isn't done, `applyStravaSkills()` sets `weekly.Tennis` to the session's day and `weekly.Tennis_strava` to its id. An Undo sticks until a *new* session id appears. It only runs after state has been read from Supabase (`stateHydrated`), and only when the Strava week matches `state.weekKey` (they differ Mon 0–3am). As of Nov 2026 no racket sessions had synced from Garmin yet, so the exact Strava type Garmin uses is unconfirmed — check the workflow log's "activities in range (Type ×n)" line.
+- **Racket sessions → Skills.** `fetch-strava.mjs` also writes `racket: [{ id, sportType, startDate, movingTimeSec }]` (no names) for activities in `RACKET_TYPES` (Tennis, Squash, Padel, Racquetball). Any session in the current week makes the Skills tab done — derived on render, nothing is written to Supabase, and there's no manual override. As of Nov 2026 no racket sessions had synced from Garmin yet, so the exact Strava type Garmin uses is unconfirmed — check the workflow log's "activities in range (Type ×n)" line.
 - `.github/workflows/strava.yml` — hourly at :23 + manual trigger; commits as `github-actions[bot]` with "Update Strava data". Pull before pushing locally, since the bot commits to `main`.
 - Weeks here start Monday 00:00 Toronto time; the app's own week rolls over Monday 3:00 device time. Week keys (the Monday date) match.
 
