@@ -45,7 +45,7 @@ state = {
   dayKey:      "2026-11-01",          // YYYY-MM-DD, local time, resets at 3am
   weekKey:     "2026-10-26",          // Monday of current week
   daily:       { [habitKey]: true|false, ... },
-  weekly:      { Push: "2026-11-01", Pull_log: [{ weight, reps }, ...], Tennis: "2026-11-03", ... },
+  weekly:      { Push: "2026-11-01", Pull_log: [{ sets: [{ weight, reps }, ...], done }, ...], Tennis: "2026-11-03", ... },
   zone2:       45,                    // Zone 2 bike minutes this week
   socialPlans: { mon: '', ..., sun: '' }, // no UI any more, but must be passed through on writes
 }
@@ -53,7 +53,7 @@ state = {
 
 - **Weekly done flags** (`weekly.Push/Pull/Legs/Tennis`) hold the dayKey they were marked done, shown as `DD.MM` in the top nav. Weeks before the redesign stored `true` — treat any truthy value as done.
 - **Skills is stored as `Tennis`.** The tab was renamed; the key wasn't, so past weeks still read.
-- **Workout logs** (`weekly['<name>_log']`) are arrays indexed by exercise position in `WORKOUTS`. Reordering exercises scrambles past logs.
+- **Workout logs** (`weekly['<name>_log']`) are arrays indexed by exercise position in `WORKOUTS`. Reordering exercises scrambles past logs. Each entry is `{ sets: [{ weight, reps }], done }`, with the set count parsed from the target ("3×12" → 3). Weeks before per-set logging stored one `{ weight, reps }` per exercise; `exerciseEntry()` reads both and fills every set from the old single value.
 - **Posture 1 / Posture 2** are booleans. Days before the split only have `'Posture program'` (a 0–2 counter); `isHabitDone()` falls back to it.
 - Old keys (`sym_*`, `daily_grateful`, `Work remote`, `Intervals`, …) may still be in stored data from the previous design. They're carried along untouched.
 
@@ -68,12 +68,13 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 | Tab | Page | Nav tab footer |
 |---|---|---|
 | Habits | Daily checklist (default) | Progress bar: done / total |
-| Push, Pull, Legs | Workout log + Mark as done/incomplete | Date done + dot (green when done); label struck through |
+| Push, Pull, Legs | Exercise list with per-set weight/reps + Done chip | Date done + dot (green when done); label struck through |
 | Skills | Warm up / Affirmations / Cool down + Mark as done/incomplete | Same as workouts |
 | Bike | "Cycling": Strava week (stats, weekly volume bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
 - **History**: tapping the date chip on Habits opens History (a list of days with counts; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Habits" chip on History goes back. Tapping the Habits tab always returns to today.
 - **Past-day edits** (`viewDay`) write straight to the API with no debounce. They're blocked until `state-read` for that day has returned (`viewDay.loaded`), so a past day is never written from partial data. If that day is in the current week, the write sends the live `state.weekly` so it can't roll back this week's workouts.
+- **Workouts** (Push/Pull/Legs): one exercise is expanded at a time, showing a weight | reps cell per set. Cells are plain `<input>`s with `inputmode` so iOS shows the number pad; values save on every keystroke. Tapping the expanded exercise's row marks it done and opens the next undone one; tapping another row jumps to it; tapping a done row reopens it. The Done chip toggles the week (shows "Undo" when done). Leaving the page with every exercise ticked also marks the week done. `renderWorkout()` skips rebuilding the list while a set input has focus, so the minute timer / Strava fetches don't close the keyboard.
 - **Bike** shows Strava data read from `data/strava/` (relative path, so it works on Pages and a local server). Defaults to the current week (Monday 00:00 local, matching `fetch-strava.mjs`). The week chip opens **Bike history** (`page = 'BikeHistory'`): one row per week from this week back to the oldest file in `index.json` (weeks in between with no file = no rides), 8 at a time with Load more; tapping a row opens that week; the "Cycling" chip goes back. Tapping the Bike tab always returns to this week. "Weekly volume" is total moving time on the bike, not just Zone 2. The progress bar and its label are capped at the goal (no over-goal display); the Time stat and the history rows show the real total. Ride rows show day · km and minutes; the whole row links to the activity on Strava (their brand guidelines ask for a link back). The current week is cached in `localStorage` (`stravaWeek`) so the nav bar renders before the fetch. `state.zone2` (the old manual counter) has no UI any more but is still passed through on writes.
 
 ---
@@ -82,7 +83,7 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 
 Flat, white, bordered lists. Design tokens are CSS custom properties on `:root` at the top of `css/styles.css` — change those for design experiments.
 
-Key tokens: `--surface` (#f1f1f1, done rows / stepper cells / active tab), `--line` (borders), `--muted` (row labels), `--green` (checks, progress), `--ink` (primary button + chip), `--red` (Mark as incomplete).
+Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `--line` (borders), `--muted` (row labels), `--green` (checks, progress), `--ink` (primary button + chip), `--red` (Mark as incomplete).
 
 ---
 
@@ -98,7 +99,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / stepper cells / active tab), `--li
 
 **localStorage as the source of truth on load.** The app renders from cache immediately, then fetches from the API and re-renders.
 
-**Workout log defaults.** When a new week starts and `weekly` is cleared, `saveWorkoutDefaults()` copies last week's weight/rep values to `localStorage`. `seedWorkoutDefaults()` re-applies them so the workout pages pre-fill with last week's numbers.
+**Workout log defaults.** When a new week starts and `weekly` is cleared, `saveWorkoutDefaults()` copies last week's weight/rep values to `localStorage`. `seedWorkoutDefaults()` re-applies them (with `done` cleared) so the workout pages pre-fill with last week's numbers.
 
 ---
 

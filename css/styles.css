@@ -1,7 +1,7 @@
 /* ── Design tokens ─────────────────────────────────────────── */
 :root {
   --bg:       #ffffff;
-  --surface:  #f1f1f1;   /* done rows, stepper cells, active tab */
+  --surface:  #f1f1f1;   /* done rows, focused cells, active tab */
   --line:     #e4e4e4;   /* borders + dividers */
   --text:     #111111;
   --muted:    #7a7a7a;   /* row labels, inactive tabs */
@@ -173,10 +173,10 @@ body.has-footer .page {
   color: var(--muted);
 }
 
-/* Habit rows */
-.habit-row { cursor: pointer; user-select: none; -webkit-user-select: none; }
-.habit-row.done { background: var(--surface); }
-.habit-row.done .row-label { color: var(--text); text-decoration: line-through; }
+/* Habit rows + workout exercise rows: gray, struck through, checked when done */
+.habit-row, .ex-row { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.habit-row.done, .ex-row.done { background: var(--surface); }
+.habit-row.done .row-label, .ex-row.done .row-label { color: var(--text); text-decoration: line-through; }
 .check {
   align-self: center;
   margin-top: 8px;
@@ -209,7 +209,7 @@ body.has-footer .page {
   text-transform: uppercase;
 }
 
-/* ── Exercises + steppers ──────────────────────────────────── */
+/* ── Card rows with a header line (Bike weekly volume) ─────── */
 .ex {
   padding: 12px 10px 10px;
   border-bottom: 1px solid var(--line);
@@ -221,27 +221,44 @@ body.has-footer .page {
   gap: 12px;
   margin-bottom: 10px;
 }
-.steppers {
+/* ── Workout sets: weight | reps per set, tap to type ──────── */
+.set-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  border-bottom: 1px solid var(--line);
 }
-.stepper {
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  gap: 2px;
-  height: 56px;
-}
-.stepper-btn, .stepper-val {
+.set-row:last-child { border-bottom: 0; }
+.set-cell {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
+  align-items: flex-start;
+  gap: 4px;
+  min-height: var(--row-h);
+  padding: 12px 10px;
+  cursor: text;
+  color: var(--muted);
 }
-.stepper-btn { font-size: 26px; font-weight: 300; }
-.stepper-btn:active { background: #e4e4e4; }
-.stepper-val { font-size: 16px; white-space: nowrap; }
-.stepper-val.unset { color: var(--faint); }
+.set-cell + .set-cell { border-left: 1px solid var(--line); }
+.set-cell:focus-within { background: var(--surface); }
+.set-input {
+  min-width: 1.5ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;   /* 16px+ stops iOS zooming in on focus */
+  font-variant-numeric: tabular-nums;   /* every digit 1ch wide, so the width-in-ch sizing fits exactly */
+  line-height: 1.4;
+}
+.set-input::placeholder { color: var(--faint); }
+.set-unit { font-size: 16px; line-height: 1.4; }
+.pencil {
+  align-self: center;
+  margin: 8px 0 0 auto;
+  color: var(--faint);
+  flex-shrink: 0;
+}
 
 /* ── Sub-navigation (Warm up / Affirmations / Cool down) ──── */
 .subnav {

@@ -31,7 +31,9 @@ const TABS = ['Habits', 'Push', 'Pull', 'Legs', 'Skills', 'Bike'];
 const WEEKLY_KEY = { Push: 'Push', Pull: 'Pull', Legs: 'Legs', Skills: 'Tennis' };
 
 // ── Workouts ─────────────────────────────────────────────────
-// Order matters: weights/reps are stored by index in weekly['<name>_log'].
+// Order matters: each exercise is stored by index in weekly['<name>_log'] as
+// { sets: [{ weight, reps }, …], done }. The set count comes from the target
+// ("3×12" → 3). Weeks before per-set logging stored a single { weight, reps }.
 const WORKOUTS = {
   Push: { title: 'Push day', exercises: [
     { name: 'Band pull-apart',             target: '2×15'     },
@@ -181,13 +183,16 @@ function readHistoryCache() {
 // ── Workout log defaults (carry last week's weights/reps into the new week) ──
 const WORKOUT_NAMES = Object.keys(WORKOUTS);
 
+// True if a log entry (either format) has any weight or reps recorded.
+const entryHasData = e => !!e && (e.weight != null || e.reps != null ||
+  (e.sets || []).some(s => s && (s.weight != null || s.reps != null)));
+
 function saveWorkoutDefaults(weekly) {
   if (!weekly) return;
   const defaults = {};
   WORKOUT_NAMES.forEach(name => {
     const log = weekly[name + '_log'];
-    if (log && log.some(e => e && (e.weight != null || e.reps != null)))
-      defaults[name + '_log'] = log;
+    if (log && log.some(entryHasData)) defaults[name + '_log'] = log;
   });
   if (Object.keys(defaults).length > 0)
     try { localStorage.setItem('workoutDefaults', JSON.stringify(defaults)); } catch {}
@@ -204,8 +209,9 @@ function seedWorkoutDefaults(weekly) {
   if (!defaults) return;
   WORKOUT_NAMES.forEach(name => {
     const key     = name + '_log';
-    const hasData = weekly[key] && weekly[key].some(e => e && (e.weight != null || e.reps != null));
-    if (!hasData && defaults[key]) weekly[key] = defaults[key];
+    const hasData = weekly[key] && weekly[key].some(entryHasData);
+    // Carry the numbers, not last week's checkmarks
+    if (!hasData && defaults[key]) weekly[key] = defaults[key].map(e => e && { ...e, done: false });
   });
 }
 
@@ -342,6 +348,12 @@ const $ = id => document.getElementById(id);
 const CHECK_SVG = `<svg class="check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12.5 9.5,18 20,6.5"/></svg>`;
 
 function go(p) {
+  // Leaving a workout with every exercise checked off counts as done for the week
+  if (page in WORKOUTS && p !== page && !state.weekly[page] &&
+      WORKOUTS[page].exercises.every((_, i) => exerciseEntry(page, i).done)) {
+    state.weekly[page] = state.dayKey;
+    saveState();
+  }
   // Entering the Bike section: pick up anything the hourly workflow committed
   if ((p === 'Bike' || p === 'BikeHistory') && page !== 'Bike' && page !== 'BikeHistory') refreshStrava();
   if (p === 'BikeHistory') loadBikeHistory();
@@ -527,33 +539,86 @@ function renderHistory() {
   $('historyList').innerHTML = html;
 }
 
-function stepperVal(v, unit) {
-  if (unit === 'lbs') return v == null ? '— lbs' : `${v} lbs`;
-  if (unit === 'sec') return v == null ? '— sec' : `${v} sec`;
-  if (v == null) return '— reps';
-  return v === 1 ? '1 rep' : `${v} reps`;
+// ── Workout log ──────────────────────────────────────────────
+const activeExercise = {};   // workout name → index of the expanded exercise (null = none)
+
+const setCount = ex => parseInt(ex.target, 10) || 3;
+
+// One exercise's log, normalized to { sets: [n × { weight, reps }], done }.
+function exerciseEntry(name, i) {
+  const raw    = state.weekly[name + '_log']?.[i] || {};
+  const legacy = { weight: raw.weight ?? null, reps: raw.reps ?? null }; // pre-per-set: same numbers every set
+  const sets   = Array.from({ length: setCount(WORKOUTS[name].exercises[i]) }, (_, s) => {
+    const src = raw.sets ? (raw.sets[s] || {}) : legacy;
+    return { weight: src.weight ?? null, reps: src.reps ?? null };
+  });
+  return { sets, done: !!raw.done };
 }
 
-function stepper(i, field, v, unit) {
-  return `<div class="stepper">
-    <button class="stepper-btn" data-ex="${i}" data-field="${field}" data-dir="-1" aria-label="Less">−</button>
-    <span class="stepper-val${v == null ? ' unset' : ''}">${stepperVal(v, unit)}</span>
-    <button class="stepper-btn" data-ex="${i}" data-field="${field}" data-dir="1" aria-label="More">+</button>
-  </div>`;
+function updateExercise(name, i, fn) {
+  const key = name + '_log';
+  const log = state.weekly[key] = state.weekly[key] || [];
+  for (let j = 0; j < i; j++) log[j] = log[j] ?? null;
+  const entry = exerciseEntry(name, i);
+  fn(entry);
+  log[i] = entry;
+  saveState();
+}
+
+// The expanded exercise: the one last opened, else the first not yet done.
+function currentExercise(name) {
+  if (name in activeExercise) return activeExercise[name];
+  const i = WORKOUTS[name].exercises.findIndex((_, j) => !exerciseEntry(name, j).done);
+  return i === -1 ? null : i;
+}
+
+// Next not-done exercise after i, wrapping around; null if all done.
+function nextOpenExercise(name, i) {
+  const n = WORKOUTS[name].exercises.length;
+  for (let k = 1; k < n; k++) {
+    const j = (i + k) % n;
+    if (!exerciseEntry(name, j).done) return j;
+  }
+  return null;
+}
+
+const PENCIL_SVG = `<svg class="pencil" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg>`;
+
+function setCell(i, s, field, v, unit) {
+  const val = v == null ? '' : String(v);
+  return `<label class="set-cell">
+    <input class="set-input" type="text" inputmode="${field === 'weight' ? 'decimal' : 'numeric'}"
+      ${field === 'weight' ? '' : 'pattern="[0-9]*"'} autocomplete="off" placeholder="—"
+      data-ex="${i}" data-set="${s}" data-field="${field}" value="${val}"
+      style="width:${Math.max(val.length, 1)}ch" aria-label="Set ${s + 1} ${field}">
+    <span class="set-unit">${unit}</span>${PENCIL_SVG}
+  </label>`;
 }
 
 function renderWorkout(name) {
-  const log = state.weekly[name + '_log'] || [];
-  $('workoutTitle').textContent = WORKOUTS[name].title;
+  const doneForWeek = !!state.weekly[WEEKLY_KEY[name]];
+  $('workoutTitle').textContent    = WORKOUTS[name].title;
+  $('workoutDoneChip').textContent = doneForWeek ? 'Undo' : 'Done';
+
+  // Don't rebuild under the keyboard (the minute timer and Strava fetches also render)
+  if ($('workoutList').contains(document.activeElement)) return;
+
+  const active = currentExercise(name);
   $('workoutList').innerHTML = WORKOUTS[name].exercises.map((ex, i) => {
-    const entry = log[i] || {};
-    return `<div class="ex">
-      <div class="ex-head"><span class="row-label">${ex.name}</span><span class="row-meta">${ex.target}</span></div>
-      <div class="steppers">
-        ${stepper(i, 'weight', entry.weight ?? null, 'lbs')}
-        ${stepper(i, 'reps',   entry.reps   ?? null, ex.unit || 'reps')}
-      </div>
+    const entry = exerciseEntry(name, i);
+    if (entry.done) {
+      return `<div class="row ex-row done" role="button" data-ex-row="${i}">
+        <span class="row-label">${ex.name}</span>${CHECK_SVG}
+      </div>`;
+    }
+    const head = `<div class="row ex-row" role="button" data-ex-row="${i}">
+      <span class="row-label">${ex.name}</span><span class="row-meta">${ex.target}</span>
     </div>`;
+    if (i !== active) return head;
+    return head + entry.sets.map((set, s) => `<div class="set-row">
+      ${setCell(i, s, 'weight', set.weight, 'lbs')}
+      ${setCell(i, s, 'reps', set.reps, ex.unit || 'reps')}
+    </div>`).join('');
   }).join('');
 }
 
@@ -689,7 +754,7 @@ function renderBikeHistory() {
 function renderFooter() {
   const btn = $('footerBtn');
   let label = null, danger = false;
-  if (page in WORKOUTS || page === 'Skills') {
+  if (page === 'Skills') {   // workouts use the Done chip instead
     danger = !!state.weekly[WEEKLY_KEY[page]];
     label  = danger ? 'Mark as incomplete' : 'Mark as done';
   }
@@ -768,22 +833,31 @@ async function loadMoreHistory() {
   }
 }
 
-function stepWorkout(name, i, field, dir) {
-  const key = name + '_log';
-  const log = state.weekly[key] = state.weekly[key] || [];
-  for (let j = 0; j <= i; j++) log[j] = log[j] || { weight: null, reps: null };
-  const step = field === 'weight' ? 5 : 1;
-  let v = log[i][field] ?? null;
-  if (dir > 0) {
-    v = v === null ? step : v + step;
+// Tapping an exercise row: the open one → complete it and open the next;
+// a done one → reopen it; any other → jump to it.
+function tapExercise(name, i) {
+  if ($('workoutList').contains(document.activeElement)) document.activeElement.blur(); // close the keyboard so the list can redraw
+  const entry = exerciseEntry(name, i);
+  if (entry.done) {
+    updateExercise(name, i, e => { e.done = false; });
+    activeExercise[name] = i;
+  } else if (currentExercise(name) === i) {
+    updateExercise(name, i, e => { e.done = true; });
+    activeExercise[name] = nextOpenExercise(name, i);
   } else {
-    if (v === null) return;
-    v -= step;
-    if (v < 0) v = null; // back to unset below zero
+    activeExercise[name] = i;
   }
-  log[i][field] = v;
-  saveState();
   render();
+}
+
+function setValue(input) {
+  const field = input.dataset.field;
+  const raw   = input.value.replace(',', '.').replace(field === 'weight' ? /[^0-9.]/g : /[^0-9]/g, '');
+  const num   = raw === '' || raw === '.' ? null : Number(raw);
+  updateExercise(page, Number(input.dataset.ex), e => {
+    e.sets[Number(input.dataset.set)][field] = Number.isFinite(num) ? num : null;
+  });
+  input.style.width = `${Math.max(input.value.length, 1)}ch`;
 }
 
 function toggleWeeklyDone() {
@@ -863,9 +937,17 @@ $('historyList').addEventListener('click', e => {
 });
 
 $('workoutList').addEventListener('click', e => {
-  const btn = e.target.closest('[data-field]');
-  if (btn) stepWorkout(page, Number(btn.dataset.ex), btn.dataset.field, Number(btn.dataset.dir));
+  const row = e.target.closest('[data-ex-row]');
+  if (row) tapExercise(page, Number(row.dataset.exRow));
 });
+$('workoutList').addEventListener('input', e => {
+  if (e.target.matches('.set-input')) setValue(e.target);
+});
+// Select the value on focus so typing replaces it
+$('workoutList').addEventListener('focusin', e => {
+  if (e.target.matches('.set-input')) e.target.select();
+});
+$('workoutDoneChip').addEventListener('click', toggleWeeklyDone);
 
 $('skillsSubnav').addEventListener('click', e => {
   const id = e.target.closest('[data-section]')?.dataset.section;
