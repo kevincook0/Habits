@@ -173,9 +173,27 @@ button {
 .habit-row, .ex-row { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .habit-row.done, .ex-row.done { background: var(--surface); }
 .habit-row.done .row-label, .ex-row.done .row-label { color: var(--text); text-decoration: line-through; }
-/* The open exercise (its sets are shown below it) */
-.ex-row.active { background: var(--surface); }
-.ex-row.active .row-label, .ex-row.active .row-meta { color: var(--text); }
+/* The open exercise / habit routine (its sets or steps are shown below it) */
+.ex-row.active, .habit-row.active { background: var(--surface); }
+.ex-row.active .row-label, .ex-row.active .row-meta, .habit-row.active .row-label { color: var(--text); }
+
+/* Habit routine steps: name | detail, read-only */
+.step-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line);
+}
+.step-row:last-child { border-bottom: 0; }
+.step-cell {
+  min-height: var(--row-h);
+  padding: 12px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.step-cell + .step-cell { border-left: 1px solid var(--line); text-transform: none; letter-spacing: 0; }
 .check {
   align-self: center;   /* vertically centered in the row */
   margin-right: 10px;

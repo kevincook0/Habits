@@ -72,6 +72,7 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 | Skills | Strava racket sessions for the week + Warm up / Affirmations / Cool down | Done (struck through, date of first session, green dot) when Strava has a racket session this week — no manual override |
 | Bike | "Cycling": Strava week (stats, weekly volume bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
+- **Habits with a routine** (`HABIT_STEPS`): first tap opens the steps (row `.active`), second tap checks it off and closes it. Tapping a done row un-checks it. Open state is in memory only (`openHabit`).
 - **History**: tapping the date chip on Habits opens History (a list of days with counts; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Habits" chip on History goes back. Tapping the Habits tab always returns to today.
 - **Past-day edits** (`viewDay`) write straight to the API with no debounce. They're blocked until `state-read` for that day has returned (`viewDay.loaded`), so a past day is never written from partial data. If that day is in the current week, the write sends the live `state.weekly` so it can't roll back this week's workouts.
 - **Workouts** (Push/Pull/Legs): one exercise is expanded at a time (its header row is `.active`: gray background, dark text), showing a weight | reps cell per set. Cells are plain `<input>`s with `inputmode` so iOS shows the number pad; values save on every keystroke. Tapping the expanded exercise's row marks it done and opens the next undone one; tapping another row jumps to it; tapping a done row reopens it. The Done chip toggles the week (shows "Undo" when done). Leaving the page with every exercise ticked also marks the week done. `renderWorkout()` skips rebuilding the list while a set input has focus, so the minute timer / Strava fetches don't close the keyboard.
@@ -108,6 +109,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 ## Key constants (top of `js/app.js`)
 
 - `DAILY_HABITS` — the 12 daily habits, in display order, as `{ key, label }`
+- `HABIT_STEPS` — read-only routines (`[name, detail]`) for habits that expand: Mobility, Posture 1/2 (both use `POSTURE_STEPS`, posture program week 7)
 - `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
 - `WEEKLY_KEY` — tab name → `state.weekly` key
 - `WORKOUTS` — Push/Pull/Legs titles and exercises (`{ name, target, unit? }`)

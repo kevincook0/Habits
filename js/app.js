@@ -16,7 +16,51 @@ const DAILY_HABITS = [
   { key: 'In bed by 11:00pm',        label: 'Bed by 23:00' },
 ];
 
-const ZONE2_GOAL = 240;   // minutes/week — fallback if a Strava file has no goal (GOAL_MIN in scripts/fetch-strava.mjs)
+// Habits with a routine: tapping the row opens the list, tapping again checks it
+// off. Keyed by habit key; items are [name, detail], read-only.
+const POSTURE_STEPS = [   // posture program, week 7 — same for both sessions
+  ['Segmental bridge',                  '4 × 8 sec holds'],
+  ['Bridge, alternating arm floats',    '4 reps'],
+  ['Bridge, alternating heel floats',   '4 reps'],
+  ['One-leg pelvic curl',               '4 reps'],
+  ['Hold 4th curl — heel floats',       '4 reps'],
+  ['Tabletop pelvic curl',              '4 reps'],
+  ['Hold 4th curl — alt. kickouts',     '4 reps'],
+  ['Bilateral kickouts',                '4 reps'],
+  ['Head-ups',                          '4 reps'],
+  ['Hold 4th head-up — curl-ups',       '4 reps'],
+  ['Hold 4th curl-up — heel floats',    '4 reps'],
+  ['Prone arm lifts',                   '4 reps'],
+  ['Bilateral arm lifts',               '4 reps'],
+  ['Goalpost forearm lifts',            '4 reps'],
+  ['Alternating shoulder taps',         '4 reps'],
+  ['Overhead arm floats — Y',           '4 reps'],
+  ['Two-part bar press',                '4 reps'],
+  ['Hold 4th press — marches',          '4 reps'],
+  ['Squats',                            ''],
+  ['Backward lunges',                   ''],
+  ['Step-ups',                          ''],
+  ['Walkouts',                          ''],
+  ['Lifts',                             ''],
+];
+const HABIT_STEPS = {
+  'Morning mobility': [
+    ['Sun salutations',     '1 min'],
+    ['Seated straddle',     '1 min'],
+    ['90/90s',              '1 min'],
+    ['Windshield wipers',   '1 min'],
+    ['Cossack squats',      '1 min'],
+    ['Curl up',             '12 reps'],
+    ['Bird dog',            '12 reps'],
+    ['Side bridge',         '12 reps'],
+    ['Banded SLS',          '12 reps'],
+    ['Wall ankle mobility', '1 min'],
+  ],
+  'Posture 1': POSTURE_STEPS,
+  'Posture 2': POSTURE_STEPS,
+};
+
+const ZONE2_GOAL = 240;  // minutes/week — fallback if a Strava file has no goal (GOAL_MIN in scripts/fetch-strava.mjs)
 const RESET_HOUR = 3;
 
 // Strava week files written by scripts/fetch-strava.mjs. Relative, so it works on
@@ -532,9 +576,14 @@ function renderHabits() {
   list.classList.toggle('all-done', done === DAILY_HABITS.length);
   list.innerHTML = DAILY_HABITS.map(({ key, label }, i) => {
     const isDone = isHabitDone(day.daily, key);
-    return `<div class="row habit-row${isDone ? ' done' : ''}" role="button" data-i="${i}">
+    const isOpen = !isDone && openHabit === key;
+    const row = `<div class="row habit-row${isDone ? ' done' : ''}${isOpen ? ' active' : ''}" role="button" data-i="${i}">
       <span class="row-label">${label}</span>${isDone ? CHECK_SVG : ''}
     </div>`;
+    if (!isOpen) return row;
+    return row + HABIT_STEPS[key].map(([name, detail]) => `<div class="step-row">
+      <span class="step-cell">${name}</span><span class="step-cell">${detail}</span>
+    </div>`).join('');
   }).join('');
 }
 
@@ -824,6 +873,21 @@ function renderStravaHistory(tab) {
 }
 
 // ── Actions ──────────────────────────────────────────────────
+let openHabit = null;   // habit key whose routine list is expanded
+
+// A habit with a routine opens on the first tap and is checked off (and closed)
+// on the second. Done habits and plain habits just toggle.
+function tapHabit(key) {
+  const daily = (viewDay || state).daily;
+  if (HABIT_STEPS[key] && !isHabitDone(daily, key) && openHabit !== key) {
+    openHabit = key;
+    render();
+    return;
+  }
+  if (openHabit === key) openHabit = null;
+  toggleHabit(key);
+}
+
 function toggleHabit(key) {
   if (viewDay) {
     if (!viewDay.loaded) return; // never write a past day we haven't read in full
@@ -983,7 +1047,7 @@ $('topNav').addEventListener('click', e => {
 
 $('habitList').addEventListener('click', e => {
   const row = e.target.closest('[data-i]');
-  if (row) toggleHabit(DAILY_HABITS[row.dataset.i].key);
+  if (row) tapHabit(DAILY_HABITS[row.dataset.i].key);
 });
 
 $('dateChip').addEventListener('click', () => go('History'));
