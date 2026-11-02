@@ -605,7 +605,7 @@ function renderBike() {
     const g      = stravaGoal(data);
     body.innerHTML = `
       <div class="list gap-sm stats">
-        <div class="stat"><span class="row-label">Minutes</span><span class="stat-value">${hmm(totals.movingTimeSec)}</span></div>
+        <div class="stat"><span class="row-label">Time</span><span class="stat-value">${hmm(totals.movingTimeSec)}</span></div>
         <div class="stat"><span class="row-label">Distance</span><span class="stat-value">${km(totals.distanceKm)}</span></div>
         <div class="stat"><span class="row-label">Elevation</span><span class="stat-value">${metres(totals.elevationM)}</span></div>
       </div>
