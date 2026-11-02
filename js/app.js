@@ -284,7 +284,12 @@ function addDays(key, n) {
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-const chipDate  = key => { const [y, m, d] = key.split('-'); return `${d}.${m}.${y.slice(2)}`; }; // 01.11.26
+// "Nov 1" (chip CSS uppercases it); adds the year when it isn't this year: "Nov 1, 2025"
+const chipDate  = key => {
+  const d = parseDayKey(key);
+  const label = `${MONTHS[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+  return d.getFullYear() === new Date().getFullYear() ? label : `${label}, ${d.getFullYear()}`;
+};
 const tabDate   = key => { const [, m, d] = key.split('-');  return `${d}.${m}`; };               // 01.11
 const longDate  = key => { const d = parseDayKey(key); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
 
