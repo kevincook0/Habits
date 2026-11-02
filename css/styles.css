@@ -263,32 +263,17 @@ body.has-footer .page {
 .subnav-btn.active { color: var(--text); }
 
 /* ── Strava week (Bike) ────────────────────────────────────── */
-.page-sub {
-  min-height: 16px;
-  margin-top: 4px;
-  font: 400 12px var(--mono);
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
-.week-nav { display: flex; gap: 2px; flex-shrink: 0; }
-.week-nav-btn { width: 44px; height: 40px; font-size: 24px; }
-.week-nav-btn:disabled { color: var(--faint); cursor: default; }
-.week-nav-btn:disabled:active { background: var(--surface); }
+.chip-plain { text-transform: none; }
 
 .list.gap-sm { margin-bottom: 12px; }
 
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.stat {
+.stats {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: var(--row-h);
+  gap: 24px;
   padding: 12px 10px;
-  border-right: 1px solid var(--line);
 }
-.stat:last-child { border-right: 0; }
-.stat-value { font-size: 20px; white-space: nowrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat-value { font-size: 22px; white-space: nowrap; }
 
 .goal-bar {
   display: block;
@@ -326,6 +311,20 @@ body.has-footer .page {
   text-transform: uppercase;
   text-decoration: none;
 }
+
+.updated-note {
+  min-height: 18px;
+  margin: 18px 0 32px;
+  text-align: center;
+  font: 500 14px var(--mono);
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Bike history: elevation · distance · minutes/goal */
+.week-vals { display: flex; gap: 16px; font-size: 13px; white-space: nowrap; }
+.history-row .row-label { white-space: nowrap; }
 
 .state-row { align-items: center; }
 .text-btn {

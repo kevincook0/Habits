@@ -11,7 +11,7 @@
 <title>Habits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
 
@@ -54,18 +54,22 @@
 <!-- ── Bike: Strava week (data/strava/*.json) + warm up / cool down ── -->
 <main class="page" id="pageBike" hidden>
   <header class="page-header">
-    <div>
-      <h1 class="page-title" id="weekTitle"></h1>
-      <div class="page-sub" id="weekUpdated"></div>
-    </div>
-    <div class="week-nav">
-      <button class="stepper-btn week-nav-btn" id="weekPrev" aria-label="Previous week">‹</button>
-      <button class="stepper-btn week-nav-btn" id="weekNext" aria-label="Next week">›</button>
-    </div>
+    <h1 class="page-title">Cycling</h1>
+    <button class="chip" id="weekChip"></button>
   </header>
   <div id="weekBody"></div>
   <div class="subnav" id="bikeSubnav"></div>
   <div class="list" id="bikeList"></div>
+</main>
+
+<!-- ── Bike history (one row per week) ── -->
+<main class="page" id="pageBikeHistory" hidden>
+  <header class="page-header">
+    <h1 class="page-title">History</h1>
+    <button class="chip chip-plain" id="bikeHistoryBackChip">Cycling</button>
+  </header>
+  <div class="list" id="bikeHistoryList"></div>
+  <button class="load-more" id="bikeHistoryMore">Load more</button>
 </main>
 
 <!-- Fixed footer action (Mark as done / incomplete) -->
@@ -73,7 +77,7 @@
   <button class="footer-btn" id="footerBtn"></button>
 </div>
 
-<script src="js/app.js?v=4"></script>
+<script src="js/app.js?v=5"></script>
 
 </body>
 </html>
