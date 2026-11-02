@@ -14,7 +14,7 @@ const DAILY_HABITS = [
   { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
   { key: 'Neuropod',                 label: 'Neuropod'     },
   { key: 'Statin, Magnesium, CoQ10', label: 'Statin'       },
-  { key: 'In bed by 11:00pm',        label: 'Bed by 23:00' },
+  { key: 'In bed by 11:00pm',        label: 'In bed by 11' },
 ];
 
 // Habits with a routine: tapping the row opens the list, tapping again checks it
