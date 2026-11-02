@@ -622,14 +622,34 @@ function renderWorkout(name) {
   }).join('');
 }
 
+// Warm-up / cool-down checkmarks live in state.daily (they reset at 3am, so
+// each session starts fresh) as { [itemName]: true } under e.g. 'skills_warmup'.
+// Affirmations are read-only.
+const routineKey  = (prefix, sectionId) => `${prefix}_${sectionId}`;
+const isCheckable = sectionId => sectionId !== 'affirm';
+
 function renderSections(prefix, sections, activeId) {
   $(prefix + 'Subnav').innerHTML = sections.map(s =>
     `<button class="subnav-btn${s.id === activeId ? ' active' : ''}" data-section="${s.id}">${s.title}</button>`
   ).join('');
   const section = sections.find(s => s.id === activeId);
-  $(prefix + 'List').innerHTML = section.items.map(([name, detail]) =>
-    `<div class="row"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`
-  ).join('');
+  const checks  = state.daily[routineKey(prefix, section.id)] || {};
+  $(prefix + 'List').innerHTML = section.items.map(([name, detail], i) => {
+    if (!isCheckable(section.id))
+      return `<div class="row"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`;
+    return checks[name]
+      ? `<div class="row ex-row done" role="button" data-item="${i}"><span class="row-label">${name}</span>${CHECK_SVG}</div>`
+      : `<div class="row ex-row" role="button" data-item="${i}"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`;
+  }).join('');
+}
+
+function toggleRoutineItem(prefix, sections, sectionId, i) {
+  const name   = sections.find(s => s.id === sectionId).items[i][0];
+  const key    = routineKey(prefix, sectionId);
+  const checks = state.daily[key] = { ...(state.daily[key] || {}) };
+  if (checks[name]) delete checks[name]; else checks[name] = true;
+  saveState();
+  render();
 }
 
 const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -956,6 +976,14 @@ $('skillsSubnav').addEventListener('click', e => {
 $('bikeSubnav').addEventListener('click', e => {
   const id = e.target.closest('[data-section]')?.dataset.section;
   if (id) { bikeSection = id; render(); }
+});
+$('skillsList').addEventListener('click', e => {
+  const row = e.target.closest('[data-item]');
+  if (row) toggleRoutineItem('skills', SKILLS_SECTIONS, skillsSection, Number(row.dataset.item));
+});
+$('bikeList').addEventListener('click', e => {
+  const row = e.target.closest('[data-item]');
+  if (row) toggleRoutineItem('bike', BIKE_SECTIONS, bikeSection, Number(row.dataset.item));
 });
 
 $('weekChip').addEventListener('click', () => go('BikeHistory'));
