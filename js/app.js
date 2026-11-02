@@ -580,7 +580,16 @@ function formatUpdated(iso) {
   return localDateStr(d) === localDateStr(new Date()) ? time : `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}, ${time}`;
 }
 
-const hmm  = sec => `${Math.floor(sec / 3600)}:${String(Math.floor(sec % 3600 / 60)).padStart(2, '0')}`;
+// "Today", "Yesterday", otherwise the weekday ("Monday") — the week is already in the chip.
+function rideDay(iso) {
+  const key = localDateStr(new Date(iso));
+  const today = localDateStr(new Date());
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+const hmm  = sec =>`${Math.floor(sec / 3600)}:${String(Math.floor(sec % 3600 / 60)).padStart(2, '0')}`;
 const km   = n => `${(n || 0).toFixed(1)} km`;
 const metres = n => `${Math.round(n || 0).toLocaleString('en-US')} m`;
 
@@ -619,18 +628,15 @@ function renderBike() {
       </div>
       <h2 class="section-title">Rides</h2>
       <div class="list">
-        ${rides.length ? rides.map(r => `
-          <div class="ex">
-            <div class="ex-head">
-              <span class="row-label">${esc(r.name)}</span>
-              <span class="row-meta">${new Date(r.startDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-            </div>
-            <div class="ride-foot">
-              <span class="ride-stats">${hmm(r.movingTimeSec)} · ${km(r.distanceKm)} · ${metres(r.elevationM)}</span>
-              <a class="strava-link" href="https://www.strava.com/activities/${Number(r.id)}" target="_blank" rel="noopener">View on Strava</a>
-            </div>
-          </div>`).join('')
-        : `<div class="row state-row"><span class="row-label">No rides this week</span></div>`}
+        ${rides.map(r => {
+          // Whole row links to the activity (Strava's guidelines ask for a link back)
+          const day = rideDay(r.startDate), dist = km(r.distanceKm), min = `${Math.floor(r.movingTimeSec / 60)} min`;
+          return `<a class="row ride-row" href="https://www.strava.com/activities/${Number(r.id)}" target="_blank" rel="noopener"
+              aria-label="View on Strava: ${esc(day)}, ${dist}, ${min}">
+            <span class="row-label">${day} · ${dist}</span>
+            <span class="row-meta">${min}</span>
+          </a>`;
+        }).join('') || `<div class="row state-row"><span class="row-label">No rides this week</span></div>`}
       </div>
       <div class="updated-note">${data?.generatedAt ? `Updated ${formatUpdated(data.generatedAt)}` : ''}</div>`;
   }

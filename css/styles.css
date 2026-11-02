@@ -9,8 +9,6 @@
   --green:    #4cb85c;
   --ink:      #060d14;   /* primary button + chip */
   --red:      #9b2226;   /* "Mark as incomplete" */
-  --strava:   #fc5200;   /* "View on Strava" links (Strava brand orange) */
-
   --radius:   10px;
   --gutter:   20px;
   --row-h:    68px;
@@ -296,21 +294,9 @@ body.has-footer .page {
   font-weight: 400;
 }
 
-.ride-foot {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-.ride-stats { font-size: 15px; white-space: nowrap; }
-.strava-link {
-  flex-shrink: 0;
-  font: 500 12px var(--mono);
-  color: var(--strava);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-decoration: none;
-}
+/* Ride rows link to the activity on Strava */
+.ride-row { color: inherit; text-decoration: none; }
+.ride-row:active { background: var(--surface); }
 
 .updated-note {
   min-height: 18px;
