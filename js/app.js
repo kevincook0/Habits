@@ -1,0 +1,673 @@
+// ── Daily habits ─────────────────────────────────────────────
+// `key` is the name stored in Supabase. The physical habit buttons write these
+// exact strings and history is keyed on them — don't rename. `label` is display only.
+const DAILY_HABITS = [
+  { key: 'Out of bed by 7:30am',     label: 'Up by 7:30'   },
+  { key: 'Make bed + open window',   label: 'Make bed'     },
+  { key: 'Supplements',              label: 'Supplements'  },
+  { key: 'Morning mobility',         label: 'Mobility'     },
+  { key: 'Posture 1',                label: 'Posture 1'    },
+  { key: 'Skincare',                 label: 'Skincare'     },
+  { key: 'Minoxidil (AM)',           label: 'Minoxidil 1'  },
+  { key: 'Posture 2',                label: 'Posture 2'    },
+  { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
+  { key: 'Neuropod',                 label: 'Neuropod'     },
+  { key: 'Statin, Magnesium, CoQ10', label: 'Statin'       },
+  { key: 'In bed by 11:00pm',        label: 'Bed by 23:00' },
+];
+
+const ZONE2_GOAL = 240;   // minutes/week — Bike tab bar fills at this
+const ZONE2_STEP = 15;
+const RESET_HOUR = 3;
+
+const TABS = ['Habits', 'Push', 'Pull', 'Legs', 'Skills', 'Bike'];
+
+// Weekly done flags live in state.weekly under these keys. The value is the
+// dayKey it was marked done (weeks before the redesign stored `true`).
+// Skills keeps the old 'Tennis' key so past weeks still read correctly.
+const WEEKLY_KEY = { Push: 'Push', Pull: 'Pull', Legs: 'Legs', Skills: 'Tennis' };
+
+// ── Workouts ─────────────────────────────────────────────────
+// Order matters: weights/reps are stored by index in weekly['<name>_log'].
+const WORKOUTS = {
+  Push: { title: 'Push day', exercises: [
+    { name: 'Band pull-apart',             target: '2×15'     },
+    { name: 'Bodyweight squat',            target: '1×10'     },
+    { name: 'Bench press (barbell or DB)', target: '3×5–8'    },
+    { name: 'Dips',                        target: '3×8–12'   },
+    { name: 'Machine flys',                target: '3×10–12'  },
+    { name: 'Tricep pulldowns',            target: '3×10–12'  },
+    { name: 'Hanging knee raise',          target: '3×8–10'   },
+    { name: 'Pallof press iso hold',       target: '3×10s/side', unit: 'sec' },
+  ]},
+  Pull: { title: 'Pull day', exercises: [
+    { name: 'Dead hang',                   target: '2×30s', unit: 'sec' },
+    { name: 'Glute bridge',                target: '2×12'     },
+    { name: 'Seated row',                  target: '3×8–12'   },
+    { name: 'Neutral-grip lat pulldown',   target: '3×8–12'   },
+    { name: 'Preacher curls',              target: '3×10–12'  },
+    { name: 'Incline DB curl',             target: '3×10–12'  },
+    { name: 'Reverse pec deck',            target: '3×12–15'  },
+    { name: 'Cable chop / med ball throw', target: '3×10/side' },
+    { name: 'Side plank / suitcase carry', target: '3×8–12/side' },
+  ]},
+  Legs: { title: 'Leg day', exercises: [
+    { name: 'Goblet squat',                target: '3×10–12'  },
+    { name: 'Bulgarian split squat',       target: '3×8/side' },
+    { name: 'Dumbbell step-up',            target: '3×10/side' },
+    { name: 'Sumo deadlift',               target: '3×10–12'  },
+    { name: 'Elevated reverse lunge',      target: '3×10/side' },
+  ]},
+};
+
+// ── Routines ([name, detail] pairs) ──────────────────────────
+const SKILLS_SECTIONS = [
+  { id: 'warmup', title: 'Warm up', items: [
+    ['Glute bridge with hip abduction',       'x10'],
+    ['Standing band lateral walk',            'x10'],
+    ['Half-kneeling thoracic rotation',       'x8'],
+    ['Ankle circles + single-leg calf raise', '30s + x5'],
+    ['Easy jog',                              ''],
+    ['Lateral shuffles',                      'x4'],
+    ['Split step jumps',                      'x10'],
+    ['Arm swings',                            'x10'],
+    ['Mini tennis',                           '10 mins'],
+  ]},
+  { id: 'affirm', title: 'Affirmations', items: [
+    ['I visualize myself as worthy and successful and give myself permission to win.'],
+    ['I see competition as a challenge to rise to, not a threat to back down from.'],
+    ['I will concentrate on what I can control and focus on quality “at-bats”.'],
+    ['I play to win, not to avoid losing.'],
+    ['I am prepared. My body knows what to do.'],
+    ['I will get myself to the right emotional state and stress/arousal level.'],
+    ['I breathe in energy, I breathe out stress and negativity.'],
+    ['If I start to think negative thoughts, I try to think less.'],
+    ['I am a champion. I move on fast.'],
+    ['I am brave until the last point.'],
+  ]},
+  { id: 'cooldown', title: 'Cool down', items: [
+    ['Easy walk',                            '2–3 lengths'],
+    ['Cross-body posterior shoulder stretch', '45s'],
+    ['Doorway or wall chest opener',         '30s'],
+    ['Wrist flexor & extensor stretch',      '30s'],
+    ['Figure-4 against a wall',              '1 min'],
+    ['Side lunge',                           '1 min'],
+    ['Kneeling hip flexor stretch',          '1 min'],
+    ['Passive windshield wiper',             '1 min'],
+    ['Standing hamstring stretch',           '1 min'],
+    ['Wall ankle dorsiflexion',              '1 min'],
+  ]},
+];
+
+const BIKE_SECTIONS = [
+  { id: 'warmup', title: 'Warm up', items: [
+    ['Glute bridge holds',                'x10'],
+    ['Clamshells with band',              'x15'],
+    ['Kneeling hip flexor pulse stretch', 'x10'],
+    ['Thoracic rotations',                'x5'],
+    ['Ankle circles',                     '30s'],
+    ['Calf raises',                       '30s'],
+  ]},
+  { id: 'cooldown', title: 'Cool down', items: [
+    ['Standing hip flexor stretch',       '30s'],
+    ['Figure-4 stretch',                  '1 min'],
+    ['Single-leg hamstring stretch',      '1 min'],
+    ["Child's pose with lateral reach",   '1 min'],
+    ['Wall ankle dorsiflexion stretch',   '1 min'],
+    ['Bolster chest opener',              '3 mins'],
+  ]},
+];
+
+// ── Supabase ─────────────────────────────────────────────────
+const SUPABASE_URL      = 'https://qbyuyoiiuoaeinvfiudv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_h9lE4du-71hsCRzxnICHyQ__GG2pE_m';
+const APP_SECRET        = '7265d62639a9ec3e37c5c3a2ac7e0e193aba9c00128efd719c59a78aebe2091e';
+
+const apiHeaders = () => ({
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'x-habit-secret': APP_SECRET,
+});
+
+async function apiRead(dayKey, weekKey) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-read`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ dayKey, weekKey }),
+  });
+  if (!res.ok) throw new Error(`read failed: ${res.status}`);
+  return res.json();
+}
+
+async function apiWrite(payload) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`write failed: ${res.status}`);
+  return res.json();
+}
+
+async function apiHistory(fromDay, toDay) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/state-history`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ fromDay, toDay }),
+  });
+  if (!res.ok) throw new Error(`history failed: ${res.status}`);
+  return res.json();
+}
+
+function cacheLocal(s) {
+  try { localStorage.setItem('habitState', JSON.stringify(s)); } catch {}
+}
+function readLocalCache() {
+  try { return JSON.parse(localStorage.getItem('habitState') || 'null'); }
+  catch { return null; }
+}
+function cacheHistory(h) {
+  try { localStorage.setItem('habitHistory', JSON.stringify(h)); } catch {}
+}
+function readHistoryCache() {
+  try { return JSON.parse(localStorage.getItem('habitHistory') || 'null'); }
+  catch { return null; }
+}
+
+// ── Workout log defaults (carry last week's weights/reps into the new week) ──
+const WORKOUT_NAMES = Object.keys(WORKOUTS);
+
+function saveWorkoutDefaults(weekly) {
+  if (!weekly) return;
+  const defaults = {};
+  WORKOUT_NAMES.forEach(name => {
+    const log = weekly[name + '_log'];
+    if (log && log.some(e => e && (e.weight != null || e.reps != null)))
+      defaults[name + '_log'] = log;
+  });
+  if (Object.keys(defaults).length > 0)
+    try { localStorage.setItem('workoutDefaults', JSON.stringify(defaults)); } catch {}
+}
+
+function readWorkoutDefaults() {
+  try { return JSON.parse(localStorage.getItem('workoutDefaults') || 'null'); }
+  catch { return null; }
+}
+
+// Seed weekly with last week's logs — only for workouts that have no data yet this week
+function seedWorkoutDefaults(weekly) {
+  const defaults = readWorkoutDefaults();
+  if (!defaults) return;
+  WORKOUT_NAMES.forEach(name => {
+    const key     = name + '_log';
+    const hasData = weekly[key] && weekly[key].some(e => e && (e.weight != null || e.reps != null));
+    if (!hasData && defaults[key]) weekly[key] = defaults[key];
+  });
+}
+
+// ── Saving ───────────────────────────────────────────────────
+const EMPTY_SOCIAL = () => ({ mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' });
+
+// socialPlans has no UI any more, but state-write blanks it if omitted — always pass it through.
+const livePayload = () => ({
+  dayKey:      state.dayKey,
+  weekKey:     state.weekKey,
+  daily:       state.daily,
+  weekly:      state.weekly,
+  zone2:       state.zone2,
+  socialPlans: state.socialPlans,
+});
+
+let saveTimer = null;
+function saveState() {
+  saveWorkoutDefaults(state.weekly); // keep defaults current for the upcoming week rollover
+  cacheLocal(state);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    apiWrite(livePayload()).catch(err => console.warn('habit save failed', err));
+  }, 400);
+}
+
+// Send a pending debounced write before the page goes away (iOS rarely fires beforeunload).
+function flushSave() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
+    method: 'POST',
+    keepalive: true,
+    headers: apiHeaders(),
+    body: JSON.stringify(livePayload()),
+  });
+}
+
+// ── Keys & date helpers ──────────────────────────────────────
+function localDateStr(d) {
+  // Use local date parts — toISOString() always returns UTC and produces
+  // wrong day keys for timezones behind UTC (e.g. EDT = UTC-4).
+  const y  = d.getFullYear();
+  const m  = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dy}`;
+}
+
+function getDayKey(d = new Date()) {
+  const adj = new Date(d.getTime());
+  if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
+  return localDateStr(adj);
+}
+
+function getWeekKey(d = new Date()) {
+  const adj = new Date(d.getTime());
+  if (adj.getHours() < RESET_HOUR) adj.setDate(adj.getDate() - 1);
+  const day = adj.getDay();
+  const monday = new Date(adj);
+  monday.setDate(adj.getDate() - ((day + 6) % 7));
+  return localDateStr(monday);
+}
+
+function parseDayKey(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0); // noon avoids DST edge cases
+}
+
+function addDays(key, n) {
+  const d = parseDayKey(key);
+  d.setDate(d.getDate() + n);
+  return localDateStr(d);
+}
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const chipDate  = key => { const [y, m, d] = key.split('-'); return `${d}.${m}.${y.slice(2)}`; }; // 01.11.26
+const tabDate   = key => { const [, m, d] = key.split('-');  return `${d}.${m}`; };               // 01.11
+const longDate  = key => { const d = parseDayKey(key); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+
+function ensureFreshKeys(s) {
+  s = s || {};
+  const dayKey  = getDayKey();
+  const weekKey = getWeekKey();
+  if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
+  if (s.weekKey !== weekKey) {
+    saveWorkoutDefaults(s.weekly); // capture last week's logs before clearing
+    s.weekKey     = weekKey;
+    s.weekly      = {};
+    s.zone2       = 0;
+    s.socialPlans = EMPTY_SOCIAL();
+    seedWorkoutDefaults(s.weekly); // seed new week with last week's anchor values
+  }
+  s.daily       = s.daily  || {};
+  s.weekly      = s.weekly || {};
+  s.zone2       = s.zone2  || 0;
+  s.socialPlans = { ...EMPTY_SOCIAL(), ...(s.socialPlans || {}) };
+  return s;
+}
+
+let state        = ensureFreshKeys(readLocalCache());
+let habitHistory = readHistoryCache() || {};   // dayKey → daily
+
+// ── Habit completion ─────────────────────────────────────────
+function isHabitDone(daily, key) {
+  // Posture used to be one counter ('Posture program': 0–2). Days before the
+  // split have no 'Posture 1'/'Posture 2' booleans, so fall back to the count.
+  if ((key === 'Posture 1' || key === 'Posture 2') && typeof daily[key] !== 'boolean') {
+    const count = typeof daily['Posture program'] === 'number' ? daily['Posture program'] : 0;
+    return count >= (key === 'Posture 1' ? 1 : 2);
+  }
+  return !!daily[key];
+}
+
+const countDone = daily => DAILY_HABITS.filter(h => isHabitDone(daily, h.key)).length;
+
+// ── View state ───────────────────────────────────────────────
+let page          = 'Habits';  // a TABS entry, or 'History'
+let viewDay       = null;      // past day open on Habits: { dayKey, weekKey, daily, weekly, zone2, socialPlans, loaded }
+let skillsSection = 'warmup';
+let bikeSection   = 'warmup';
+let bikeDraft     = 0;         // Zone 2 minutes being edited; committed by Save progress
+let historyDays   = 14;        // rows shown on History
+let historyFrom   = null;      // earliest dayKey fetched into habitHistory
+
+const $ = id => document.getElementById(id);
+
+const CHECK_SVG = `<svg class="check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12.5 9.5,18 20,6.5"/></svg>`;
+
+function go(p) {
+  if (p === 'Bike' && page !== 'Bike') bikeDraft = state.zone2;
+  page = p;
+  window.scrollTo(0, 0);
+  render();
+}
+
+// ── Render ───────────────────────────────────────────────────
+function render() {
+  state = ensureFreshKeys(state);
+  if (viewDay && viewDay.dayKey === state.dayKey) viewDay = null;
+
+  const pageId = page === 'History' ? 'pageHistory'
+               : page in WORKOUTS   ? 'pageWorkout'
+               : 'page' + page;
+  document.querySelectorAll('.page').forEach(el => { el.hidden = el.id !== pageId; });
+
+  renderNav();
+  if (page === 'Habits')       renderHabits();
+  else if (page === 'History') renderHistory();
+  else if (page in WORKOUTS)   renderWorkout(page);
+  else if (page === 'Skills')  renderSections('skills', SKILLS_SECTIONS, skillsSection);
+  else if (page === 'Bike')    renderBike();
+  renderFooter();
+}
+
+const progressBar = pct => `<span class="nav-bar"><span class="nav-bar-fill" style="width:${Math.round(pct * 100)}%"></span></span>`;
+
+function renderNav() {
+  $('topNav').innerHTML = TABS.map(tab => {
+    const active = page === tab || (tab === 'Habits' && page === 'History');
+    let foot, done = false;
+    if (tab === 'Habits') {
+      foot = progressBar(countDone(state.daily) / DAILY_HABITS.length);
+    } else if (tab === 'Bike') {
+      foot = progressBar(Math.min(state.zone2 / ZONE2_GOAL, 1));
+    } else {
+      const v = state.weekly[WEEKLY_KEY[tab]];
+      done = !!v;
+      foot = `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
+    }
+    return `<button class="nav-tab${active ? ' active' : ''}${done ? ' done' : ''}" data-tab="${tab}">
+      <span class="nav-label">${tab}</span><span class="nav-foot">${foot}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderHabits() {
+  const day   = viewDay || state;
+  const done  = countDone(day.daily);
+  $('habitsCount').textContent = `${done}/${DAILY_HABITS.length}`;
+  $('dateChip').textContent    = chipDate(day.dayKey);
+  const list = $('habitList');
+  list.classList.toggle('loading', !!viewDay && !viewDay.loaded);
+  list.classList.toggle('all-done', done === DAILY_HABITS.length);
+  list.innerHTML = DAILY_HABITS.map(({ key, label }, i) => {
+    const isDone = isHabitDone(day.daily, key);
+    return `<div class="row habit-row${isDone ? ' done' : ''}" role="button" data-i="${i}">
+      <span class="row-label">${label}</span>${isDone ? CHECK_SVG : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  let html = '';
+  let key  = state.dayKey;
+  for (let i = 0; i < historyDays; i++) {
+    const daily = key === state.dayKey ? state.daily : (habitHistory[key] || {});
+    const done  = countDone(daily);
+    html += `<div class="row history-row" role="button" data-day="${key}">
+      <span class="row-label">${longDate(key)}</span>
+      <span class="history-right">
+        <span class="history-count">${done}/${DAILY_HABITS.length}</span>
+        <span class="dot${done === DAILY_HABITS.length ? ' on' : ''}"></span>
+      </span>
+    </div>`;
+    key = addDays(key, -1);
+  }
+  $('historyList').innerHTML = html;
+}
+
+function stepperVal(v, unit) {
+  if (unit === 'lbs') return v == null ? '— lbs' : `${v} lbs`;
+  if (unit === 'sec') return v == null ? '— sec' : `${v} sec`;
+  if (v == null) return '— reps';
+  return v === 1 ? '1 rep' : `${v} reps`;
+}
+
+function stepper(i, field, v, unit) {
+  return `<div class="stepper">
+    <button class="stepper-btn" data-ex="${i}" data-field="${field}" data-dir="-1" aria-label="Less">−</button>
+    <span class="stepper-val${v == null ? ' unset' : ''}">${stepperVal(v, unit)}</span>
+    <button class="stepper-btn" data-ex="${i}" data-field="${field}" data-dir="1" aria-label="More">+</button>
+  </div>`;
+}
+
+function renderWorkout(name) {
+  const log = state.weekly[name + '_log'] || [];
+  $('workoutTitle').textContent = WORKOUTS[name].title;
+  $('workoutList').innerHTML = WORKOUTS[name].exercises.map((ex, i) => {
+    const entry = log[i] || {};
+    return `<div class="ex">
+      <div class="ex-head"><span class="row-label">${ex.name}</span><span class="row-meta">${ex.target}</span></div>
+      <div class="steppers">
+        ${stepper(i, 'weight', entry.weight ?? null, 'lbs')}
+        ${stepper(i, 'reps',   entry.reps   ?? null, ex.unit || 'reps')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSections(prefix, sections, activeId) {
+  $(prefix + 'Subnav').innerHTML = sections.map(s =>
+    `<button class="subnav-btn${s.id === activeId ? ' active' : ''}" data-section="${s.id}">${s.title}</button>`
+  ).join('');
+  const section = sections.find(s => s.id === activeId);
+  $(prefix + 'List').innerHTML = section.items.map(([name, detail]) =>
+    `<div class="row"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`
+  ).join('');
+}
+
+function renderBike() {
+  $('bikeGoal').textContent = `${ZONE2_GOAL} min`;
+  $('bikeVal').textContent  = `${bikeDraft} minutes`;
+  renderSections('bike', BIKE_SECTIONS, bikeSection);
+}
+
+function renderFooter() {
+  const btn = $('footerBtn');
+  let label = null, danger = false;
+  if (page in WORKOUTS || page === 'Skills') {
+    danger = !!state.weekly[WEEKLY_KEY[page]];
+    label  = danger ? 'Mark as incomplete' : 'Mark as done';
+  } else if (page === 'Bike') {
+    label = 'Save progress';
+  }
+  $('footer').hidden = label === null;
+  document.body.classList.toggle('has-footer', label !== null);
+  if (label === null) return;
+  btn.textContent = label;
+  btn.classList.toggle('danger', danger);
+}
+
+// ── Actions ──────────────────────────────────────────────────
+function toggleHabit(key) {
+  if (viewDay) {
+    if (!viewDay.loaded) return; // never write a past day we haven't read in full
+    viewDay.daily[key] = !isHabitDone(viewDay.daily, key);
+    saveViewDay();
+  } else {
+    state.daily[key] = !isHabitDone(state.daily, key);
+    saveState();
+  }
+  render();
+}
+
+// Writes go straight out (no debounce) so switching days can't drop a pending write.
+function saveViewDay() {
+  const v = viewDay;
+  habitHistory[v.dayKey] = v.daily;
+  cacheHistory(habitHistory);
+  // Same week as today: send the live weekly data so this write can't roll it back.
+  const live = v.weekKey === state.weekKey ? state : v;
+  apiWrite({
+    dayKey:      v.dayKey,
+    weekKey:     v.weekKey,
+    daily:       v.daily,
+    weekly:      live.weekly,
+    zone2:       live.zone2,
+    socialPlans: live.socialPlans,
+  }).catch(err => console.warn('past day save failed', err));
+}
+
+async function openDay(dayKey) {
+  if (dayKey === state.dayKey) { viewDay = null; go('Habits'); return; }
+  const weekKey = getWeekKey(parseDayKey(dayKey));
+  const v = viewDay = { dayKey, weekKey, daily: { ...(habitHistory[dayKey] || {}) }, loaded: false };
+  go('Habits');
+  try {
+    const remote = await apiRead(dayKey, weekKey);
+    if (viewDay !== v) return; // user moved on
+    Object.assign(v, {
+      daily:       remote.daily  || {},
+      weekly:      remote.weekly || {},
+      zone2:       remote.zone2  || 0,
+      socialPlans: remote.socialPlans || EMPTY_SOCIAL(),
+      loaded:      true,
+    });
+  } catch (e) {
+    console.warn('day fetch failed', e); // stays read-only (loaded: false)
+  }
+  render();
+}
+
+async function loadMoreHistory() {
+  historyDays += 14;
+  render();
+  const oldest = addDays(state.dayKey, -(historyDays - 1));
+  if (historyFrom && oldest >= historyFrom) return;
+  const to = historyFrom ? addDays(historyFrom, -1) : state.dayKey;
+  try {
+    const { rows } = await apiHistory(oldest, to);
+    (rows || []).forEach(r => { habitHistory[r.day_key] = r.daily || {}; });
+    historyFrom = oldest;
+    cacheHistory(habitHistory);
+    if (page === 'History') render();
+  } catch (e) {
+    console.warn('history fetch failed', e);
+  }
+}
+
+function stepWorkout(name, i, field, dir) {
+  const key = name + '_log';
+  const log = state.weekly[key] = state.weekly[key] || [];
+  for (let j = 0; j <= i; j++) log[j] = log[j] || { weight: null, reps: null };
+  const step = field === 'weight' ? 5 : 1;
+  let v = log[i][field] ?? null;
+  if (dir > 0) {
+    v = v === null ? step : v + step;
+  } else {
+    if (v === null) return;
+    v -= step;
+    if (v < 0) v = null; // back to unset below zero
+  }
+  log[i][field] = v;
+  saveState();
+  render();
+}
+
+function toggleWeeklyDone() {
+  const key = WEEKLY_KEY[page];
+  state.weekly[key] = state.weekly[key] ? false : state.dayKey;
+  saveState();
+  render();
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+render();
+
+// Hydrate from API + load 60 days of history for the History page
+(async () => {
+  const today   = getDayKey();
+  const fromDay = addDays(today, -60);
+
+  const [stateResult, historyResult] = await Promise.allSettled([
+    apiRead(today, getWeekKey()),
+    apiHistory(fromDay, today),
+  ]);
+
+  if (stateResult.status === 'fulfilled') {
+    const remote = stateResult.value;
+    state = ensureFreshKeys({
+      dayKey:      remote.dayKey,
+      weekKey:     remote.weekKey,
+      daily:       remote.daily,
+      weekly:      remote.weekly,
+      zone2:       remote.zone2,
+      socialPlans: remote.socialPlans,
+    });
+    seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
+    cacheLocal(state);
+    if (page === 'Bike') bikeDraft = state.zone2;
+  } else {
+    console.warn('initial habit fetch failed', stateResult.reason);
+  }
+
+  if (historyResult.status === 'fulfilled') {
+    habitHistory = {};
+    (historyResult.value.rows || []).forEach(r => { habitHistory[r.day_key] = r.daily || {}; });
+    historyFrom = fromDay;
+    cacheHistory(habitHistory);
+  } else {
+    console.warn('history fetch failed', historyResult.reason);
+  }
+
+  render();
+})();
+
+// ── Event listeners ──────────────────────────────────────────
+$('topNav').addEventListener('click', e => {
+  const tab = e.target.closest('[data-tab]')?.dataset.tab;
+  if (!tab) return;
+  if (tab === 'Habits') viewDay = null; // the Habits tab always means today
+  go(tab);
+});
+
+$('habitList').addEventListener('click', e => {
+  const row = e.target.closest('[data-i]');
+  if (row) toggleHabit(DAILY_HABITS[row.dataset.i].key);
+});
+
+$('dateChip').addEventListener('click', () => go('History'));
+$('historyBackChip').addEventListener('click', () => go('Habits'));
+$('historyMore').addEventListener('click', loadMoreHistory);
+$('historyList').addEventListener('click', e => {
+  const row = e.target.closest('[data-day]');
+  if (row) openDay(row.dataset.day);
+});
+
+$('workoutList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-field]');
+  if (btn) stepWorkout(page, Number(btn.dataset.ex), btn.dataset.field, Number(btn.dataset.dir));
+});
+
+$('skillsSubnav').addEventListener('click', e => {
+  const id = e.target.closest('[data-section]')?.dataset.section;
+  if (id) { skillsSection = id; render(); }
+});
+$('bikeSubnav').addEventListener('click', e => {
+  const id = e.target.closest('[data-section]')?.dataset.section;
+  if (id) { bikeSection = id; render(); }
+});
+
+document.querySelectorAll('[data-bike]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    bikeDraft = Math.max(0, bikeDraft + Number(btn.dataset.bike) * ZONE2_STEP);
+    render();
+  });
+});
+
+$('footerBtn').addEventListener('click', () => {
+  if (page === 'Bike') {
+    state.zone2 = bikeDraft;
+    saveState();
+    go('Habits');
+  } else {
+    toggleWeeklyDone();
+  }
+});
+
+window.addEventListener('pagehide', flushSave);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushSave();
+});
+
+// Re-render each minute so the 3am rollover happens without a reload
+setInterval(render, 60000);
