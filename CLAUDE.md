@@ -109,7 +109,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 ## Key constants (top of `js/app.js`)
 
 - `DAILY_HABITS` — the 12 daily habits, in display order, as `{ key, label }`
-- `HABIT_STEPS` — read-only routines (`[name, detail]`) for habits that expand: Mobility, Posture 1/2 (both use `POSTURE_STEPS`, posture program week 7)
+- `HABIT_STEPS` — read-only routines (`[name, detail]`) for habits that expand: Mobility, Posture 1/2 (both use `POSTURE_STEPS`, the current rehab routine — edit it as rehab progresses)
 - `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
 - `WEEKLY_KEY` — tab name → `state.weekly` key
 - `WORKOUTS` — Push/Pull/Legs titles and exercises (`{ name, target, unit? }`)

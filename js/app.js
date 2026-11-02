@@ -18,30 +18,9 @@ const DAILY_HABITS = [
 
 // Habits with a routine: tapping the row opens the list, tapping again checks it
 // off. Keyed by habit key; items are [name, detail], read-only.
-const POSTURE_STEPS = [   // posture program, week 7 — same for both sessions
-  ['Segmental bridge',                  '4 × 8 sec holds'],
-  ['Bridge, alternating arm floats',    '4 reps'],
-  ['Bridge, alternating heel floats',   '4 reps'],
-  ['One-leg pelvic curl',               '4 reps'],
-  ['Hold 4th curl — heel floats',       '4 reps'],
-  ['Tabletop pelvic curl',              '4 reps'],
-  ['Hold 4th curl — alt. kickouts',     '4 reps'],
-  ['Bilateral kickouts',                '4 reps'],
-  ['Head-ups',                          '4 reps'],
-  ['Hold 4th head-up — curl-ups',       '4 reps'],
-  ['Hold 4th curl-up — heel floats',    '4 reps'],
-  ['Prone arm lifts',                   '4 reps'],
-  ['Bilateral arm lifts',               '4 reps'],
-  ['Goalpost forearm lifts',            '4 reps'],
-  ['Alternating shoulder taps',         '4 reps'],
-  ['Overhead arm floats — Y',           '4 reps'],
-  ['Two-part bar press',                '4 reps'],
-  ['Hold 4th press — marches',          '4 reps'],
-  ['Squats',                            ''],
-  ['Backward lunges',                   ''],
-  ['Step-ups',                          ''],
-  ['Walkouts',                          ''],
-  ['Lifts',                             ''],
+const POSTURE_STEPS = [   // current rehab — same for both sessions; update as it progresses
+  ['Seated chest lifts',  '4 reps'],
+  ['Seated spine twists', '4 reps'],
 ];
 const HABIT_STEPS = {
   'Morning mobility': [
