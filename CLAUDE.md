@@ -146,7 +146,7 @@ Habits/
 ├── habit-button/          ← ESP8266 physical habit buttons (Arduino sketches + build guide)
 ├── weekly-prototype.html  ← older standalone weekly-view prototype
 ├── CLAUDE.md              ← this file
-└── Check.png              ← apple-touch-icon for home screen
+└── icon.png               ← apple-touch-icon for home screen (180×180, opaque white background)
 ```
 
 ---
