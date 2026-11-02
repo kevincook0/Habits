@@ -194,10 +194,11 @@ body.has-footer .page {
   align-items: flex-end;
   justify-content: space-between;
 }
+/* Same type as the date on the left (.history-row .row-label) */
 .history-count {
-  font: 500 14px var(--mono);
-  color: #555;
-  letter-spacing: 0.04em;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 .load-more {
   display: block;
@@ -326,7 +327,7 @@ body.has-footer .page {
 }
 
 /* Bike history: elevation · distance · minutes/goal */
-.week-vals { display: flex; gap: 16px; font-size: 13px; white-space: nowrap; }
+.week-vals { display: flex; gap: 20px; white-space: nowrap; }
 .history-row .row-label { white-space: nowrap; }
 
 .state-row { align-items: center; }
