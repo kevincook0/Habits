@@ -52,7 +52,7 @@ state = {
 ```
 
 - **Weekly done flags** (`weekly.Push/Pull/Legs/Tennis`) hold the dayKey they were marked done, shown as `DD.MM` in the top nav. Weeks before the redesign stored `true` — treat any truthy value as done.
-- **Skills is stored as `Tennis`.** The tab was renamed; the key wasn't, so past weeks still read.
+- **Skills is stored as `Tennis`.** The tab was renamed; the key wasn't, so past weeks still read. It can also be set automatically from Strava (see below); `weekly.Tennis_strava` holds the id of the racket session that set it.
 - **Workout logs** (`weekly['<name>_log']`) are arrays indexed by exercise position in `WORKOUTS`. Reordering exercises scrambles past logs. Each entry is `{ sets: [{ weight, reps }], done }`, with the set count parsed from the target ("3×12" → 3). Weeks before per-set logging stored one `{ weight, reps }` per exercise; `exerciseEntry()` reads both and fills every set from the old single value.
 - **Posture 1 / Posture 2** are booleans. Days before the split only have `'Posture program'` (a 0–2 counter); `isHabitDone()` falls back to it.
 - Old keys (`sym_*`, `daily_grateful`, `Work remote`, `Intervals`, …) may still be in stored data from the previous design. They're carried along untouched.
@@ -157,6 +157,7 @@ A scheduled GitHub Action fetches Strava rides and commits JSON files that the B
 - `node scripts/fetch-strava.mjs` — refreshes the access token, fetches the current + previous week (Mon 00:00 → Mon 00:00, America/Toronto), writes `data/strava/<weekStart>.json` and `data/strava/index.json`. Edit `RIDE_TYPES`, `GOAL_MIN`, `WEEKS_BACK` at the top.
   - Files are only rewritten when something besides `generatedAt` changed, so `generatedAt` means "last changed", and no-op runs don't commit.
   - If Strava rotates the refresh token: in Actions it updates the repo secret via `gh secret set` (needs `GH_PAT` with Secrets read/write); locally it updates `.env` and warns that the GitHub secret is now stale.
+- **Racket sessions → Skills.** `fetch-strava.mjs` also writes `racket: [{ id, sportType, startDate, movingTimeSec }]` (no names) for activities in `RACKET_TYPES` (Tennis, Squash, Padel, Racquetball). When the current week's file has one and Skills isn't done, `applyStravaSkills()` sets `weekly.Tennis` to the session's day and `weekly.Tennis_strava` to its id. An Undo sticks until a *new* session id appears. It only runs after state has been read from Supabase (`stateHydrated`), and only when the Strava week matches `state.weekKey` (they differ Mon 0–3am). As of Nov 2026 no racket sessions had synced from Garmin yet, so the exact Strava type Garmin uses is unconfirmed — check the workflow log's "activities in range (Type ×n)" line.
 - `.github/workflows/strava.yml` — hourly at :23 + manual trigger; commits as `github-actions[bot]` with "Update Strava data". Pull before pushing locally, since the bot commits to `main`.
 - Weeks here start Monday 00:00 Toronto time; the app's own week rolls over Monday 3:00 device time. Week keys (the Monday date) match.
 

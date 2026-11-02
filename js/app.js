@@ -404,8 +404,10 @@ async function loadStravaWeek(key, force = false) {
   try {
     const data = await loadStravaJson(`${key}.json`);
     stravaData[key] = { status: 'ok', data };
-    if (key === currentStravaWeek())
+    if (key === currentStravaWeek()) {
       try { localStorage.setItem('stravaWeek', JSON.stringify({ key, data })); } catch {}
+      applyStravaSkills();
+    }
   } catch (e) {
     console.warn('strava week load failed', e);
     if (stravaData[key]?.status !== 'ok') stravaData[key] = { status: 'error' }; // keep stale data over an error
@@ -446,6 +448,22 @@ function bikeHistoryWeeks() {
 
 function loadBikeHistory() {
   bikeHistoryWeeks().slice(0, bikeHistoryCount).forEach(k => loadStravaWeek(k));
+}
+
+// A racket session (tennis/squash/padel) on Strava this week marks Skills done,
+// dated to that session. weekly.Tennis_strava remembers which session did it, so
+// "Mark as incomplete" sticks until a *new* session shows up. Waits until state
+// has been read from Supabase, so it never writes over data from a stale cache.
+let stateHydrated = false;
+function applyStravaSkills() {
+  const key = currentStravaWeek();
+  if (!stateHydrated || key !== state.weekKey) return; // Mon 0–3am the app's week hasn't rolled yet
+  const session = stravaData[key]?.data?.racket?.at(-1);
+  if (!session || state.weekly.Tennis || state.weekly.Tennis_strava === session.id) return;
+  state.weekly.Tennis        = getDayKey(new Date(session.startDate));
+  state.weekly.Tennis_strava = session.id;
+  saveState();
+  render();
 }
 
 function openStravaWeek(key) {
@@ -918,6 +936,8 @@ refreshStrava();
     });
     seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
     cacheLocal(state);
+    stateHydrated = true;
+    applyStravaSkills(); // Strava data may have loaded first
   } else {
     console.warn('initial habit fetch failed', stateResult.reason);
   }

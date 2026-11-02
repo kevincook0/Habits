@@ -19,6 +19,10 @@ import { readEnvFile, writeEnvValue } from './lib/env.mjs';
 
 const TIME_ZONE  = 'America/Toronto';
 const RIDE_TYPES = ['Ride', 'GravelRide', 'MountainBikeRide', 'VirtualRide'];
+// Any of these in a week marks the app's Skills tab done. Some Garmin racket
+// profiles sync to Strava as Racquetball; check the workflow log's type counts
+// if a session isn't picked up.
+const RACKET_TYPES = ['Tennis', 'Squash', 'Padel', 'Racquetball'];
 const GOAL_MIN   = 240;  // weekly moving-time goal — keep in sync with ZONE2_GOAL in js/app.js
 const WEEKS_BACK = 1;    // previous weeks refreshed each run, so late Sunday uploads land correctly
 
@@ -165,10 +169,11 @@ function saveRefreshToken(token) {
 const round = (n, dp) => Math.round(n * 10 ** dp) / 10 ** dp;
 
 function buildWeek(week, activities, generatedAt) {
-  const rides = activities
-    .filter(a => RIDE_TYPES.includes(a.sport_type))
+  const inWeek = activities
     .filter(a => { const t = Date.parse(a.start_date); return t >= week.startMs && t < week.endMs; })
     .sort((a, b) => Date.parse(a.start_date) - Date.parse(b.start_date));
+  const rides  = inWeek.filter(a => RIDE_TYPES.includes(a.sport_type));
+  const racket = inWeek.filter(a => RACKET_TYPES.includes(a.sport_type));
 
   const movingTimeSec = rides.reduce((s, a) => s + (a.moving_time || 0), 0);
   const distanceM     = rides.reduce((s, a) => s + (a.distance || 0), 0);
@@ -193,6 +198,13 @@ function buildWeek(week, activities, generatedAt) {
       movingTimeSec: a.moving_time || 0,
       distanceKm:    round((a.distance || 0) / 1000, 2),
       elevationM:    round(a.total_elevation_gain || 0, 1),
+    })),
+    // No names here — only what the app needs to mark Skills done.
+    racket: racket.map(a => ({
+      id:            a.id,
+      sportType:     a.sport_type,
+      startDate:     a.start_date,
+      movingTimeSec: a.moving_time || 0,
     })),
   };
 }
@@ -280,7 +292,7 @@ async function main() {
     const data    = buildWeek(week, activities, generatedAt);
     const changed = writeIfChanged(path.join(OUT_DIR, `${week.key}.json`), data);
     console.log(`${week.key}: ${data.totals.rideCount} ride(s), ${data.goal.doneMin}/${GOAL_MIN} min` +
-      `${data.goal.complete ? ' ✓' : ''} — ${changed ? 'updated' : 'unchanged'}`);
+      `${data.goal.complete ? ' ✓' : ''}, ${data.racket.length} racket session(s) — ${changed ? 'updated' : 'unchanged'}`);
   }
 
   const available = readdirSync(OUT_DIR)
