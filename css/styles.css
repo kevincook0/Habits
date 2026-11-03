@@ -135,6 +135,13 @@ button {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.chips { display: flex; gap: 10px; }
+/* Secondary chip: outlined (Progress / History next to the dark chip) */
+.chip.secondary {
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
 
 /* ── Lists + rows ──────────────────────────────────────────── */
 .list {
@@ -211,6 +218,13 @@ button {
   align-items: flex-end;
   justify-content: space-between;
 }
+/* Day completion bar under the count */
+.history-bar { width: calc(100vw / 6 - 17px); }   /* same as the Habits tab bar: one nav column minus its padding + border */
+
+/* Progress rows: label + % on top, full-width bar below */
+.progress-row { flex-direction: column; justify-content: space-between; }
+.progress-top { display: flex; justify-content: space-between; gap: 12px; }
+
 /* Same type as the date on the left (.history-row .row-label) */
 .history-count {
   font-size: 14px;

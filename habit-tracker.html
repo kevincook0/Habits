@@ -12,7 +12,7 @@
 <title>Habits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=14">
 </head>
 <body>
 
@@ -23,7 +23,10 @@
 <main class="page" id="pageHabits">
   <header class="page-header">
     <h1 class="page-title" id="habitsCount">0/0</h1>
-    <button class="chip" id="dateChip"></button>
+    <div class="chips">
+      <button class="chip secondary" id="habitsProgressChip">Scores</button>
+      <button class="chip" id="dateChip"></button>
+    </div>
   </header>
   <div class="list" id="habitList"></div>
 </main>
@@ -32,10 +35,26 @@
 <main class="page" id="pageHistory" hidden>
   <header class="page-header">
     <h1 class="page-title">History</h1>
-    <button class="chip" id="historyBackChip">Habits</button>
+    <div class="chips">
+      <button class="chip secondary" id="historyProgressChip">Scores</button>
+      <button class="chip" id="historyBackChip">Today</button>
+    </div>
   </header>
   <div class="list" id="historyList"></div>
   <button class="load-more" id="historyMore">Load more</button>
+</main>
+
+<!-- ── Progress: completion % per habit over the loaded history ── -->
+<main class="page" id="pageProgress" hidden>
+  <header class="page-header">
+    <h1 class="page-title">Scores</h1>
+    <div class="chips">
+      <button class="chip secondary" id="progressHistoryChip">History</button>
+      <button class="chip" id="progressBackChip">Today</button>
+    </div>
+  </header>
+  <div class="list" id="progressList"></div>
+  <p class="updated-note" id="progressNote"></p>
 </main>
 
 <!-- ── Push / Pull / Legs ── -->
@@ -79,7 +98,7 @@
   <button class="load-more" id="stravaHistoryMore">Load more</button>
 </main>
 
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 
 </body>
 </html>

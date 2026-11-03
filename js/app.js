@@ -362,7 +362,7 @@ function isHabitDone(daily, key) {
 const countDone = daily => DAILY_HABITS.filter(h => isHabitDone(daily, h.key)).length;
 
 // ── View state ───────────────────────────────────────────────
-let page          = 'Habits';  // a TABS entry, or 'History'
+let page          = 'Habits';  // a TABS entry, 'History', 'Progress', or '<Bike|Skills>History'
 let viewDay       = null;      // past day open on Habits: { dayKey, weekKey, daily, weekly, zone2, socialPlans, loaded }
 let skillsSection = 'warmup';
 let bikeSection   = 'warmup';
@@ -505,6 +505,7 @@ function render() {
   renderNav();
   if (page === 'Habits')       renderHabits();
   else if (page === 'History') renderHistory();
+  else if (page === 'Progress') renderProgress();
   else if (page in WORKOUTS)   renderWorkout(page);
   else if (page === 'Skills')  renderSkills();
   else if (page === 'Bike')    renderBike();
@@ -524,7 +525,7 @@ function stravaGoal(data) {
 
 function renderNav() {
   $('topNav').innerHTML = TABS.map(tab => {
-    const active = page === tab || (tab === 'Habits' && page === 'History') || stravaTabOf(page) === tab;
+    const active = page === tab || (tab === 'Habits' && (page === 'History' || page === 'Progress')) || stravaTabOf(page) === tab;
     let foot, done = false;
     const dateFoot = v => `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
     if (tab === 'Habits') {
@@ -579,12 +580,33 @@ function renderHistory() {
       <span class="row-label">${longDate(key)}</span>
       <span class="history-right">
         <span class="history-count">${done}/${DAILY_HABITS.length}</span>
-        <span class="dot${done === DAILY_HABITS.length ? ' on' : ''}"></span>
+        ${progressBar(done / DAILY_HABITS.length, 'history-bar')}
       </span>
     </div>`;
     key = addDays(key, -1);
   }
   $('historyList').innerHTML = html;
+}
+
+// Completion rate per habit across past days in habitHistory. Today is left out
+// (it's still in progress), and so are 0/13 days — vacation, or nothing was logged.
+function renderProgress() {
+  const days = Object.keys(habitHistory)
+    .filter(k => k < state.dayKey && countDone(habitHistory[k]) > 0)
+    .map(k => habitHistory[k]);
+  $('progressNote').textContent = days.length
+    ? `${days.length} day${days.length === 1 ? '' : 's'} counted`
+    : 'No days logged yet';
+  $('progressList').innerHTML = DAILY_HABITS.map(({ key, label }) => {
+    const pct = days.length ? days.filter(d => isHabitDone(d, key)).length / days.length : 0;
+    return `<div class="row progress-row">
+      <span class="progress-top">
+        <span class="row-label">${label}</span>
+        <span class="history-count">${Math.round(pct * 100)}%</span>
+      </span>
+      ${progressBar(pct)}
+    </div>`;
+  }).join('');
 }
 
 // ── Workout log ──────────────────────────────────────────────
@@ -936,7 +958,7 @@ async function loadMoreHistory() {
     (rows || []).forEach(r => { habitHistory[r.day_key] = r.daily || {}; });
     historyFrom = oldest;
     cacheHistory(habitHistory);
-    if (page === 'History') render();
+    if (page === 'History' || page === 'Progress') render();
   } catch (e) {
     console.warn('history fetch failed', e);
   }
@@ -1038,7 +1060,11 @@ $('habitList').addEventListener('click', e => {
 });
 
 $('dateChip').addEventListener('click', () => go('History'));
-$('historyBackChip').addEventListener('click', () => go('Habits'));
+$('historyBackChip').addEventListener('click', () => { viewDay = null; go('Habits'); });
+$('habitsProgressChip').addEventListener('click', () => go('Progress'));
+$('historyProgressChip').addEventListener('click', () => go('Progress'));
+$('progressHistoryChip').addEventListener('click', () => go('History'));
+$('progressBackChip').addEventListener('click', () => { viewDay = null; go('Habits'); });
 $('historyMore').addEventListener('click', loadMoreHistory);
 $('historyList').addEventListener('click', e => {
   const row = e.target.closest('[data-day]');
