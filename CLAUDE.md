@@ -72,7 +72,7 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 | Skills (shown as "Sport") | Strava racket sessions for the week + Mindset + Warm up / Cool down | One green dot per racket session this week (gray dot if none); struck through when there's at least one — no manual override |
 | Bike | "Cycling": Strava week (stats, weekly volume bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
-- **Habits header tabs**: the title is two tabs, the done count ("0/13") and "Social". Social (`page = 'Social'`) has a text box per day of the current week, saved to `state.socialPlans` on every keystroke (debounced like other writes). Enter closes the keyboard; boxes grow to fit. `renderSocial()` skips rebuilding while a box has focus. Tapping the count goes back to Habits.
+- **Habits header tabs**: the title is two tabs: the habit count ("0/13") and the Social count (days this week with a plan / `SOCIAL_GOAL`, e.g. "0/7"). Social (`page = 'Social'`) has a text box per day of the current week, saved to `state.socialPlans` on every keystroke (debounced like other writes). Enter closes the keyboard; boxes grow to fit. `renderSocial()` skips rebuilding while a box has focus. Tapping the count goes back to Habits.
 - **Mindset accordions** (`HABITS_MINDSET`, `SOCIAL_MINDSET`, `SPORT_MINDSET`): read-only numbered affirmations in a gray box above the list on Habits, Social and Sport. Tap anywhere on the box to expand/collapse; open state is in memory (`mindsetOpen`), collapsed on load.
 - **Habits with a routine** (`HABIT_STEPS`): first tap opens the steps (row `.active`), second tap checks it off and closes it. Tapping a done row un-checks it. Open state is in memory only (`openHabit`).
 - **History**: tapping the date chip on Habits opens History (a list of days with a count and a completion bar; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Today" chip on History goes back. Tapping the Habits tab always returns to today.
@@ -113,7 +113,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 
 - `DAILY_HABITS` — the 13 daily habits, in display order, as `{ key, label }`
 - `HABIT_STEPS` — read-only routines (`[name, detail]`) for habits that expand: Mobility, Posture 1/2 (both use `POSTURE_STEPS`, the current rehab routine — edit it as rehab progresses)
-- `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
+- `SOCIAL_GOAL = 7` (days with plans/week), `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
 - `WEEKLY_KEY` — tab name → `state.weekly` key
 - `TAB_LABELS` — display names that differ from the tab id (`Skills` → "Sport"). Tab ids are page names and state keys; rename the label, not the id
 - `WORKOUTS` — Push/Pull/Legs titles and exercises (`{ name, target, unit? }`)

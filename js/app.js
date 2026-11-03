@@ -42,6 +42,7 @@ const HABIT_STEPS = {
   'Posture 2': POSTURE_STEPS,
 };
 
+const SOCIAL_GOAL = 7;   // days a week with social plans (every day); the Social tab shows filled / goal
 const ZONE2_GOAL = 240;  // minutes/week — fallback if a Strava file has no goal (GOAL_MIN in scripts/fetch-strava.mjs)
 const RESET_HOUR = 3;
 
@@ -585,6 +586,7 @@ function renderHabits() {
   const day   = viewDay || state;
   const done  = countDone(day.daily);
   $('habitsCount').textContent = `${done}/${DAILY_HABITS.length}`;
+  $('habitsSocialTab').textContent = socialCount();
   renderMindset('habitsMindset', 'habits', HABITS_MINDSET);
   $('dateChip').textContent    = chipDate(day.dayKey);
   const list = $('habitList');
@@ -634,8 +636,13 @@ function renderMindset(containerId, id, items) {
 const SOCIAL_DAYS = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'],
                      ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
 
+// Days this week with a plan written, out of SOCIAL_GOAL
+const socialCount = () =>
+  `${SOCIAL_DAYS.filter(([k]) => (state.socialPlans[k] || '').trim()).length}/${SOCIAL_GOAL}`;
+
 function renderSocial() {
-  $('socialCount').textContent = `${countDone(state.daily)}/${DAILY_HABITS.length}`;
+  $('socialCount').textContent    = `${countDone(state.daily)}/${DAILY_HABITS.length}`;
+  $('socialTabCount').textContent = socialCount();
   renderMindset('socialMindset', 'social', SOCIAL_MINDSET);
   // Don't rebuild under the keyboard (the minute timer and Strava fetches also render)
   if ($('socialList').contains(document.activeElement)) return;
@@ -1131,6 +1138,7 @@ $('socialList').addEventListener('input', e => {
   // Enter = done (closes the keyboard) rather than a new line
   if (el.value.includes('\n')) { el.value = el.value.replace(/\n/g, ''); el.blur(); }
   state.socialPlans[el.dataset.plan] = el.value;
+  $('socialTabCount').textContent = socialCount();
   fitHeight(el);
   saveState();
 });
