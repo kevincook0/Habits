@@ -12,7 +12,7 @@
 <title>Habits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=14">
+<link rel="stylesheet" href="css/styles.css?v=17">
 </head>
 <body>
 
@@ -22,13 +22,29 @@
 <!-- ── Habits (today, or a past day opened from History) ── -->
 <main class="page" id="pageHabits">
   <header class="page-header">
-    <h1 class="page-title" id="habitsCount">0/0</h1>
+    <h1 class="title-tabs">
+      <button class="title-tab active" id="habitsCount">0/0</button>
+      <button class="title-tab" id="habitsSocialTab">Social</button>
+    </h1>
     <div class="chips">
       <button class="chip secondary" id="habitsProgressChip">Scores</button>
       <button class="chip" id="dateChip"></button>
     </div>
   </header>
+  <div id="habitsMindset"></div>
   <div class="list" id="habitList"></div>
+</main>
+
+<!-- ── Social: this week's plans, one input per day (state.socialPlans) ── -->
+<main class="page" id="pageSocial" hidden>
+  <header class="page-header">
+    <h1 class="title-tabs">
+      <button class="title-tab" id="socialCount">0/0</button>
+      <button class="title-tab active">Social</button>
+    </h1>
+  </header>
+  <div id="socialMindset"></div>
+  <div class="list" id="socialList"></div>
 </main>
 
 <!-- ── History ── -->
@@ -66,13 +82,14 @@
   <div class="list" id="workoutList"></div>
 </main>
 
-<!-- ── Skills: Strava racket sessions (data/strava/*.json) + warm up / affirmations / cool down ── -->
+<!-- ── Skills (shown as "Sport"): Strava racket sessions (data/strava/*.json) + mindset + warm up / cool down ── -->
 <main class="page" id="pageSkills" hidden>
   <header class="page-header">
-    <h1 class="page-title">Skills</h1>
+    <h1 class="page-title">Sport</h1>
     <button class="chip" id="skillsWeekChip"></button>
   </header>
   <div id="skillsWeekBody"></div>
+  <div id="skillsMindset"></div>
   <div class="subnav" id="skillsSubnav"></div>
   <div class="list" id="skillsList"></div>
 </main>
@@ -98,7 +115,7 @@
   <button class="load-more" id="stravaHistoryMore">Load more</button>
 </main>
 
-<script src="js/app.js?v=21"></script>
+<script src="js/app.js?v=23"></script>
 
 </body>
 </html>

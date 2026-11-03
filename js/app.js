@@ -50,6 +50,8 @@ const RESET_HOUR = 3;
 const STRAVA_DIR = 'data/strava/';
 
 const TABS = ['Habits', 'Push', 'Pull', 'Legs', 'Skills', 'Bike'];
+// Display names where they differ from the tab id (ids are page names + state keys — don't rename)
+const TAB_LABELS = { Skills: 'Sport' };
 
 // Workout done flags live in state.weekly under these keys. The value is the
 // dayKey it was marked done (weeks before the redesign stored `true`).
@@ -91,6 +93,46 @@ const WORKOUTS = {
   ]},
 };
 
+// ── Mindset affirmations ─────────────────────────────────────
+// Read-only accordions: Habits (general), Social (charisma), Sport (competition).
+const HABITS_MINDSET = [
+  'I will be kind to myself and to others.',
+  'I make decisions with an abundance mindset.',
+  'I will have the courage to grow up and fulfill my potential.',
+  'I choose short-term discomfort over regret.',
+  'I don’t wait to feel ready. I just do it.',
+  'I take the shot even if I’m likely to miss.',
+  'I punch above my weight class.',
+  'I will be brave for 5 minutes longer than everyone else.',
+  'I prioritize living the life I want to live over the fear of public failure (~1% of people).',
+  'I do what I want without fear of judgement — I dance like no one’s watching.',
+  'The hard days aren’t setbacks, they’re the forge.',
+];
+const SOCIAL_MINDSET = [
+  'I will prepare to be noticed — believe you belong.',
+  'I will treat strangers like old friends — assume familiarity.',
+  'I will have good energy — being enthusiastic is worth 25 IQ points.',
+  'I will engage in playful banter and find levity in every situation.',
+  'I will be positive, protective, and light hearted.',
+  'I will use touch to build trust and camaraderie.',
+  'I will speak with a smile to make others smile.',
+  'I will use modulation to appear energetic.',
+  'I will act confident so that others can also feel confident.',
+  'I will earn respect by speaking confidently and conducting myself well.',
+];
+const SPORT_MINDSET = [
+  'I visualize myself as worthy and successful and give myself permission to win.',
+  'I see competition as a challenge to rise to, not a threat to back down from.',
+  'I will concentrate on what I can control and focus on quality “at-bats”.',
+  'I play to win, not to avoid losing.',
+  'I am prepared. My body knows what to do.',
+  'I will get myself to the right emotional state and stress/arousal level.',
+  'I breathe in energy, I breathe out stress and negativity.',
+  'If I start to think negative thoughts, I try to think less.',
+  'I am a champion. I move on fast.',
+  'I am brave until the last point.',
+];
+
 // ── Routines ([name, detail] pairs) ──────────────────────────
 const SKILLS_SECTIONS = [
   { id: 'warmup', title: 'Warm up', items: [
@@ -103,18 +145,6 @@ const SKILLS_SECTIONS = [
     ['Split step jumps',                      'x10'],
     ['Arm swings',                            'x10'],
     ['Mini tennis',                           '10 mins'],
-  ]},
-  { id: 'affirm', title: 'Affirmations', items: [
-    ['I visualize myself as worthy and successful and give myself permission to win.'],
-    ['I see competition as a challenge to rise to, not a threat to back down from.'],
-    ['I will concentrate on what I can control and focus on quality “at-bats”.'],
-    ['I play to win, not to avoid losing.'],
-    ['I am prepared. My body knows what to do.'],
-    ['I will get myself to the right emotional state and stress/arousal level.'],
-    ['I breathe in energy, I breathe out stress and negativity.'],
-    ['If I start to think negative thoughts, I try to think less.'],
-    ['I am a champion. I move on fast.'],
-    ['I am brave until the last point.'],
   ]},
   { id: 'cooldown', title: 'Cool down', items: [
     ['Easy walk',                            '2–3 lengths'],
@@ -244,7 +274,7 @@ function seedWorkoutDefaults(weekly) {
 // ── Saving ───────────────────────────────────────────────────
 const EMPTY_SOCIAL = () => ({ mon: '', tue: '', wed: '', thu: '', fri: '', sat: '', sun: '' });
 
-// socialPlans has no UI any more, but state-write blanks it if omitted — always pass it through.
+// state-write blanks socialPlans if omitted — always send the full payload.
 const livePayload = () => ({
   dayKey:      state.dayKey,
   weekKey:     state.weekKey,
@@ -362,9 +392,10 @@ function isHabitDone(daily, key) {
 const countDone = daily => DAILY_HABITS.filter(h => isHabitDone(daily, h.key)).length;
 
 // ── View state ───────────────────────────────────────────────
-let page          = 'Habits';  // a TABS entry, 'History', 'Progress', or '<Bike|Skills>History'
+let page          = 'Habits';  // a TABS entry, 'History', 'Progress', 'Social', or '<Bike|Skills>History'
 let viewDay       = null;      // past day open on Habits: { dayKey, weekKey, daily, weekly, zone2, socialPlans, loaded }
 let skillsSection = 'warmup';
+const mindsetOpen = {};          // accordion id → expanded (in memory; starts collapsed)
 let bikeSection   = 'warmup';
 let historyDays   = 14;        // rows shown on History
 let historyFrom   = null;      // earliest dayKey fetched into habitHistory
@@ -506,6 +537,7 @@ function render() {
   if (page === 'Habits')       renderHabits();
   else if (page === 'History') renderHistory();
   else if (page === 'Progress') renderProgress();
+  else if (page === 'Social')  renderSocial();
   else if (page in WORKOUTS)   renderWorkout(page);
   else if (page === 'Skills')  renderSkills();
   else if (page === 'Bike')    renderBike();
@@ -525,7 +557,7 @@ function stravaGoal(data) {
 
 function renderNav() {
   $('topNav').innerHTML = TABS.map(tab => {
-    const active = page === tab || (tab === 'Habits' && (page === 'History' || page === 'Progress')) || stravaTabOf(page) === tab;
+    const active = page === tab || (tab === 'Habits' && ['History', 'Progress', 'Social'].includes(page)) || stravaTabOf(page) === tab;
     let foot, done = false;
     const dateFoot = v => `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
     if (tab === 'Habits') {
@@ -544,7 +576,7 @@ function renderNav() {
       foot = dateFoot(v);
     }
     return `<button class="nav-tab${active ? ' active' : ''}${done ? ' done' : ''}" data-tab="${tab}">
-      <span class="nav-label">${tab}</span><span class="nav-foot">${foot}</span>
+      <span class="nav-label">${TAB_LABELS[tab] || tab}</span><span class="nav-foot">${foot}</span>
     </button>`;
   }).join('');
 }
@@ -553,6 +585,7 @@ function renderHabits() {
   const day   = viewDay || state;
   const done  = countDone(day.daily);
   $('habitsCount').textContent = `${done}/${DAILY_HABITS.length}`;
+  renderMindset('habitsMindset', 'habits', HABITS_MINDSET);
   $('dateChip').textContent    = chipDate(day.dayKey);
   const list = $('habitList');
   list.classList.toggle('loading', !!viewDay && !viewDay.loaded);
@@ -586,6 +619,38 @@ function renderHistory() {
     key = addDays(key, -1);
   }
   $('historyList').innerHTML = html;
+}
+
+// Read-only affirmations in a collapsible box; tapping anywhere on it toggles.
+function renderMindset(containerId, id, items) {
+  const open = !!mindsetOpen[id];
+  $(containerId).innerHTML = `<div class="mindset${open ? ' open' : ''}" role="button" aria-expanded="${open}" data-mindset="${id}">
+    <span class="row-label">Mindset</span>
+    ${open ? `<ol class="mindset-list">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : ''}
+  </div>`;
+}
+
+// Social: one free-text plan per day of the current week (state.socialPlans).
+const SOCIAL_DAYS = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'],
+                     ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
+
+function renderSocial() {
+  $('socialCount').textContent = `${countDone(state.daily)}/${DAILY_HABITS.length}`;
+  renderMindset('socialMindset', 'social', SOCIAL_MINDSET);
+  // Don't rebuild under the keyboard (the minute timer and Strava fetches also render)
+  if ($('socialList').contains(document.activeElement)) return;
+  $('socialList').innerHTML = SOCIAL_DAYS.map(([key, label]) => `<label class="row social-row">
+    <span class="row-label">${label}</span>
+    <textarea class="social-input" rows="1" enterkeyhint="done" autocomplete="off" data-plan="${key}"
+      aria-label="${label} plans">${esc(state.socialPlans[key])}</textarea>
+  </label>`).join('');
+  $('socialList').querySelectorAll('.social-input').forEach(fitHeight);
+}
+
+// Grow a textarea to fit its text (no inner scrolling)
+function fitHeight(el) {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
 }
 
 // Completion rate per habit across past days in habitHistory. Today is left out
@@ -694,9 +759,7 @@ function renderWorkout(name) {
 
 // Warm-up / cool-down checkmarks live in state.daily (they reset at 3am, so
 // each session starts fresh) as { [itemName]: true } under e.g. 'skills_warmup'.
-// Affirmations are read-only.
 const routineKey  = (prefix, sectionId) => `${prefix}_${sectionId}`;
-const isCheckable = sectionId => sectionId !== 'affirm';
 
 function renderSections(prefix, sections, activeId) {
   $(prefix + 'Subnav').innerHTML = sections.map(s =>
@@ -705,8 +768,6 @@ function renderSections(prefix, sections, activeId) {
   const section = sections.find(s => s.id === activeId);
   const checks  = state.daily[routineKey(prefix, section.id)] || {};
   $(prefix + 'List').innerHTML = section.items.map(([name, detail], i) => {
-    if (!isCheckable(section.id))
-      return `<div class="row"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`;
     return checks[name]
       ? `<div class="row ex-row done" role="button" data-item="${i}"><span class="row-label">${name}</span>${CHECK_SVG}</div>`
       : `<div class="row ex-row" role="button" data-item="${i}"><span class="row-label">${name}</span>${detail ? `<span class="row-meta">${detail}</span>` : ''}</div>`;
@@ -813,8 +874,8 @@ function renderBike() {
   renderSections('bike', BIKE_SECTIONS, bikeSection);
 }
 
-// Skills: the week's racket sessions from Strava (which is what marks Skills
-// done), then Warm up / Affirmations / Cool down.
+// Skills (shown as "Sport"): the week's racket sessions from Strava (which is
+// what marks Skills done), then the Mindset accordion, then Warm up / Cool down.
 function renderSkills() {
   const key   = viewWeek.Skills || currentStravaWeek();
   const entry = stravaData[key] || { status: 'loading' };
@@ -836,6 +897,7 @@ function renderSkills() {
       ${updatedNote(entry.data)}`;
   }
 
+  renderMindset('skillsMindset', 'sport', SPORT_MINDSET);
   renderSections('skills', SKILLS_SECTIONS, skillsSection);
 }
 
@@ -843,7 +905,7 @@ function renderSkills() {
 function renderStravaHistory(tab) {
   const list  = $('stravaHistoryList');
   const weeks = stravaHistoryWeeks();
-  $('stravaHistoryBackChip').textContent = tab === 'Bike' ? 'Cycling' : 'Skills';
+  $('stravaHistoryBackChip').textContent = tab === 'Bike' ? 'Cycling' : 'Sport';
   $('stravaHistoryMore').hidden = stravaIndexState !== 'ok' || stravaHistoryCount >= weeks.length;
 
   if (stravaIndexState === 'loading') { list.innerHTML = loadingRow('history'); return; }
@@ -1061,6 +1123,24 @@ $('habitList').addEventListener('click', e => {
 
 $('dateChip').addEventListener('click', () => go('History'));
 $('historyBackChip').addEventListener('click', () => { viewDay = null; go('Habits'); });
+$('habitsSocialTab').addEventListener('click', () => go('Social'));
+$('socialCount').addEventListener('click', () => go('Habits'));
+$('socialList').addEventListener('input', e => {
+  const el = e.target.closest('[data-plan]');
+  if (!el) return;
+  // Enter = done (closes the keyboard) rather than a new line
+  if (el.value.includes('\n')) { el.value = el.value.replace(/\n/g, ''); el.blur(); }
+  state.socialPlans[el.dataset.plan] = el.value;
+  fitHeight(el);
+  saveState();
+});
+// Any Mindset accordion
+document.addEventListener('click', e => {
+  const box = e.target.closest('[data-mindset]');
+  if (!box) return;
+  mindsetOpen[box.dataset.mindset] = !mindsetOpen[box.dataset.mindset];
+  render();
+});
 $('habitsProgressChip').addEventListener('click', () => go('Progress'));
 $('historyProgressChip').addEventListener('click', () => go('Progress'));
 $('progressHistoryChip').addEventListener('click', () => go('History'));

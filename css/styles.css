@@ -135,7 +135,66 @@ button {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.chips { display: flex; gap: 10px; }
+.chips { display: flex; gap: 10px; flex-shrink: 0; }
+.page-header { gap: 12px; }
+
+/* Title as tabs (Habits count | Social): same type as .page-title, inactive one muted */
+.title-tabs { display: flex; gap: 22px; margin: 0; font: inherit; }
+.title-tab {
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #8a8a8a;
+  white-space: nowrap;
+}
+.title-tab.active { color: var(--text); }
+
+/* Mindset: read-only affirmations, tap to expand / collapse */
+.mindset {
+  min-height: var(--row-h);
+  margin-bottom: 24px;
+  padding: 12px 8px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mindset-list {
+  margin: 10px 0 0;   /* the box's 24px bottom padding is the only space below the list */
+  padding: 0;
+  list-style: none;
+  counter-reset: mindset;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.mindset-list li + li { margin-top: 8px; }
+/* Number drawn inside the item (not as an outside marker) so "10." starts at
+   the box's 8px padding like "1." does; wrapped lines align under the text */
+.mindset-list li { display: flex; counter-increment: mindset; }
+.mindset-list li::before {
+  content: counter(mindset) ".";
+  flex-shrink: 0;
+  margin-right: 0.35em;
+  font-variant-numeric: tabular-nums;   /* equal-width digits: items 1–9 line up */
+}
+
+/* Social: day label on top, free-text plan below */
+.social-row { flex-direction: column; justify-content: flex-start; gap: 4px; cursor: text; }
+.social-row:focus-within { background: var(--surface); }
+.social-input {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  font: 400 16px/1.5 var(--font);   /* 16px stops iOS zooming on focus */
+  color: var(--text);
+}
 /* Secondary chip: outlined (Progress / History next to the dark chip) */
 .chip.secondary {
   background: var(--bg);
@@ -292,7 +351,7 @@ button {
   flex-shrink: 0;
 }
 
-/* ── Sub-navigation (Warm up / Affirmations / Cool down) ──── */
+/* ── Sub-navigation (Warm up / Cool down) ──────────────────── */
 /* Used on Skills and Bike; scrolls sideways if it ever outgrows the screen */
 .subnav {
   display: flex;
