@@ -1125,6 +1125,18 @@ $('topNav').addEventListener('click', e => {
   go(tab);
 });
 
+// While a routine is open, a tap anywhere on Habits outside its card just
+// closes it (it doesn't check off another habit or toggle the Mindset box).
+// The top nav and the page header (tabs, chips) still work as usual.
+document.addEventListener('click', e => {
+  if (page !== 'Habits' || !openHabit) return;
+  if (e.target.closest('.open-card, .page-header, #topNav')) return;
+  e.stopPropagation();
+  e.preventDefault();
+  openHabit = null;
+  render();
+}, true);   // capture: runs before the list's own click handler
+
 $('habitList').addEventListener('click', e => {
   const row = e.target.closest('[data-i]');
   if (row) tapHabit(DAILY_HABITS[row.dataset.i].key);
