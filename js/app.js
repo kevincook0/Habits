@@ -599,9 +599,10 @@ function renderHabits() {
       <span class="row-label">${label}</span>${isDone ? CHECK_SVG : ''}
     </div>`;
     if (!isOpen) return row;
-    return row + HABIT_STEPS[key].map(([name, detail]) => `<div class="step-row">
+    // The open routine and its steps sit on a raised card, like the open exercise
+    return `<div class="open-card">${row}${HABIT_STEPS[key].map(([name, detail]) => `<div class="step-row">
       <span class="step-cell">${name}</span><span class="step-cell">${detail}</span>
-    </div>`).join('');
+    </div>`).join('')}</div>`;
   }).join('');
 }
 
@@ -757,10 +758,11 @@ function renderWorkout(name) {
       <span class="row-label">${ex.name}</span><span class="row-meta">${ex.target}</span>
     </div>`;
     if (i !== active) return head;
-    return head + entry.sets.map((set, s) => `<div class="set-row">
+    // The open exercise and its sets sit on a raised card, apart from the next exercise
+    return `<div class="open-card">${head}${entry.sets.map((set, s) => `<div class="set-row">
       ${setCell(i, s, 'weight', set.weight, 'lbs')}
       ${setCell(i, s, 'reps', set.reps, ex.unit || 'reps')}
-    </div>`).join('');
+    </div>`).join('')}</div>`;
   }).join('');
 }
 
@@ -1132,6 +1134,28 @@ $('dateChip').addEventListener('click', () => go('History'));
 $('historyBackChip').addEventListener('click', () => { viewDay = null; go('Habits'); });
 $('habitsSocialTab').addEventListener('click', () => go('Social'));
 $('socialCount').addEventListener('click', () => go('Habits'));
+
+// Swipe between Habits (day) and Social (week): left → Social, right → Habits.
+// Only on those two pages; ignores vertical scrolls, swipes starting in a text
+// box, and the screen edges (iOS uses those for back/forward).
+let swipe = null;
+document.addEventListener('touchstart', e => {
+  swipe = null;
+  if (page !== 'Habits' && page !== 'Social') return;
+  if (e.touches.length !== 1 || e.target.closest('input, textarea')) return;
+  const t = e.touches[0];
+  if (t.clientX < 24 || t.clientX > window.innerWidth - 24) return;
+  swipe = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!swipe) return;
+  const t  = e.changedTouches[0];
+  const dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dx < 0 && page === 'Habits') go('Social');
+  else if (dx > 0 && page === 'Social') go('Habits');
+}, { passive: true });
 $('socialList').addEventListener('input', e => {
   const el = e.target.closest('[data-plan]');
   if (!el) return;
