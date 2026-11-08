@@ -42,6 +42,7 @@ const HABIT_STEPS = {
   'Posture 2': POSTURE_STEPS,
 };
 
+const SOCIAL_WEEKS_AHEAD = 4;   // future weeks you can plan on the Social page
 const SOCIAL_GOAL = 7;   // days a week with social plans (every day); the Social tab shows filled / goal
 const ZONE2_GOAL = 240;  // minutes/week — fallback if a Strava file has no goal (GOAL_MIN in scripts/fetch-strava.mjs)
 const RESET_HOUR = 3;
@@ -202,9 +203,10 @@ async function apiRead(dayKey, weekKey) {
   return res.json();
 }
 
-async function apiWrite(payload) {
+async function apiWrite(payload, keepalive = false) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
     method: 'POST',
+    keepalive,
     headers: apiHeaders(),
     body: JSON.stringify(payload),
   });
@@ -285,6 +287,13 @@ const livePayload = () => ({
   socialPlans: state.socialPlans,
 });
 
+// A new week starts with blank plans locally, but the server may hold plans made
+// ahead of time. Until they're read back, a write of today would wipe them, so
+// writes are held (ensureFreshKeys sets this; render retries the read).
+let plansStale   = false;
+let plansSyncing = false;
+let writeHeld    = false;
+
 let saveTimer = null;
 function saveState() {
   saveWorkoutDefaults(state.weekly); // keep defaults current for the upcoming week rollover
@@ -292,13 +301,15 @@ function saveState() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
+    if (plansStale) { writeHeld = true; return; }
     apiWrite(livePayload()).catch(err => console.warn('habit save failed', err));
   }, 400);
 }
 
 // Send a pending debounced write before the page goes away (iOS rarely fires beforeunload).
 function flushSave() {
-  if (!saveTimer) return;
+  flushSocialWeek();
+  if (!saveTimer || plansStale) return;
   clearTimeout(saveTimer);
   saveTimer = null;
   fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
@@ -367,6 +378,7 @@ function ensureFreshKeys(s) {
     s.weekly      = {};
     s.zone2       = 0;
     s.socialPlans = EMPTY_SOCIAL();
+    plansStale    = true;          // plans made ahead for this week are still on the server
     seedWorkoutDefaults(s.weekly); // seed new week with last week's anchor values
   }
   s.daily       = s.daily  || {};
@@ -378,6 +390,29 @@ function ensureFreshKeys(s) {
 
 let state        = ensureFreshKeys(readLocalCache());
 let habitHistory = readHistoryCache() || {};   // dayKey → daily
+
+function markPlansFresh() {
+  plansStale = false;
+  if (writeHeld) { writeHeld = false; saveState(); }
+}
+
+// Pick up plans already saved for a week that just started.
+async function syncPlans() {
+  plansSyncing = true;
+  try {
+    await socialWriteDone;
+    const remote = await apiRead(state.dayKey, state.weekKey);
+    if (plansStale && remote.weekKey === state.weekKey) {
+      state.socialPlans = { ...EMPTY_SOCIAL(), ...remote.socialPlans };
+      cacheLocal(state);
+      markPlansFresh();
+      render();
+    }
+  } catch (e) {
+    console.warn('social plans fetch failed', e); // retried on the next render
+  }
+  plansSyncing = false;
+}
 
 // ── Habit completion ─────────────────────────────────────────
 function isHabitDone(daily, key) {
@@ -393,7 +428,7 @@ function isHabitDone(daily, key) {
 const countDone = daily => DAILY_HABITS.filter(h => isHabitDone(daily, h.key)).length;
 
 // ── View state ───────────────────────────────────────────────
-let page          = 'Habits';  // a TABS entry, 'History', 'Progress', 'Social', or '<Bike|Skills>History'
+let page          = 'Habits';  // a TABS entry, 'History', 'Progress', 'Social', 'SocialHistory', or '<Bike|Skills>History'
 let viewDay       = null;      // past day open on Habits: { dayKey, weekKey, daily, weekly, zone2, socialPlans, loaded }
 let skillsSection = 'warmup';
 const mindsetOpen = {};          // accordion id → expanded (in memory; starts collapsed)
@@ -406,6 +441,9 @@ const $ = id => document.getElementById(id);
 const CHECK_SVG = `<svg class="check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12.5 9.5,18 20,6.5"/></svg>`;
 
 function go(p) {
+  // Another week is only open while on Social, so each visit re-reads it
+  if (page === 'Social' && p !== 'Social') { flushSocialWeek(); socialWeek = null; }
+  if (p === 'SocialHistory' && page !== p) loadSocialWeeks(true);
   // Leaving a workout with every exercise checked off counts as done for the week
   if (page in WORKOUTS && p !== page && !state.weekly[page] &&
       WORKOUTS[page].exercises.every((_, i) => exerciseEntry(page, i).done)) {
@@ -525,7 +563,9 @@ const racketSessions = data => data?.racket || [];
 // ── Render ───────────────────────────────────────────────────
 function render() {
   state = ensureFreshKeys(state);
+  if (plansStale && !plansSyncing) syncPlans();
   if (viewDay && viewDay.dayKey === state.dayKey) viewDay = null;
+  if (socialWeek && socialWeek.weekKey === state.weekKey) { flushSocialWeek(); socialWeek = null; }
 
   const isStravaHistory = page.endsWith('History') && !!stravaTabOf(page);
   const pageId = page === 'History' ? 'pageHistory'
@@ -539,6 +579,7 @@ function render() {
   else if (page === 'History') renderHistory();
   else if (page === 'Progress') renderProgress();
   else if (page === 'Social')  renderSocial();
+  else if (page === 'SocialHistory') renderSocialHistory();
   else if (page in WORKOUTS)   renderWorkout(page);
   else if (page === 'Skills')  renderSkills();
   else if (page === 'Bike')    renderBike();
@@ -558,7 +599,7 @@ function stravaGoal(data) {
 
 function renderNav() {
   $('topNav').innerHTML = TABS.map(tab => {
-    const active = page === tab || (tab === 'Habits' && ['History', 'Progress', 'Social'].includes(page)) || stravaTabOf(page) === tab;
+    const active = page === tab || (tab === 'Habits' && ['History', 'Progress', 'Social', 'SocialHistory'].includes(page)) || stravaTabOf(page) === tab;
     let foot, done = false;
     const dateFoot = v => `<span class="nav-date">${typeof v === 'string' ? tabDate(v) : ''}</span><span class="nav-dot"></span>`;
     if (tab === 'Habits') {
@@ -633,26 +674,121 @@ function renderMindset(containerId, id, items) {
   </div>`;
 }
 
-// Social: one free-text plan per day of the current week (state.socialPlans).
+// Social: one free-text plan per day, for this week (state.socialPlans) or
+// another one picked from SocialHistory (socialWeek).
 const SOCIAL_DAYS = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'],
                      ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
 
-// Days this week with a plan written, out of SOCIAL_GOAL
-const socialCount = () =>
-  `${SOCIAL_DAYS.filter(([k]) => (state.socialPlans[k] || '').trim()).length}/${SOCIAL_GOAL}`;
+let socialWeek      = null;  // another week open on Social: { weekKey, daily, weekly, zone2, socialPlans, loaded }
+let socialPastWeeks = 8;     // past weeks listed on SocialHistory
+const socialWeeks   = {};    // weekKey → plans, as last read (for the week list)
+let socialSaveTimer = null;
+let socialWriteDone = Promise.resolve();  // the last write, so a read can't overtake it
+
+// Days with a plan written
+const socialDone  = plans => SOCIAL_DAYS.filter(([k]) => (plans[k] || '').trim()).length;
+const socialCount = (plans = state.socialPlans) => `${socialDone(plans)}/${SOCIAL_GOAL}`;
 
 function renderSocial() {
+  const week = socialWeek || state;
   $('socialCount').textContent    = `${countDone(state.daily)}/${DAILY_HABITS.length}`;
-  $('socialTabCount').textContent = socialCount();
+  $('socialTabCount').textContent = socialCount(week.socialPlans);
+  $('socialWeekChip').textContent = weekRange(week.weekKey);
   renderMindset('socialMindset', 'social', SOCIAL_MINDSET);
+  $('socialList').classList.toggle('loading', !!socialWeek && !socialWeek.loaded);
   // Don't rebuild under the keyboard (the minute timer and Strava fetches also render)
   if ($('socialList').contains(document.activeElement)) return;
   $('socialList').innerHTML = SOCIAL_DAYS.map(([key, label]) => `<label class="row social-row">
     <span class="row-label">${label}</span>
     <textarea class="social-input" rows="1" enterkeyhint="done" autocomplete="off" data-plan="${key}"
-      aria-label="${label} plans">${esc(state.socialPlans[key])}</textarea>
+      aria-label="${label} plans">${esc(week.socialPlans[key])}</textarea>
   </label>`).join('');
   $('socialList').querySelectorAll('.social-input').forEach(fitHeight);
+}
+
+// Newest first: SOCIAL_WEEKS_AHEAD future weeks, this week, then past weeks.
+function socialWeekKeys() {
+  const keys = [];
+  for (let i = SOCIAL_WEEKS_AHEAD; i >= -socialPastWeeks; i--) keys.push(addDays(state.weekKey, i * 7));
+  return keys;
+}
+
+function renderSocialHistory() {
+  $('socialHistoryList').innerHTML = socialWeekKeys().map(key => {
+    const plans = key === state.weekKey ? state.socialPlans : socialWeeks[key];
+    const done  = plans ? socialDone(plans) : 0;
+    return `<div class="row history-row" role="button" data-social-week="${key}">
+      <span class="row-label">${weekRange(key)}</span>
+      <span class="history-right">
+        <span class="history-count">${plans ? done : '–'}/${SOCIAL_GOAL}</span>
+        ${progressBar(done / SOCIAL_GOAL, 'history-bar')}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+// One read per week: state-history only returns daily rows.
+async function loadSocialWeeks(force = false) {
+  await socialWriteDone;
+  const keys = socialWeekKeys().filter(k => k !== state.weekKey && (force || !socialWeeks[k]));
+  await Promise.all(keys.map(async key => {
+    try {
+      socialWeeks[key] = (await apiRead(key, key)).socialPlans || EMPTY_SOCIAL();
+    } catch (e) {
+      console.warn('social week fetch failed', e);
+    }
+    if (page === 'SocialHistory') render();
+  }));
+}
+
+// A past or future week is read in full first, because state-write replaces the
+// whole row. It's written under its Monday's dayKey, sending that day back unchanged.
+async function openSocialWeek(key) {
+  if (key === state.weekKey) { socialWeek = null; go('Social'); return; }
+  const w = socialWeek = {
+    weekKey: key, daily: {}, weekly: {}, zone2: 0,
+    socialPlans: { ...EMPTY_SOCIAL(), ...socialWeeks[key] }, loaded: false,
+  };
+  go('Social');
+  try {
+    await socialWriteDone;
+    const remote = await apiRead(key, key);
+    if (socialWeek !== w) return; // user moved on
+    Object.assign(w, {
+      daily:       remote.daily  || {},
+      weekly:      remote.weekly || {},
+      zone2:       remote.zone2  || 0,
+      socialPlans: { ...EMPTY_SOCIAL(), ...remote.socialPlans },
+      loaded:      true,
+    });
+    socialWeeks[key] = w.socialPlans;
+  } catch (e) {
+    console.warn('social week fetch failed', e); // stays read-only (loaded: false)
+  }
+  render();
+}
+
+function saveSocialWeek() {
+  socialWeeks[socialWeek.weekKey] = socialWeek.socialPlans;
+  // A past day left open on Habits holds its own copy of these plans
+  if (viewDay?.weekKey === socialWeek.weekKey) viewDay.socialPlans = socialWeek.socialPlans;
+  clearTimeout(socialSaveTimer);
+  socialSaveTimer = setTimeout(flushSocialWeek, 400);
+}
+
+function flushSocialWeek() {
+  if (!socialSaveTimer) return;
+  clearTimeout(socialSaveTimer);
+  socialSaveTimer = null;
+  const w = socialWeek;
+  socialWriteDone = apiWrite({
+    dayKey:      w.weekKey,
+    weekKey:     w.weekKey,
+    daily:       w.daily,
+    weekly:      w.weekly,
+    zone2:       w.zone2,
+    socialPlans: w.socialPlans,
+  }, true).catch(err => console.warn('social week save failed', err));
 }
 
 // Grow a textarea to fit its text (no inner scrolling)
@@ -1099,6 +1235,7 @@ refreshStrava();
       socialPlans: remote.socialPlans,
     });
     seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
+    if (remote.weekKey === state.weekKey) markPlansFresh();
     cacheLocal(state);
   } else {
     console.warn('initial habit fetch failed', stateResult.reason);
@@ -1173,10 +1310,23 @@ $('socialList').addEventListener('input', e => {
   if (!el) return;
   // Enter = done (closes the keyboard) rather than a new line
   if (el.value.includes('\n')) { el.value = el.value.replace(/\n/g, ''); el.blur(); }
-  state.socialPlans[el.dataset.plan] = el.value;
-  $('socialTabCount').textContent = socialCount();
+  if (socialWeek && !socialWeek.loaded) return; // never write a week we haven't read in full
+  const week = socialWeek || state;
+  week.socialPlans[el.dataset.plan] = el.value;
+  $('socialTabCount').textContent = socialCount(week.socialPlans);
   fitHeight(el);
-  saveState();
+  if (socialWeek) saveSocialWeek(); else saveState();
+});
+$('socialWeekChip').addEventListener('click', () => go('SocialHistory'));
+$('socialHistoryBackChip').addEventListener('click', () => go('Social'));
+$('socialHistoryMore').addEventListener('click', () => {
+  socialPastWeeks += 8;
+  loadSocialWeeks();
+  render();
+});
+$('socialHistoryList').addEventListener('click', e => {
+  const row = e.target.closest('[data-social-week]');
+  if (row) openSocialWeek(row.dataset.socialWeek);
 });
 // Any Mindset accordion
 document.addEventListener('click', e => {

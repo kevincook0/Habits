@@ -12,7 +12,7 @@
 <title>Habits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=19">
+<link rel="stylesheet" href="css/styles.css?v=20">
 </head>
 <body>
 
@@ -35,16 +35,27 @@
   <div class="list" id="habitList"></div>
 </main>
 
-<!-- ── Social: this week's plans, one input per day (state.socialPlans) ── -->
+<!-- ── Social: a week's plans, one input per day ── -->
 <main class="page" id="pageSocial" hidden>
   <header class="page-header">
     <h1 class="title-tabs">
       <button class="title-tab" id="socialCount">0/0</button>
       <button class="title-tab active" id="socialTabCount" aria-label="Social">0/7</button>
     </h1>
+    <button class="chip" id="socialWeekChip"></button>
   </header>
   <div id="socialMindset"></div>
   <div class="list" id="socialList"></div>
+</main>
+
+<!-- ── Social weeks: past, this week, and up to 4 ahead ── -->
+<main class="page" id="pageSocialHistory" hidden>
+  <header class="page-header">
+    <h1 class="page-title">History</h1>
+    <button class="chip" id="socialHistoryBackChip">This week</button>
+  </header>
+  <div class="list" id="socialHistoryList"></div>
+  <button class="load-more" id="socialHistoryMore">Load more</button>
 </main>
 
 <!-- ── History ── -->
@@ -115,7 +126,7 @@
   <button class="load-more" id="stravaHistoryMore">Load more</button>
 </main>
 
-<script src="js/app.js?v=28"></script>
+<script src="js/app.js?v=29"></script>
 
 </body>
 </html>
