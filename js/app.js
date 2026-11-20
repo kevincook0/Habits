@@ -12,6 +12,7 @@ const DAILY_HABITS = [
   { key: 'Salad',                    label: 'Salad'        },
   { key: 'Posture 2',                label: 'Posture 2'    },
   { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
+  { key: 'French lesson',            label: 'French'       },   // ticked by Bonjour-hi when a Learn session is finished
   { key: 'Neuropod',                 label: 'Neuropod'     },
   { key: 'Statin, Magnesium, CoQ10', label: 'Statin'       },
   { key: 'In bed by 11:00pm',        label: 'In bed by 11' },
@@ -294,30 +295,47 @@ let plansStale   = false;
 let plansSyncing = false;
 let writeHeld    = false;
 
+// Today's row is also written from outside this page (the physical buttons,
+// Bonjour-hi's French lesson), so it's re-read whenever the page comes back to
+// the foreground (refreshState). `synced` is today as the server last had it:
+// what was read back, or the last write that landed. Anything in `state` that
+// differs from it is a change made here that the server doesn't have yet.
+let synced        = null;
+let refreshing    = false;              // a read is in flight: writes wait for it
+let refreshQueued = false;              // asked to refresh again while one was running
+let liveWriteDone = Promise.resolve();  // the last write of today, so a read can't overtake it
+let writeSeq      = 0;
+
+const clone = o => JSON.parse(JSON.stringify(o));
+
 let saveTimer = null;
 function saveState() {
   saveWorkoutDefaults(state.weekly); // keep defaults current for the upcoming week rollover
   cacheLocal(state);
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    if (plansStale) { writeHeld = true; return; }
-    apiWrite(livePayload()).catch(err => console.warn('habit save failed', err));
-  }, 400);
+  saveTimer = setTimeout(() => { saveTimer = null; sendLive(); }, 400);
+}
+
+// Write today now, or hold it while a read it would overwrite is pending.
+function sendLive(keepalive = false) {
+  if (plansStale || refreshing) { writeHeld = true; return; }
+  const payload = clone(livePayload());
+  const seq     = ++writeSeq;
+  liveWriteDone = apiWrite(payload, keepalive)
+    .then(() => {
+      // Only the newest write counts, and only if the day hasn't rolled over since
+      if (seq === writeSeq && payload.dayKey === state.dayKey && payload.weekKey === state.weekKey) synced = payload;
+    })
+    .catch(err => console.warn('habit save failed', err));
 }
 
 // Send a pending debounced write before the page goes away (iOS rarely fires beforeunload).
 function flushSave() {
   flushSocialWeek();
-  if (!saveTimer || plansStale) return;
+  if (!saveTimer) return;
   clearTimeout(saveTimer);
   saveTimer = null;
-  fetch(`${SUPABASE_URL}/functions/v1/state-write`, {
-    method: 'POST',
-    keepalive: true,
-    headers: apiHeaders(),
-    body: JSON.stringify(livePayload()),
-  });
+  sendLive(true);
 }
 
 // ── Keys & date helpers ──────────────────────────────────────
@@ -371,7 +389,11 @@ function ensureFreshKeys(s) {
   s = s || {};
   const dayKey  = getDayKey();
   const weekKey = getWeekKey();
-  if (s.dayKey  !== dayKey)  { s.dayKey  = dayKey;  s.daily  = {}; }
+  if (s.dayKey  !== dayKey)  {
+    s.dayKey = dayKey;
+    s.daily  = {};
+    if (synced) Object.assign(synced, { dayKey, daily: {} });   // nothing of the new day has been sent yet
+  }
   if (s.weekKey !== weekKey) {
     saveWorkoutDefaults(s.weekly); // capture last week's logs before clearing
     s.weekKey     = weekKey;
@@ -380,6 +402,8 @@ function ensureFreshKeys(s) {
     s.socialPlans = EMPTY_SOCIAL();
     plansStale    = true;          // plans made ahead for this week are still on the server
     seedWorkoutDefaults(s.weekly); // seed new week with last week's anchor values
+    // The seeded numbers aren't changes made here, so they belong to the baseline
+    if (synced) Object.assign(synced, { weekKey, weekly: clone(s.weekly), zone2: 0, socialPlans: EMPTY_SOCIAL() });
   }
   s.daily       = s.daily  || {};
   s.weekly      = s.weekly || {};
@@ -389,6 +413,7 @@ function ensureFreshKeys(s) {
 }
 
 let state        = ensureFreshKeys(readLocalCache());
+synced           = clone(state);               // until the first read: assume the cache is what the server has
 let habitHistory = readHistoryCache() || {};   // dayKey → daily
 
 function markPlansFresh() {
@@ -403,7 +428,8 @@ async function syncPlans() {
     await socialWriteDone;
     const remote = await apiRead(state.dayKey, state.weekKey);
     if (plansStale && remote.weekKey === state.weekKey) {
-      state.socialPlans = { ...EMPTY_SOCIAL(), ...remote.socialPlans };
+      state.socialPlans  = { ...EMPTY_SOCIAL(), ...remote.socialPlans };
+      synced.socialPlans = clone(state.socialPlans);
       cacheLocal(state);
       markPlansFresh();
       render();
@@ -412,6 +438,75 @@ async function syncPlans() {
     console.warn('social plans fetch failed', e); // retried on the next render
   }
   plansSyncing = false;
+}
+
+// ── Refreshing from the server ───────────────────────────────
+// Rejects if the promise hasn't settled in time, so a request that never comes
+// back (the page was frozen mid-flight) can't hold writes forever.
+const within = (promise, ms) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), ms)),
+]);
+
+// Re-read today and take the server's copy, re-applying on top only what was
+// changed here since the last sync (a tap during the read, or a write that never
+// landed). Runs at boot and each time the page comes back to the foreground.
+// Writes are held meanwhile, so one sent from this page's older copy can't wipe
+// a tick made somewhere else.
+async function refreshState() {
+  if (refreshing) { refreshQueued = true; return; }
+  refreshing = true;
+  try {
+    await within(liveWriteDone, 3000).catch(() => {});
+    const remote = await within(apiRead(getDayKey(), getWeekKey()), 8000);
+    state = ensureFreshKeys(state);
+    // The day rolled over mid-read: this answer is for yesterday
+    if (remote.dayKey !== state.dayKey || remote.weekKey !== state.weekKey) return;
+
+    const server = {
+      dayKey:      state.dayKey,
+      weekKey:     state.weekKey,
+      daily:       remote.daily  || {},
+      weekly:      remote.weekly || {},
+      zone2:       remote.zone2  || 0,
+      socialPlans: { ...EMPTY_SOCIAL(), ...remote.socialPlans },
+    };
+    seedWorkoutDefaults(server.weekly); // an empty new week gets last week's numbers
+
+    // The server's values, except for the keys changed here since the last sync
+    let kept = 0;
+    const same  = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const merge = (base, mine, theirs) => {
+      const out = { ...theirs };
+      new Set([...Object.keys(base), ...Object.keys(mine)]).forEach(k => {
+        if (same(base[k], mine[k])) return;
+        kept++;
+        if (k in mine) out[k] = mine[k]; else delete out[k];
+      });
+      return out;
+    };
+    const zone2Changed = state.zone2 !== synced.zone2;
+    state = {
+      dayKey:      server.dayKey,
+      weekKey:     server.weekKey,
+      daily:       merge(synced.daily,       state.daily,       server.daily),
+      weekly:      merge(synced.weekly,      state.weekly,      server.weekly),
+      zone2:       zone2Changed ? state.zone2 : server.zone2,
+      socialPlans: merge(synced.socialPlans, state.socialPlans, server.socialPlans),
+    };
+    synced     = clone(server);
+    plansStale = false;
+    cacheLocal(state);
+    if (kept || zone2Changed) writeHeld = true;   // the server is missing something: send it
+  } catch (e) {
+    console.warn('habit refresh failed', e);
+  } finally {
+    refreshing = false;
+    // Asked again mid-read (left and came back): that answer may already be old
+    if (refreshQueued) { refreshQueued = false; refreshState(); }
+    else if (writeHeld && !plansStale) { writeHeld = false; saveState(); }
+    render();
+  }
 }
 
 // ── Habit completion ─────────────────────────────────────────
@@ -798,7 +893,7 @@ function fitHeight(el) {
 }
 
 // Completion rate per habit across past days in habitHistory. Today is left out
-// (it's still in progress), and so are 0/13 days — vacation, or nothing was logged.
+// (it's still in progress), and so are 0/14 days — vacation, or nothing was logged.
 function renderProgress() {
   const days = Object.keys(habitHistory)
     .filter(k => k < state.dayKey && countDone(habitHistory[k]) > 0)
@@ -1214,42 +1309,22 @@ function toggleWeeklyDone() {
 render();
 refreshStrava();
 
-// Hydrate from API + load 60 days of history for the History page
+// Hydrate today from the API (and again each time the page returns to the foreground)
+refreshState();
+
+// Load 60 days of history for the History page
 (async () => {
   const today   = getDayKey();
   const fromDay = addDays(today, -60);
-
-  const [stateResult, historyResult] = await Promise.allSettled([
-    apiRead(today, getWeekKey()),
-    apiHistory(fromDay, today),
-  ]);
-
-  if (stateResult.status === 'fulfilled') {
-    const remote = stateResult.value;
-    state = ensureFreshKeys({
-      dayKey:      remote.dayKey,
-      weekKey:     remote.weekKey,
-      daily:       remote.daily,
-      weekly:      remote.weekly,
-      zone2:       remote.zone2,
-      socialPlans: remote.socialPlans,
-    });
-    seedWorkoutDefaults(state.weekly); // re-apply if API returned an empty new week
-    if (remote.weekKey === state.weekKey) markPlansFresh();
-    cacheLocal(state);
-  } else {
-    console.warn('initial habit fetch failed', stateResult.reason);
-  }
-
-  if (historyResult.status === 'fulfilled') {
+  try {
+    const { rows } = await apiHistory(fromDay, today);
     habitHistory = {};
-    (historyResult.value.rows || []).forEach(r => { habitHistory[r.day_key] = r.daily || {}; });
+    (rows || []).forEach(r => { habitHistory[r.day_key] = r.daily || {}; });
     historyFrom = fromDay;
     cacheHistory(habitHistory);
-  } else {
-    console.warn('history fetch failed', historyResult.reason);
+  } catch (e) {
+    console.warn('history fetch failed', e);
   }
-
   render();
 })();
 
@@ -1395,7 +1470,10 @@ document.addEventListener('click', e => {
 window.addEventListener('pagehide', flushSave);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') flushSave();
+  else refreshState();   // pick up ticks made elsewhere while this page was in the background
 });
+// Restored from the back/forward cache (no reload, so no boot read)
+window.addEventListener('pageshow', e => { if (e.persisted) refreshState(); });
 
 // Re-render each minute so the 3am rollover happens without a reload
 setInterval(render, 60000);

@@ -20,13 +20,14 @@ Personal habit tracker built as a static PWA (plain HTML + CSS + JS, no build st
 
 Project URL: `https://qbyuyoiiuoaeinvfiudv.supabase.co`
 
-Three Edge Functions, all invoked via `POST`:
+Four Edge Functions, all invoked via `POST`:
 
 | Function | Purpose |
 |---|---|
 | `state-read` | Returns `{ daily, weekly, zone2, socialPlans }` for a given `{ dayKey, weekKey }` |
 | `state-write` | Upserts `{ dayKey, weekKey, daily, weekly, zone2, socialPlans }` |
 | `state-history` | Returns `{ rows: [{ day_key, daily }] }` for a `{ fromDay, toDay }` range |
+| `habit-check` | Sets one habit for one day: `{ dayKey, habit, done? }` (`done` defaults to `true`). Leaves the day's other habits and the week row alone |
 
 Every request includes `x-habit-secret` in the header as a lightweight auth token (the secret is embedded in the JS; rotate in both places if compromised).
 
@@ -35,6 +36,16 @@ Every request includes `x-habit-secret` in the header as a lightweight auth toke
 Writes for today are **debounced 400 ms** — `saveState()` writes to `localStorage` immediately, then queues a network write. `flushSave()` sends a pending write on `pagehide` / `visibilitychange`.
 
 The physical habit buttons in `habit-button/` also write to `state-write`, keyed by the exact habit name.
+
+**Bonjour-hi ticks `French lesson`.** Kev's French app (github.com/kevincook0/bonjour-hi) calls `habit-check` from its server when a full Learn session is finished (every word answered; ending early or a Retry Missed doesn't count). It only ever ticks, never unticks. Use `habit-check` for any outside writer that knows about a single habit: it can't wipe other ticks or the week's social plans the way a partial `state-write` would. It reads the day, changes the key and writes the day back, so it isn't atomic, but the two steps are milliseconds apart.
+
+**The page re-reads today when it returns to the foreground** (`refreshState()`: at boot, on `visibilitychange` → visible, and on a back/forward-cache restore). Without it, a page left in the background would send its older copy on the next tap and wipe a tick made elsewhere. How it stays safe:
+
+- `synced` is today as the server last had it (what was read back, or the last write that landed). Whatever differs between `synced` and `state` is a change made on this page that the server doesn't have yet.
+- A refresh takes the server's copy and re-applies only those differences, key by key (`daily`, `weekly`, `socialPlans`), then writes if there were any. So a tap during the read survives, and so does a tick whose write failed while offline.
+- Writes are held while a read is in flight (`refreshing`, same mechanism as `plansStale`) and released when it lands or fails. Reads time out after 8 s so a frozen request can't hold writes forever.
+- At a day or week rollover `ensureFreshKeys()` resets the matching part of `synced` too (the seeded workout numbers count as baseline, not as changes).
+- All of today's writes go through `sendLive()`. Don't call `apiWrite(livePayload())` directly, or `synced` goes stale.
 
 ---
 
@@ -72,11 +83,11 @@ Top nav with six tabs (`TABS`), rendered by `renderNav()`:
 | Skills (shown as "Sport") | Strava racket sessions for the week + Mindset + Warm up / Cool down | One green dot per racket session this week (gray dot if none); struck through when there's at least one — no manual override |
 | Bike | "Cycling": Strava week (stats, weekly volume bar, rides) + Warm up / Cool down | Progress bar: this week's Strava minutes / goal — dark, green when complete |
 
-- **Habits header tabs**: the title is two tabs: the habit count ("0/13") and the Social count (days this week with a plan / `SOCIAL_GOAL`, e.g. "0/7"). Social (`page = 'Social'`) has a text box per day of the current week, saved to `state.socialPlans` on every keystroke (debounced like other writes). Enter closes the keyboard; boxes grow to fit. `renderSocial()` skips rebuilding while a box has focus. The week chip opens `page = 'SocialHistory'`: weeks newest first, from `SOCIAL_WEEKS_AHEAD` (4) ahead down through past weeks (8 at a time), each with its count; tapping one opens it, editable. Another week (`socialWeek`) is read in full first, written under its Monday's dayKey (sending that day back unchanged), and dropped on leaving Social. **Plans made ahead:** a new week starts blank locally, so `plansStale` holds today's writes until the server's plans are read back; otherwise the first tick of the week would wipe them. Tapping the count goes back to Habits. Swiping left on Habits opens Social and swiping right on Social goes back (only on these two pages; swipes starting in a text box or within 24px of the screen edge are ignored).
+- **Habits header tabs**: the title is two tabs: the habit count ("0/14") and the Social count (days this week with a plan / `SOCIAL_GOAL`, e.g. "0/7"). Social (`page = 'Social'`) has a text box per day of the current week, saved to `state.socialPlans` on every keystroke (debounced like other writes). Enter closes the keyboard; boxes grow to fit. `renderSocial()` skips rebuilding while a box has focus. The week chip opens `page = 'SocialHistory'`: weeks newest first, from `SOCIAL_WEEKS_AHEAD` (4) ahead down through past weeks (8 at a time), each with its count; tapping one opens it, editable. Another week (`socialWeek`) is read in full first, written under its Monday's dayKey (sending that day back unchanged), and dropped on leaving Social. **Plans made ahead:** a new week starts blank locally, so `plansStale` holds today's writes until the server's plans are read back; otherwise the first tick of the week would wipe them. Tapping the count goes back to Habits. Swiping left on Habits opens Social and swiping right on Social goes back (only on these two pages; swipes starting in a text box or within 24px of the screen edge are ignored).
 - **Mindset accordions** (`HABITS_MINDSET`, `SOCIAL_MINDSET`, `SPORT_MINDSET`): read-only numbered affirmations in a gray box above the list on Habits, Social and Sport. Tap anywhere on the box to expand/collapse; open state is in memory (`mindsetOpen`), collapsed on load.
 - **Habits with a routine** (`HABIT_STEPS`): first tap opens the steps (row `.active`, wrapped with its steps in a raised `.open-card`), second tap checks it off and closes it. Tapping a done row un-checks it. While one is open, a tap anywhere on Habits outside its card (another habit, the Mindset box, blank space) only closes it; the top nav and the page header still work. Open state is in memory only (`openHabit`).
 - **History**: tapping the date chip on Habits opens History (a list of days with a count and a completion bar; "Load more" adds 14 days). Tapping a day opens it on the Habits page, editable. The "Today" chip on History goes back. Tapping the Habits tab always returns to today.
-- **Progress** (titled "Scores"): the outlined "Scores" chip on Habits and History opens `page = 'Progress'`: % of days each habit was done, with a bar. Counts past days in `habitHistory` (60 days loaded at boot, plus any "Load more"), leaving out today and any 0/13 day (vacation / not logged). Its chips go to History or back to today.
+- **Progress** (titled "Scores"): the outlined "Scores" chip on Habits and History opens `page = 'Progress'`: % of days each habit was done, with a bar. Counts past days in `habitHistory` (60 days loaded at boot, plus any "Load more"), leaving out today and any 0/14 day (vacation / not logged). Its chips go to History or back to today.
 - **Past-day edits** (`viewDay`) write straight to the API with no debounce. They're blocked until `state-read` for that day has returned (`viewDay.loaded`), so a past day is never written from partial data. If that day is in the current week, the write sends the live `state.weekly` so it can't roll back this week's workouts.
 - **Workouts** (Push/Pull/Legs): one exercise is expanded at a time (its header row is `.active`: gray background, dark text; it and its sets are wrapped in a raised `.open-card` that sticks out past the list), showing a weight | reps cell per set. Cells are plain `<input>`s with `inputmode` so iOS shows the number pad; values save on every keystroke. Tapping the expanded exercise's row marks it done and opens the next undone one; tapping another row jumps to it; tapping a done row reopens it. The Done chip toggles the week (shows "Undo" when done). Leaving the page with every exercise ticked also marks the week done. `renderWorkout()` skips rebuilding the list while a set input has focus, so the minute timer / Strava fetches don't close the keyboard.
 - **Warm up / Cool down checkmarks** (Skills and Bike): tap a row to check it off. Stored in `state.daily` as `{ [itemName]: true }` under `skills_warmup`, `skills_cooldown`, `bike_warmup`, `bike_cooldown`, so they reset at 3am (each session starts fresh). Keyed by item name, so reordering is safe but renaming an item drops its check.
@@ -103,7 +114,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 
 **Cache-busting.** The `<link>`/`<script>` tags in `habit-tracker.html` carry a `?v=N` query string. Bump `N` on the file(s) you changed so iOS Safari doesn't serve a stale copy.
 
-**localStorage as the source of truth on load.** The app renders from cache immediately, then fetches from the API and re-renders.
+**localStorage as the source of truth on load.** The app renders from cache immediately, then fetches from the API and re-renders. It fetches again each time it comes back to the foreground (see "The page re-reads today" above).
 
 **Workout log defaults.** When a new week starts and `weekly` is cleared, `saveWorkoutDefaults()` copies last week's weight/rep values to `localStorage`. `seedWorkoutDefaults()` re-applies them (with `done` cleared) so the workout pages pre-fill with last week's numbers.
 
@@ -111,7 +122,7 @@ Key tokens: `--surface` (#f1f1f1, done rows / focused set cells / active tab), `
 
 ## Key constants (top of `js/app.js`)
 
-- `DAILY_HABITS` — the 13 daily habits, in display order, as `{ key, label }`
+- `DAILY_HABITS` — the 14 daily habits, in display order, as `{ key, label }`. `French lesson` is ticked by Bonjour-hi (it can still be tapped by hand)
 - `HABIT_STEPS` — read-only routines (`[name, detail]`) for habits that expand: Mobility, Posture 1/2 (both use `POSTURE_STEPS`, the current rehab routine — edit it as rehab progresses)
 - `SOCIAL_WEEKS_AHEAD = 4`, `SOCIAL_GOAL = 7` (days with plans/week), `ZONE2_GOAL = 240` (minutes/week), `ZONE2_STEP = 15`, `RESET_HOUR = 3`
 - `WEEKLY_KEY` — tab name → `state.weekly` key
@@ -139,7 +150,7 @@ Habits/
 │   └── styles.css         ← all styling; design tokens on :root at the top
 ├── js/
 │   └── app.js             ← constants, state, Supabase sync, rendering, events
-├── supabase/functions/    ← Edge Functions: state-read, state-write, state-history
+├── supabase/functions/    ← Edge Functions: state-read, state-write, state-history, habit-check
 ├── scripts/
 │   ├── strava-auth.mjs    ← one-time local Strava OAuth; writes STRAVA_REFRESH_TOKEN to .env
 │   ├── fetch-strava.mjs   ← fetches weekly rides → data/strava/*.json
