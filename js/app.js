@@ -10,10 +10,10 @@ const DAILY_HABITS = [
   { key: 'Skincare',                 label: 'Skincare'     },
   { key: 'Minoxidil (AM)',           label: 'Minoxidil 1'  },
   { key: 'Salad',                    label: 'Salad'        },
+  { key: 'Distraction-free lunch',   label: 'Distraction-free lunch' },
   { key: 'Posture 2',                label: 'Posture 2'    },
   { key: 'Minoxidil (PM)',           label: 'Minoxidil 2'  },
   { key: 'French lesson',            label: 'French'       },   // ticked by Bonjour-hi when a Learn session is finished
-  { key: 'Neuropod',                 label: 'Neuropod'     },
   { key: 'Statin, Magnesium, CoQ10', label: 'Statin'       },
   { key: 'In bed by 11:00pm',        label: 'In bed by 11' },
 ];
@@ -893,7 +893,7 @@ function fitHeight(el) {
 }
 
 // Completion rate per habit across past days in habitHistory. Today is left out
-// (it's still in progress), and so are 0/14 days — vacation, or nothing was logged.
+// (it's still in progress), and so are 0/N days — vacation, or nothing was logged.
 function renderProgress() {
   const days = Object.keys(habitHistory)
     .filter(k => k < state.dayKey && countDone(habitHistory[k]) > 0)
